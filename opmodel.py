@@ -1,4 +1,4 @@
-print('Sup?')
+print('Oh, nice')
 
 def foobar():
     print("Foobar yourself")
