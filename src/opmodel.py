@@ -10,6 +10,9 @@ def foo():
 def qux():
     print("Qux what!!")
 
+def baq():
+    print("Baq now")
+
 class Model:
     def __init__(self):
         self.foobar = 0
