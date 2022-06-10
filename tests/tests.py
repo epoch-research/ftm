@@ -1,13 +1,7 @@
-#@title Test suite
-
 import unittest
-
+ 
 import numpy as np
 from opmodel import *
-
-import opmodel
-
-print(opmodel.SimulateTakeOff)
 
 class TestSimulateTakeoff(unittest.TestCase):
   
@@ -431,7 +425,3 @@ class TestTaskWeights(unittest.TestCase):
         compute_to_labour_share_ratio,
         places=2
         )
-
-#unittest.main(argv=[''], verbosity=2, exit=False);
-#unittest.main(argv=['', 'TestAllocationFunction.test_allocation_function_complex_input'], verbosity=2, exit=False);
-#unittest.main(argv=['', 'TestTaskWeights.test_weight_estimation'], verbosity=2, exit=False);
