@@ -3,8 +3,6 @@ import unittest
 import numpy as np
 from opmodel import *
 
-print("b_2")
-
 class TestSimulateTakeoff(unittest.TestCase):
   
   def setUp(self):
@@ -15,7 +13,6 @@ class TestSimulateTakeoff(unittest.TestCase):
   
   def test_basic_checks(self):
     # Create model
-    print("flkdasjflkasjfdlsjdfklasjflsadjdfdaslfjalskj")
     model = SimulateTakeOff()
 
     # Run simulation
