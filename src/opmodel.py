@@ -143,8 +143,7 @@ class SimulateTakeOff():
     self.process_automation_costs()
 
     # Define rampup triggers
-    self.rampup_trigger_goods = self.rampup_trigger
-    self.rampup_trigger_rnd = self.rampup_trigger
+    self.rampup_trigger = self.rampup_trigger
 
     # Define initial quantities
     self.initial_software = 1
@@ -931,8 +930,7 @@ class SimulateTakeOff():
 
     # Rampup
     self.rampup[t_idx] = \
-      (self.frac_tasks_automated_goods[t_idx-1] >= self.rampup_trigger_goods) \
-      or (self.frac_tasks_automated_rnd[t_idx-1] >= self.rampup_trigger_rnd)
+      self.frac_tasks_automated_goods[t_idx-1] >= self.rampup_trigger
     
     if self.rampup[t_idx] and not self.rampup[t_idx-1]:
       t_year = self.index_to_time(t_idx)
