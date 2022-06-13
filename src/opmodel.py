@@ -1538,3 +1538,18 @@ class SimulateTakeOff():
     display(metrics_df)
 
     
+if __name__ == "__main__":
+  # Retrieve parameter estimates from spreadsheet
+  parameter_table = pd.read_csv('https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/export?format=csv#gid=0')
+  parameter_table = parameter_table.set_index("Parameter")
+  best_guess_parameters = {parameter : row['Best guess'] for parameter, row in parameter_table.iterrows()}
+
+  # Run model
+  model = SimulateTakeOff(**best_guess_parameters, t_step=1)
+  model.run_simulation()
+
+  # Plot things
+  model.plot('gwp')
+  model.plot_compute_decomposition()
+  model.display_summary_table()
+  model.display_takeoff_metrics()
