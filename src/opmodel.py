@@ -1518,14 +1518,14 @@ class SimulateTakeOff():
       # Auxiliary function to compute doubling times 
       dt = lambda s : self.t_step / np.log2(s[idx]/s[idx-1]) \
                       if np.log2(s[idx]/s[idx-1]) != 0 else np.nan
-      doubling_time_metrics = ['hardware_performance', 'software', 'compute_investment', 'gwp', 'capital', 'cumulative_rnd_input_hardware', 'cumulative_rnd_input_software']
-      
-      for doubling_time_metric in doubling_time_metrics:
-        summary_row[f"{doubling_time_metric} doubling time"] = dt(getattr(self, doubling_time_metric))
+      doubling_time_metrics = ['hardware_performance', 'software', 'compute_investment', 'frac_compute_training', 'gwp', 'capital']
       
       raw_metrics = ['biggest_training_run', 'frac_tasks_automated_goods', 'frac_tasks_automated_rnd']
       for raw_metric in raw_metrics:
         summary_row[f"{raw_metric}"] = getattr(self, raw_metric)[idx]
+      
+      for doubling_time_metric in doubling_time_metrics:
+        summary_row[f"{doubling_time_metric} doubling time"] = dt(getattr(self, doubling_time_metric))
 
       summary_table.append(summary_row)
 
