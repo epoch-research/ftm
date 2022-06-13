@@ -1492,11 +1492,11 @@ class SimulateTakeOff():
       plt.axhline(10**oom, linestyle='dotted', color='black',)
 
     labels = ["Compute investment ", "Hardare performance", "Software", "Frac compute training"]
-
-    plt.legend(loc='upper left')
     
     if new_figure:
       plt.title(f"Compute increase decomposition");
+      plt.legend(bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0);
+      plt.tight_layout();
       plt.show();
   
   def display_summary_table(self):
@@ -1505,7 +1505,7 @@ class SimulateTakeOff():
     
     for period, t in {'prerampup' : np.mean([self.t_start, self.rampup_start]) , 
                       'rampup_start': self.rampup_start, 
-                      'mid rampup': np.mean([self.rampup_start, self.agi_year]) , 
+                      'mid rampup': np.mean([self.rampup_start, self.agi_year]), 
                       'agi': self.agi_year}.items() :
       idx = self.time_to_index(t)
       t = self.index_to_time(idx) # Round to nearest valid year
