@@ -1534,7 +1534,7 @@ class SimulateTakeOff():
   
   def display_takeoff_metrics(self):
     metrics_df = pd.DataFrame(self.takeoff_metrics, index = [0])
-    metrics_df["doubling times"] = [f"{dt:0.1f}" for dt in self.doubling_times[:4]]
+    metrics_df["doubling times"] = repr(self.doubling_times[:4])
     display(metrics_df)
 
     
