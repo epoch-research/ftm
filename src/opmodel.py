@@ -306,6 +306,7 @@ class SimulateTakeOff():
 
     self.rampup = np.zeros(self.n_timesteps, dtype=bool)
     self.rampup_start = None
+    self.rampup_mid = None
 
     # Goods vs compute investment split
     self.frac_gwp_compute = np.zeros(self.n_timesteps)
@@ -935,6 +936,12 @@ class SimulateTakeOff():
     if self.rampup[t_idx] and not self.rampup[t_idx-1]:
       t_year = self.index_to_time(t_idx)
       self.rampup_start = t_year
+    
+    if self.rampup[t_idx] and \
+    self.frac_tasks_automated_goods[t_idx-1] >= 0.3 and \
+    not self.frac_tasks_automated_goods[t_idx-2] >= 0.3:
+      self.rampup_mid = self.index_to_time(t_idx)
+      
 
     def update_frac_input(current_frac, growth_rate, growth_rate_rampup, max_frac):
       frac = current_frac\
@@ -1440,13 +1447,12 @@ class SimulateTakeOff():
                 linestyle='dotted',
                 color=line_color,
                 label='rampup_start');
-
-    if self.agi_year:
-      mid_rampup = (self.rampup_start + self.agi_year)/2
-      plt.axvline(mid_rampup, 
+    if self.rampup_mid:
+      plt.axvline(self.rampup_mid, 
                 linestyle='-.',
                 color=line_color,
                 label='mid_rampup');
+    if self.agi_year:
 
       plt.axvline(self.agi_year, 
                 linestyle='dashed',
@@ -1505,7 +1511,7 @@ class SimulateTakeOff():
     
     for period, t in {'prerampup' : np.mean([self.t_start, self.rampup_start]) , 
                       'rampup_start': self.rampup_start, 
-                      'mid rampup': np.mean([self.rampup_start, self.agi_year]), 
+                      'mid rampup': self.rampup_mid, 
                       'agi': self.agi_year}.items() :
       idx = self.time_to_index(t)
       t = self.index_to_time(idx) # Round to nearest valid year
