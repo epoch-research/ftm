@@ -2,7 +2,7 @@
 Sensitivity analysis.
 """
 
-from _setup_ import *
+from . import *
 
 parameter_table = pd.read_csv('https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/export?format=csv#gid=0')
 parameter_table = parameter_table.set_index("Parameter")

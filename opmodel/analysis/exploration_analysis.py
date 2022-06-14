@@ -2,7 +2,7 @@
 Explore year by year.
 """
 
-from _setup_ import *
+from . import *
 
 exploration_target = 'compare' #@param {type:"string"}
 

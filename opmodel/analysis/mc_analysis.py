@@ -2,7 +2,7 @@
 Monte carlo analysis.
 """
 
-from _setup_ import *
+from . import *
 
 from scipy.special import erfinv
 from numpy.random import default_rng
