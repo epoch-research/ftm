@@ -5,6 +5,8 @@ import pandas as pd
 import math
 import traceback
 
+from utils import display
+
 class SimulateTakeOff():
   """ Class to run a simulation of how automation and the economy 
       will feed into each other.
