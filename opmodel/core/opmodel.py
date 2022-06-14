@@ -1519,7 +1519,10 @@ class SimulateTakeOff():
                       'mid rampup': self.rampup_mid, 
                       'agi': self.agi_year}.items() :
       idx = self.time_to_index(t)
-      t = self.index_to_time(idx) # Round to nearest valid year
+      t = self.index_to_time(idx)
+      t_end = t + 1
+      idx_end = self.time_to_index(t_end)
+      
 
       summary_row = {
         'period' : period,
@@ -1527,8 +1530,8 @@ class SimulateTakeOff():
       }
 
       # Auxiliary function to compute doubling times 
-      dt = lambda s : self.t_step / np.log2(s[idx]/s[idx-1]) \
-                      if np.log2(s[idx]/s[idx-1]) != 0 else np.nan
+      dt = lambda s : self.t_step / np.log2(s[idx_end]/s[idx]) \
+                      if np.log2(s[idx_end]/s[idx]) != 0 else np.nan
       doubling_time_metrics = ['hardware_performance', 'software', 'compute_investment', 'frac_compute_training', 'gwp', 'capital']
       
       raw_metrics = ['biggest_training_run', 'frac_tasks_automated_goods', 'frac_tasks_automated_rnd']
