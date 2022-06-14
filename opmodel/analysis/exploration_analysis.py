@@ -5,6 +5,7 @@ Explore year by year.
 from . import *
 
 def explore(exploration_target = 'compare'):
+  log.info('Downloading parameters...')
   # Retrieve parameter table
   parameter_table = pd.read_csv('https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/export?format=csv#gid=0')
   parameter_table = parameter_table.set_index("Parameter")
@@ -51,16 +52,19 @@ def explore(exploration_target = 'compare'):
     high_value = row['Aggressive']
 
   # Initialize simulations
+  log.info('Initializing simulations...')
   low_model = SimulateTakeOff(**low_params)
   med_model = SimulateTakeOff(**med_params)
   high_model = SimulateTakeOff(**high_params)
 
   # Run simulations
+  log.info('Running simulations...')
   low_model.run_simulation()
   med_model.run_simulation()
   high_model.run_simulation()
 
   # Print table of metrics
+  log.info('Results...')
   low_results = {**{'type' : 'Conservative', 'value' : low_value}, **low_model.takeoff_metrics}
   med_results = {**{'type' : 'Best guess', 'value' : med_value}, **med_model.takeoff_metrics}
   high_results = {**{'type' : 'Aggressive', 'value' : high_value}, **high_model.takeoff_metrics}
@@ -100,6 +104,8 @@ def explore(exploration_target = 'compare'):
   low_model.display_summary_table()
   med_model.display_summary_table()
   high_model.display_summary_table()
+
+  log.info('Done')
 
 def explore_year(year = 2020):
   parameter_table = pd.read_csv('https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/export?format=csv#gid=0')
