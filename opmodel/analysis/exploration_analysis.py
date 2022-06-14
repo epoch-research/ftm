@@ -94,6 +94,7 @@ plt.ylabel("Best guess")
 plt.subplot(3, 1, 3)
 high_model.plot_compute_decomposition(new_figure=False)
 plt.ylabel("Aggressive")
+plt.show()
 
 # Plot doubling times
 print("Model summaries")
