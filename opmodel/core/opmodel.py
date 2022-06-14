@@ -988,11 +988,14 @@ class SimulateTakeOff():
       self.gwp[t_idx-1] * self.frac_gwp_compute[t_idx] * self.t_step
     
     if t_idx-self.hardware_delay_idx >= 0:
-      new_hardware = \
-        self.compute_investment[t_idx] * self.hardware_performance[t_idx-self.hardware_delay_idx]
+      buyable_hardware_performance = \
+        self.hardware_performance[t_idx-self.hardware_delay_idx]
     else:
-      new_hardware = \
-        self.compute_investment[t_idx] * self.initial_hardware_performance
+      buyable_hardware_performance = \
+        self.hardware_performance[0] * (self.hardware_performance[1] \
+        / self.hardware_performance[0])**(t_idx-self.hardware_delay_idx)
+    
+    new_hardware = self.compute_investment[t_idx] * buyable_hardware_performance
 
     self.hardware[t_idx] = \
       self.hardware[t_idx-1] \
