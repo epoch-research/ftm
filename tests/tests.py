@@ -1,6 +1,8 @@
 import unittest
  
 import numpy as np
+
+import _setup_
 from opmodel import *
 
 class TestSimulateTakeoff(unittest.TestCase):
