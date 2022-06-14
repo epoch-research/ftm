@@ -104,7 +104,7 @@ class SimulateTakeOff():
 
       # Simulation resolution
       t_start = 2022,
-      t_end = 2062,
+      t_end = 2100,
       t_step = 0.1, # Time between steps in years
 
       n_labour_tasks = 100,
