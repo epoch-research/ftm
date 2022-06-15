@@ -24,6 +24,19 @@ class Report:
     # General styling
     self.head.append(et.fromstring('''
       <style>
+        body {
+          font-family: Arial, sans-serif;
+          font-size: 15px;
+        }
+
+        * {
+          color: #222;
+        }
+
+        table {
+          font-size: 1em;
+        }
+
         .main {
           display: grid;
           grid-template-columns: [full-start] minmax(4vw,auto) [wide-start] minmax(auto,140px) [main-start] min(640px,calc(100% - 8vw)) [main-end] minmax(auto,140px) [wide-end] minmax(4vw,auto) [full-end];
