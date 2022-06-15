@@ -106,8 +106,6 @@ def explore(exploration_target='compare', report_file_path=None, report_dir_path
   plt.subplot(3, 1, 3)
   high_model.plot_compute_decomposition(new_figure=False)
   plt.ylabel("Aggressive")
-
-  report.add_header("Figures", level = 3)
   report.add_figure()
 
   # Plot doubling times

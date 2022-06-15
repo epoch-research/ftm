@@ -27,14 +27,19 @@ class Report:
         .main {
           display: grid;
           grid-template-columns: [full-start] minmax(4vw,auto) [wide-start] minmax(auto,140px) [main-start] min(640px,calc(100% - 8vw)) [main-end] minmax(auto,140px) [wide-end] minmax(4vw,auto) [full-end];
+          padding: 10px;
         }
 
         .main > * {
-          grid-column: main-start/main-end;
+          grid-column: full-start/full-end;
         }
 
         .main > .figure-container {
-          grid-column: wide-start/wide-end;
+          grid-column: full-start/full-end;
+        }
+
+        .figure-container img {
+          max-width: 90vw;
         }
 
         table, td, tr, th {
@@ -46,6 +51,7 @@ class Report:
           margin-left: auto;
           margin-right: auto;
           border-collapse: collapse;
+          white-space: nowrap;
         }
 
         table.dataframe thead {
@@ -57,6 +63,7 @@ class Report:
         table.dataframe td, table.dataframe th {
           text-align: right;
           padding: 0.2em 1.5em;
+          text-wrap: nowrap;
         }
 
         table.dataframe tbody tr:nth-child(odd) {
@@ -87,6 +94,7 @@ class Report:
 
         #image-modal img {
           height: 90%;
+          max-width: 100%;
           cursor: move;
         }
 
@@ -408,11 +416,11 @@ class Report:
     if not figure: figure = plt.gcf()
 
     image = BytesIO()
-    figure.savefig(image, format='svg')
+    figure.savefig(image, format='svg', bbox_inches='tight')
     base64_image = base64.b64encode(image.getvalue()).decode('utf-8')
 
     container = et.Element('div', {'class': 'figure-container'})
-    img = et.Element('img', {'class': 'figure', 'src': f'data:image/svg+xml;base64,{base64_image}', 'style': 'width: 100%'})
+    img = et.Element('img', {'class': 'figure', 'src': f'data:image/svg+xml;base64,{base64_image}'})
     container.append(img)
 
     if caption:
@@ -424,8 +432,8 @@ class Report:
     plt.close(figure)
 
   def add_data_frame(self, df):
-    container = et.Element('div', {'class': 'table-container', 'style': 'overflow-x: auto;'})
-    dataframe_wrapper = et.Element('div', {'class': 'dataframe-container', 'style': 'overflow-x: auto;'})
+    container = et.Element('div', {'class': 'table-container'})
+    dataframe_wrapper = et.Element('div', {'class': 'dataframe-container'})
 
     table = et.fromstring(df.to_html())
     dataframe_wrapper.append(table)
@@ -461,7 +469,7 @@ class Report:
 if __name__ == '__main__':
   import numpy as np
 
-  report = Report(add_csv_copy_button=False)
+  report = Report(add_csv_copy_button=False, report_file_path='report-test.html')
 
   report.add_header("Title")
   report.add_paragraph("Today I've learned many things.")
@@ -507,5 +515,5 @@ if __name__ == '__main__':
 
   report.add_all_figures()
 
-  report_path = report.write('report-test.html')
+  report_path = report.write()
   print(f'Report written to {report_path}')
