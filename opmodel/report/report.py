@@ -408,11 +408,11 @@ class Report:
     element.text = paragraph
     self.content.append(element)
 
-  def add_all_figures(self, caption = None):
+  def add_all_figures(self):
     for fignum in plt.get_fignums():
-      self.add_figure(plt.figure(fignum), caption)
+      self.add_figure(plt.figure(fignum))
 
-  def add_figure(self, figure = None, caption = None):
+  def add_figure(self, figure = None):
     if not figure: figure = plt.gcf()
 
     image = BytesIO()
@@ -422,11 +422,6 @@ class Report:
     container = et.Element('div', {'class': 'figure-container'})
     img = et.Element('img', {'class': 'figure', 'src': f'data:image/svg+xml;base64,{base64_image}'})
     container.append(img)
-
-    if caption:
-      div = et.Element('div', {'style': 'font-size: 0.9rem; color: grey; margin-left: auto; margin-right: auto; text-align: center;'})
-      div.text = caption
-      container.append(div)
 
     self.content.append(container)
     plt.close(figure)
