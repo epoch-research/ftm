@@ -5,10 +5,8 @@ Explore year by year.
 from . import log
 from . import *
 
-def explore(exploration_target='compare', report_file_path=None, report_dir_path=None):
-  report = Report(report_file_path=report_file_path, report_dir_path=report_dir_path)
-
-  log.info('Downloading parameters...')
+def explore(exploration_target='compare', report_file_path='exploration_analysis.html', report_dir_path=None):
+  log.info('Retrieving parameters...')
   # Retrieve parameter table
   parameter_table = pd.read_csv('https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/export?format=csv#gid=0')
   parameter_table = parameter_table.set_index("Parameter")
@@ -72,8 +70,10 @@ def explore(exploration_target='compare', report_file_path=None, report_dir_path
   log.info('  Aggressive simulation')
   high_model.run_simulation()
 
+  log.info('Writing report...')
+  report = Report(report_file_path=report_file_path, report_dir_path=report_dir_path)
+
   # Print table of metrics
-  log.info('Writing results...')
   low_results = {**{'type' : 'Conservative', 'value' : low_value}, **low_model.takeoff_metrics}
   med_results = {**{'type' : 'Best guess', 'value' : med_value}, **med_model.takeoff_metrics}
   high_results = {**{'type' : 'Aggressive', 'value' : high_value}, **high_model.takeoff_metrics}
@@ -190,5 +190,4 @@ if __name__ == '__main__':
   )
 
   args = parser.parse_args()
-
   explore(exploration_target=args.exploration_target, report_file_path=args.output_file, report_dir_path=args.output_dir)
