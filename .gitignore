@@ -138,3 +138,4 @@ dmypy.json
 
 # Misc
 _ignore*
+_output_/

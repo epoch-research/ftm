@@ -5,17 +5,16 @@ import logging
 
 from ..core.opmodel import SimulateTakeOff
 from ..core.utils import display
+from ..report.report import Report
 
-# In case we want to get rid of them
 class Log:
   INFO_LEVEL = 1
 
   def __init__(self, level=0):
     self.level = level
 
-  def info(self, msg):
+  def info(self, *args, **kwargs):
     if self.level < Log.INFO_LEVEL: return
-    print(msg)
-
+    print(*args, **kwargs)
 
 log = Log(level=Log.INFO_LEVEL)

@@ -2,9 +2,12 @@
 Explore year by year.
 """
 
+from . import log
 from . import *
 
-def explore(exploration_target = 'compare'):
+def explore(exploration_target='compare', report_file_path=None, report_dir_path=None):
+  report = Report(report_file_path=report_file_path, report_dir_path=report_dir_path)
+
   log.info('Downloading parameters...')
   # Retrieve parameter table
   parameter_table = pd.read_csv('https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/export?format=csv#gid=0')
@@ -53,18 +56,24 @@ def explore(exploration_target = 'compare'):
 
   # Initialize simulations
   log.info('Initializing simulations...')
+  log.info('  Conservative simulation')
   low_model = SimulateTakeOff(**low_params)
+  log.info('  Best guess simulation')
   med_model = SimulateTakeOff(**med_params)
+  log.info('  Aggressive simulation')
   high_model = SimulateTakeOff(**high_params)
 
   # Run simulations
   log.info('Running simulations...')
+  log.info('  Conservative simulation')
   low_model.run_simulation()
+  log.info('  Best guess simulation')
   med_model.run_simulation()
+  log.info('  Aggressive simulation')
   high_model.run_simulation()
 
   # Print table of metrics
-  log.info('Results...')
+  log.info('Writing results...')
   low_results = {**{'type' : 'Conservative', 'value' : low_value}, **low_model.takeoff_metrics}
   med_results = {**{'type' : 'Best guess', 'value' : med_value}, **med_model.takeoff_metrics}
   high_results = {**{'type' : 'Aggressive', 'value' : high_value}, **high_model.takeoff_metrics}
@@ -76,7 +85,7 @@ def explore(exploration_target = 'compare'):
 
   results = [low_results, med_results, high_results]
   results = pd.DataFrame(results)
-  display(results)
+  report.add_data_frame(results)
 
   # Plot results
   metrics = ['gwp'] #, 'compute', 'hardware_performance', 'software', 'frac_gwp_compute', 'frac_training_compute']
@@ -97,13 +106,24 @@ def explore(exploration_target = 'compare'):
   plt.subplot(3, 1, 3)
   high_model.plot_compute_decomposition(new_figure=False)
   plt.ylabel("Aggressive")
-  plt.show()
+
+  report.add_header("Figures", level = 3)
+  report.add_figure()
 
   # Plot doubling times
-  print("Model summaries")
-  low_model.display_summary_table()
-  med_model.display_summary_table()
-  high_model.display_summary_table()
+  report.add_header("Model summaries", level = 3)
+
+  report.add_header("Conservative", level = 4)
+  report.add_data_frame(low_model.get_summary_table())
+
+  report.add_header("Best guess", level = 4)
+  report.add_data_frame(med_model.get_summary_table())
+
+  report.add_header("Aggressive", level = 4)
+  report.add_data_frame(high_model.get_summary_table())
+
+  report_path = report.write()
+  log.info(f'Report stored in {report_path}')
 
   log.info('Done')
 
@@ -149,7 +169,28 @@ if __name__ == '__main__':
   import argparse
 
   parser = argparse.ArgumentParser()
-  parser.add_argument("-t", "--exploration_target", default="compare")
+
+  parser.add_argument(
+    "-t",
+    "--exploration-target",
+    default="compare",
+    help="Choose 'compare' to compare aggressive, best guess and conservative scenario"
+  )
+
+  parser.add_argument(
+    "-o",
+    "--output-file",
+    default="exploration_analysis.html",
+    help="Path of the output report (absolute or relative to the report directory)"
+  )
+
+  parser.add_argument(
+    "-d",
+    "--output-dir",
+    default=Report.default_report_path(),
+    help="Path of the output directory (will be create if it doesn't exist)"
+  )
+
   args = parser.parse_args()
 
-  explore(args.exploration_target)
+  explore(exploration_target=args.exploration_target, report_file_path=args.output_file, report_dir_path=args.output_dir)

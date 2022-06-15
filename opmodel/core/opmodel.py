@@ -1509,9 +1509,8 @@ class SimulateTakeOff():
       plt.legend(bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0);
       plt.tight_layout();
       plt.show();
-  
-  def display_summary_table(self):
-    
+
+  def get_summary_table(self):
     summary_table = []
     
     for period, t in {'prerampup' : np.mean([self.t_start, self.rampup_start]) , 
@@ -1544,7 +1543,11 @@ class SimulateTakeOff():
       summary_table.append(summary_row)
 
     summary_table = pd.DataFrame(summary_table)
-    display(summary_table)
+
+    return summary_table
+  
+  def display_summary_table(self):
+    display(self.get_summary_table())
   
   def display_takeoff_metrics(self):
     metrics_df = pd.DataFrame(self.takeoff_metrics, index = [0])
