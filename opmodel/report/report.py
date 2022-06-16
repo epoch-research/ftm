@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from xml.etree import ElementTree as et
 import os
+import time
 
 DEFAULT_REPORT_DIRECTORY = '_output_'     # Relative to the root of the repository
 DEFAULT_REPORT_FILE      = 'report.html'  # Relative to the DEFAULT_REPORT_DIRECTORY
@@ -364,13 +365,13 @@ class Report:
     self.head.append(et.fromstring('<script defer="true" src="https://unpkg.com/panzoom@9.4.0/dist/panzoom.min.js"></script>'))
 
     self.head.append(et.fromstring(f'''
-      <script type="text/javascript" charset="utf-8">
+      <script>
         let addCsvCopyButton = {'true' if add_csv_copy_button else 'false'};
       </script>
     '''));
 
     self.head.append(et.fromstring('''
-      <script type="text/javascript" charset="utf-8">
+      <script>
         window.onload = () => {
           if (addCsvCopyButton) {
             let clipboard = new ClipboardJS('.copy-button');
@@ -398,6 +399,32 @@ class Report:
     '''))
 
     self.body.append(et.fromstring('''
+      <script>
+        function onNodeChange(records) {
+          for (let record of records) {
+            for (let node of record.addedNodes) {
+              if (!node.dataset || !node.dataset.timestamp) continue;
+
+              node.innerText = new Date(+node.dataset.timestamp)
+                .toLocaleDateString('en-us', {
+                  year:"numeric",
+                  month:"short",
+                  day:"numeric",
+                  hour:'2-digit',
+                  minute:'2-digit',
+                  hour12:false,
+                  timeZoneName:'short'
+              });
+            }
+          }
+        }
+
+        let observer = new MutationObserver(onNodeChange);
+        observer.observe(document.body, { childList: true, subtree: true });
+      </script>
+    '''))
+
+    self.body.append(et.fromstring('''
       <div class="modal micromodal-slide" id="image-modal" aria-hidden="true">
         <div class="modal-overlay" tabindex="-1" data-micromodal-close='true'>
           <div class="modal-content-content">
@@ -405,6 +432,13 @@ class Report:
           </div>
         </div>
       </div>
+    '''))
+
+    self.content.append(et.fromstring(f'''
+      <p style="color: grey">
+        Generated at
+        <span data-timestamp="{int(time.time() * 1000)}" class="page-generation-time" style="color: grey"></span>
+      </p>
     '''))
 
     self.html.append(self.head)
