@@ -398,6 +398,7 @@ class Report:
       </script>
     '''))
 
+    # Convert all timestamps to dates
     self.body.append(et.fromstring('''
       <script>
         function onNodeChange(records) {
@@ -424,6 +425,7 @@ class Report:
       </script>
     '''))
 
+    # Figure modal
     self.body.append(et.fromstring('''
       <div class="modal micromodal-slide" id="image-modal" aria-hidden="true">
         <div class="modal-overlay" tabindex="-1" data-micromodal-close='true'>
@@ -434,6 +436,7 @@ class Report:
       </div>
     '''))
 
+    # Generation date
     self.content.append(et.fromstring(f'''
       <p style="color: grey">
         Generated at
