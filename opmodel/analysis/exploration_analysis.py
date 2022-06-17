@@ -170,30 +170,12 @@ def explore_year(year = 2020):
   print(f"compute share goods = {model.compute_share_goods[index]}")
 
 if __name__ == '__main__':
-  import argparse
-
-  parser = argparse.ArgumentParser()
-
+  parser = init_cli_arguments()
   parser.add_argument(
     "-t",
     "--exploration-target",
     default="compare",
     help="Choose 'compare' to compare aggressive, best guess and conservative scenario"
   )
-
-  parser.add_argument(
-    "-o",
-    "--output-file",
-    default="exploration_analysis.html",
-    help="Path of the output report (absolute or relative to the report directory)"
-  )
-
-  parser.add_argument(
-    "-d",
-    "--output-dir",
-    default=Report.default_report_path(),
-    help="Path of the output directory (will be create if it doesn't exist)"
-  )
-
   args = parser.parse_args()
   explore(exploration_target=args.exploration_target, report_file_path=args.output_file, report_dir_path=args.output_dir)

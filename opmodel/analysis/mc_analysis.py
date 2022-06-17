@@ -171,31 +171,13 @@ def mc_analysis(n_trials=100, report_file_path='mc_analysis.html', report_dir_pa
   log.info('Done')
 
 if __name__ == '__main__':
-  import argparse
-
-  parser = argparse.ArgumentParser()
-
+  parser = init_cli_arguments()
   parser.add_argument(
     "-n",
     "--n-trials",
     type=int,
     default=100,
   )
-
-  parser.add_argument(
-    "-o",
-    "--output-file",
-    default="mc_analysis.html",
-    help="Path of the output report (absolute or relative to the report directory)"
-  )
-
-  parser.add_argument(
-    "-d",
-    "--output-dir",
-    default=Report.default_report_path(),
-    help="Path of the output directory (will be create if it doesn't exist)"
-  )
-
   args = parser.parse_args()
   mc_analysis(n_trials=args.n_trials, report_file_path=args.output_file, report_dir_path=args.output_dir)
 

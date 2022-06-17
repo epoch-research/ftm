@@ -82,24 +82,7 @@ def sensitivity_analysis(report_file_path='sensitivity_analysis.html', report_di
   log.info('Done')
 
 if __name__ == '__main__':
-  import argparse
-
-  parser = argparse.ArgumentParser()
-
-  parser.add_argument(
-    "-o",
-    "--output-file",
-    default="sensitivity_analysis.html",
-    help="Path of the output report (absolute or relative to the report directory)"
-  )
-
-  parser.add_argument(
-    "-d",
-    "--output-dir",
-    default=Report.default_report_path(),
-    help="Path of the output directory (will be create if it doesn't exist)"
-  )
-
+  parser = init_cli_arguments()
   args = parser.parse_args()
   sensitivity_analysis(report_file_path=args.output_file, report_dir_path=args.output_dir)
 
