@@ -52,22 +52,19 @@ def explore(exploration_target='compare', report_file_path='exploration_analysis
     med_value = row['Best guess']
     high_value = row['Aggressive']
 
-  # Initialize simulations
-  log.info('Initializing simulations...')
-  log.info('  Conservative simulation')
-  low_model = SimulateTakeOff(**low_params)
-  log.info('  Best guess simulation')
-  med_model = SimulateTakeOff(**med_params)
-  log.info('  Aggressive simulation')
-  high_model = SimulateTakeOff(**high_params)
-
   # Run simulations
   log.info('Running simulations...')
+
   log.info('  Conservative simulation')
+  low_model = SimulateTakeOff(**low_params)
   low_model.run_simulation()
+
   log.info('  Best guess simulation')
+  med_model = SimulateTakeOff(**med_params)
   med_model.run_simulation()
+
   log.info('  Aggressive simulation')
+  high_model = SimulateTakeOff(**high_params)
   high_model.run_simulation()
 
   log.info('Writing report...')
@@ -119,6 +116,15 @@ def explore(exploration_target='compare', report_file_path='exploration_analysis
 
   report.add_header("Aggressive", level = 4)
   report.add_data_frame(high_model.get_summary_table())
+
+  # Write down the parameters
+  report.add_header("Inputs", level = 3)
+  report.add_paragraph(f"<span style='font-weight:bold'>exploration_target:</span> {exploration_target}")
+  input_parameters = pd.DataFrame(
+    [low_params, med_params, high_params],
+    index = ['Conservative', 'Best guess', 'Aggressive']
+  ).transpose()
+  report.add_data_frame(input_parameters)
 
   report_path = report.write()
   log.info(f'Report stored in {report_path}')

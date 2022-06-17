@@ -73,6 +73,9 @@ def sensitivity_analysis(report_file_path='sensitivity_analysis.html', report_di
   report = Report(report_file_path=report_file_path, report_dir_path=report_dir_path)
   report.add_data_frame(results)
 
+  report.add_header("Simulation parameters", level = 3)
+  report.add_data_frame(parameter_table)
+
   report_path = report.write()
   log.info(f'Report stored in {report_path}')
 

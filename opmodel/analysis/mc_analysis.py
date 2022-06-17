@@ -160,6 +160,11 @@ def mc_analysis(n_trials=100, report_file_path='mc_analysis.html', report_dir_pa
     plot_quantiles(mc_model.timesteps, state_metrics[state_metric], "Year", state_metric)
     report.add_figure()
 
+  # Write down the parameters
+  report.add_header("Inputs", level = 3)
+  report.add_paragraph(f"<span style='font-weight:bold'>n_trials:</span> {n_trials}")
+  report.add_data_frame(parameter_table)
+
   report_path = report.write()
   log.info(f'Report stored in {report_path}')
 

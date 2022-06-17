@@ -61,9 +61,6 @@ class Report:
         }
 
         table.dataframe {
-          width: 100%;
-          margin-left: auto;
-          margin-right: auto;
           border-collapse: collapse;
           white-space: nowrap;
         }
@@ -77,7 +74,6 @@ class Report:
         table.dataframe td, table.dataframe th {
           text-align: right;
           padding: 0.2em 1.5em;
-          text-wrap: nowrap;
         }
 
         table.dataframe tbody tr:nth-child(odd) {
@@ -454,8 +450,7 @@ class Report:
     self.content.append(element)
 
   def add_paragraph(self, paragraph):
-    element = et.Element('p')
-    element.text = paragraph
+    element = et.fromstring(f'<p>{paragraph}</p>')
     self.content.append(element)
 
   def add_all_figures(self):
@@ -519,6 +514,7 @@ if __name__ == '__main__':
   report.add_header("Title")
   report.add_paragraph("Today I've learned many things.")
   report.add_paragraph("Lfkasjflsa aafksl fklsajf lskajf lkasjf klkadsj fldkasj flkadsj fld sjlafjdaslfj adslfjdalsfj fladsjfds.")
+  report.add_paragraph("""I'm a paragraph with <span style='color: red'>inner elements</span>.""")
 
   # Some plot
   report.add_header("Foobar", level = 4)
