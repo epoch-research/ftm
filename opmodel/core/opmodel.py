@@ -1466,7 +1466,7 @@ class SimulateTakeOff():
 
       
   
-  def plot_compute_decomposition(self, new_figure=True, crop_to_rampup = False):
+  def plot_compute_decomposition(self, new_figure = True, crop_to_rampup = False):
     """ Show the growth of the factors that drive compute
     """
     
@@ -1509,6 +1509,31 @@ class SimulateTakeOff():
       plt.legend(bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0);
       plt.tight_layout();
       plt.show();
+
+  def plot_compute_decomposition_bioanchors_style(self, new_figure = True):
+    """ Show the growth of the factors that drive compute in the style of the Bio Anchors report
+    """
+    
+    if new_figure:
+      plt.figure(figsize=(14, 8), dpi=80);
+
+    reference_idx = 0
+
+    training_investment = self.compute_investment * self.frac_compute_training
+    
+    plt.plot(self.timesteps, training_investment/training_investment[reference_idx], label = 'Training compute investment', color = 'blue')
+    plt.plot(self.timesteps, self.hardware_performance/self.hardware_performance[reference_idx], label = 'Hardware performance', color = 'orange')
+    plt.plot(self.timesteps, self.software/self.software[reference_idx], label = 'Software', color = 'green')
+    
+    plt.yscale('log')
+
+    plt.grid(axis = 'y', linestyle = 'dotted', color = 'black')
+
+    if new_figure:
+      plt.title(f"Compute increase decomposition")
+      plt.legend(bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0)
+      plt.tight_layout()
+      plt.show()
 
   def get_summary_table(self):
     summary_table = []
