@@ -8,18 +8,6 @@ from ..core.opmodel import SimulateTakeOff
 from ..core.utils import display
 from ..report.report import Report
 
-class Log:
-  INFO_LEVEL = 1
-
-  def __init__(self, level=0):
-    self.level = level
-
-  def info(self, *args, **kwargs):
-    if self.level < Log.INFO_LEVEL: return
-    print(*args, **kwargs)
-
-log = Log(level=Log.INFO_LEVEL)
-
 def init_cli_arguments():
   parser = argparse.ArgumentParser()
 
@@ -38,3 +26,25 @@ def init_cli_arguments():
   )
 
   return parser
+
+class Log:
+  INFO_LEVEL = 1
+
+  def __init__(self, level=0):
+    self.level = level
+    self.indentation_level = 0
+
+  def indent(self):
+    self.indentation_level += 1
+
+  def deindent(self):
+    self.indentation_level -= 1
+    if self.indentation_level < 0: self.indentation_level = 0
+
+  def info(self, *args, **kwargs):
+    if self.level < Log.INFO_LEVEL: return
+    print(' ' * self.indentation_level, end = '')
+    print(*args, **kwargs)
+
+log = Log(level=Log.INFO_LEVEL)
+

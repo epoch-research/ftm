@@ -5,11 +5,12 @@ Explore year by year.
 from . import log
 from . import *
 
-def explore(exploration_target='compare', report_file_path='exploration_analysis.html', report_dir_path=None):
-  log.info('Retrieving parameters...')
-  # Retrieve parameter table
-  parameter_table = pd.read_csv('https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/export?format=csv#gid=0')
-  parameter_table = parameter_table.set_index("Parameter")
+def explore(exploration_target='compare', report_file_path='exploration_analysis.html', report_dir_path=None, parameter_table=None, report=None):
+  if parameter_table is None:
+    # Retrieve parameter table
+    log.info('Retrieving parameters...')
+    parameter_table = pd.read_csv('https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/export?format=csv#gid=0')
+    parameter_table = parameter_table.set_index("Parameter")
 
   # Define parameters
   med_params = {
@@ -68,7 +69,9 @@ def explore(exploration_target='compare', report_file_path='exploration_analysis
   high_model.run_simulation()
 
   log.info('Writing report...')
-  report = Report(report_file_path=report_file_path, report_dir_path=report_dir_path)
+  new_report = report is None
+  if new_report:
+    report = Report(report_file_path=report_file_path, report_dir_path=report_dir_path)
 
   # Print table of metrics
   low_results = {**{'type' : 'Conservative', 'value' : low_value}, **low_model.takeoff_metrics}
@@ -126,8 +129,9 @@ def explore(exploration_target='compare', report_file_path='exploration_analysis
   ).transpose()
   report.add_data_frame(input_parameters)
 
-  report_path = report.write()
-  log.info(f'Report stored in {report_path}')
+  if new_report:
+    report_path = report.write()
+    log.info(f'Report stored in {report_path}')
 
   log.info('Done')
 

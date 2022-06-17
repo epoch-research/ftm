@@ -453,6 +453,10 @@ class Report:
     element = et.fromstring(f'<p>{paragraph}</p>')
     self.content.append(element)
 
+  def add_vspace(self, px=100):
+    element = et.fromstring(f'<div style="height:{px}px"></div>')
+    self.content.append(element)
+
   def add_all_figures(self):
     for fignum in plt.get_fignums():
       self.add_figure(plt.figure(fignum))
