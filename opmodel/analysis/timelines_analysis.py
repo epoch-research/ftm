@@ -33,7 +33,6 @@ def timelines_analysis(report_file_path='timelines_analysis.html', report_dir_pa
     log.deindent()
 
     report.add_vspace()
-    break
 
     log.info('')
 
