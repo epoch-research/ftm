@@ -14,14 +14,14 @@ def init_cli_arguments():
   parser.add_argument(
     "-o",
     "--output-file",
-    default="exploration_analysis.html",
+    default=None,
     help="Path of the output report (absolute or relative to the report directory)"
   )
 
   parser.add_argument(
     "-d",
     "--output-dir",
-    default=Report.default_report_path(),
+    default=None,
     help="Path of the output directory (will be create if it doesn't exist)"
   )
 

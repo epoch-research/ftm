@@ -5,7 +5,10 @@ Explore year by year.
 from . import log
 from . import *
 
-def explore(exploration_target='compare', report_file_path='exploration_analysis.html', report_dir_path=None, parameter_table=None, report=None):
+def explore(exploration_target='compare', report_file_path=None, report_dir_path=None, parameter_table=None, report=None):
+  if report_file_path is None:
+    report_file_path = 'exploration_analysis.html'
+
   if parameter_table is None:
     # Retrieve parameter table
     log.info('Retrieving parameters...')

@@ -80,7 +80,10 @@ def plot_quantiles(ts, data, xlabel, ylabel, n_quantiles = 7, colormap = cm.Blue
   ax1.set_ylabel(ylabel, fontsize=14)
   fig.tight_layout()
 
-def mc_analysis(n_trials=100, report_file_path='mc_analysis.html', report_dir_path=None):
+def mc_analysis(n_trials=100, report_file_path=None, report_dir_path=None):
+  if report_file_path is None:
+    report_file_path = 'mc_analysis.html'
+
   scalar_metrics = ['rampup_start', 'agi_year']
   state_metrics = ['gwp', 'biggest_training_run', 'compute']
 
