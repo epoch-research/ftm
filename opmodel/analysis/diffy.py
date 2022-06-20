@@ -903,6 +903,7 @@ else:
   print('There are changes')
 body.insert(0, banner)
 
+os.makedirs(output_dir, exist_ok=True)
 report_path = os.path.abspath(os.path.join(output_dir, output_path))
 
 print(f'Details in the full report: {report_path}')
