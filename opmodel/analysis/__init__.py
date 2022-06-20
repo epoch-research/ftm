@@ -6,6 +6,7 @@ import argparse
 
 from ..core.opmodel import SimulateTakeOff
 from ..core.utils import display
+from ..core import utils
 from ..report.report import Report
 
 def init_cli_arguments():

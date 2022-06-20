@@ -5,6 +5,7 @@ import pandas as pd
 import math
 import traceback
 
+from . import utils
 from .utils import display
 
 class SimulateTakeOff():
@@ -1527,7 +1528,7 @@ class SimulateTakeOff():
     
     plt.yscale('log')
 
-    plt.grid(axis = 'y', linestyle = 'dotted', color = 'black')
+    utils.draw_oom_lines()
 
     if new_figure:
       plt.title(f"Compute increase decomposition")
