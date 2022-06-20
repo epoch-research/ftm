@@ -8,15 +8,49 @@ from types import MethodType
 from xml.etree import ElementTree as et
 from inspect import getframeinfo, stack
 
+import argparse
+
 from . import log
 
 ##################################################################
-# Main parameters of future function
+# Main parameters for a future function
 project_ref_a = 'b:main'
 params_url_a = 'https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/export?format=csv&gid=0'
 
 project_ref_b = 'b:bioanchors_comparison'
 params_url_b = 'https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/export?format=csv&gid=0'
+
+parser = argparse.ArgumentParser()
+
+parser.add_argument(
+  "-a",
+  "--ref-a",
+  default=None,
+  help="Reference to model a"
+)
+
+parser.add_argument(
+  "-b",
+  "--ref-b",
+  default=None,
+  help="Reference to model a"
+)
+
+parser.add_argument(
+  "-p",
+  "--params",
+  default=None,
+  help="Parameters URL or local path"
+)
+
+args = parser.parse_args()
+
+if args.ref_a: project_ref_a = args.ref_a
+if args.ref_b: project_ref_b = args.ref_b
+
+if args.params:
+  params_url_a = args.params
+  params_url_b = args.params
 ##################################################################
 
 
