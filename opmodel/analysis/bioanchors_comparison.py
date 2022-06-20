@@ -60,7 +60,7 @@ def bioanchors_model(
 
   fast_training_investment = \
       initial_training_investment * fast_training_investment_growth ** (timesteps[:slow_training_investment_start_index] - t_start)
-  slow_training_investment = training_investment_0[-1] * \
+  slow_training_investment = fast_training_investment[-1] * \
       slow_training_investment_growth ** (timesteps[slow_training_investment_start_index:] - timesteps[slow_training_investment_start_index-1])
   training_investment = np.concatenate([fast_training_investment, slow_training_investment])
 
