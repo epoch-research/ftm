@@ -1423,15 +1423,25 @@ class SimulateTakeOff():
 
   ## VISUALIZATION ##
 
-  def plot(self, metric, plot_growth = False, new_figure=True, line_color='black'):
+  def plot(self, metric, plot_growth = False, new_figure=True, line_color='black', crop_after_agi = True):
     """ Plot a metric over time.
         Eg gwp, compute, capital, labour, hardware_efficiency, software, hardware
     """
     x = self.timesteps
     y = getattr(self, metric)
+    
+    if crop_after_agi:
+      idx_end = min(self.time_to_index(self.agi_year+5), self.t_idx) \
+                if self.agi_year is not None and crop_after_agi else self.t_idx
+      x = x[:idx_end]
+      y = y[:idx_end]
+      
     if plot_growth:
       x = x[1:]
       y = y[1:] / y[:-1]
+    
+    
+    
     if new_figure:
       plt.figure(figsize=(14, 8), dpi=80);
     #if not plot_growth:
@@ -1447,18 +1457,18 @@ class SimulateTakeOff():
   def _plot_vlines(self, line_color = 'black'):
     
     if self.rampup_start:
-      
       plt.axvline(self.rampup_start, 
                 linestyle='dotted',
                 color=line_color,
                 label='rampup_start');
+                
     if self.rampup_mid:
       plt.axvline(self.rampup_mid, 
                 linestyle='-.',
                 color=line_color,
                 label='mid_rampup');
+                
     if self.agi_year:
-
       plt.axvline(self.agi_year, 
                 linestyle='dashed',
                 color=line_color,
@@ -1466,16 +1476,16 @@ class SimulateTakeOff():
 
       
   
-  def plot_compute_decomposition(self, new_figure=True, crop_to_rampup = False):
+  def plot_compute_decomposition(self, new_figure=True, crop_after_agi = True):
     """ Show the growth of the factors that drive compute
     """
     
     if new_figure:
       plt.figure(figsize=(14, 8), dpi=80);
 
-    start_idx = self.time_to_index(self.rampup_start) if self.rampup_start is not None and crop_to_rampup else 0
+    start_idx = 0
     reference_idx = self.time_to_index(self.rampup_start) if self.rampup_start is not None else 0
-    end_idx = self.time_to_index(self.agi_year) if self.agi_year is not None and crop_to_rampup else self.t_idx
+    end_idx = min(self.time_to_index(self.agi_year+5), self.t_idx) if self.agi_year is not None and crop_after_agi else self.t_idx
     
     plt.plot(self.timesteps[start_idx:end_idx], self.compute_investment[start_idx:end_idx]/self.compute_investment[reference_idx], label='Compute investment', color = 'blue')
     plt.plot(self.timesteps[start_idx:end_idx], self.hardware_performance[start_idx:end_idx]/self.hardware_performance[reference_idx], label='Hardware performance', color = 'orange')
