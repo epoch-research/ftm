@@ -333,11 +333,6 @@ def to_html(diff_table, as_string = False):
 
   def float_formatter(x):
     formatted = '0' if (x == 0) else f'{x:e}' if ((eps < x and x < 1e-5) or x > 1e5) else str(x)
-
-    # tmp-test
-    if np.abs(x - 85267222316546) < 10:
-      print(x, type(x))
-
     return formatted
 
   precision = 4
