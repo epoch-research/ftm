@@ -88,7 +88,7 @@ def plot_bioanchors_model(*args, ylims = None, **kwargs):
   [timesteps, training_investment, hardware, software] = bioanchors_model(*args, **kwargs)
 
   plt.plot(timesteps, training_investment, label = 'Training compute investment', color = 'blue')
-  plt.plot(timesteps, hardware, label = 'Hardware quality', color = 'orange')
+  plt.plot(timesteps, 1.25*hardware, label = 'Hardware quality', color = 'orange') # displaced so that it's visible
   plt.plot(timesteps, software, label = 'Software', color = 'green')
 
   plt.yscale('log')
