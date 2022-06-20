@@ -1419,20 +1419,33 @@ class SimulateTakeOff():
     
     # Round doubling times
     self.doubling_times = [round(dt, 2) for dt in self.doubling_times]
+    
+    # We are only interested in the first five doubling times
+    self.doubling_times = self.doubling_times[:5]
 
   ###########################################################################
 
   ## VISUALIZATION ##
 
-  def plot(self, metric, plot_growth = False, new_figure=True, line_color='black'):
+  def plot(self, metric, plot_growth = False, new_figure=True, line_color='black', crop_after_agi = True):
     """ Plot a metric over time.
         Eg gwp, compute, capital, labour, hardware_efficiency, software, hardware
     """
     x = self.timesteps
     y = getattr(self, metric)
+    
+    if crop_after_agi:
+      idx_end = min(self.time_to_index(self.agi_year+5), self.t_idx) \
+                if self.agi_year is not None and crop_after_agi else self.t_idx
+      x = x[:idx_end]
+      y = y[:idx_end]
+      
     if plot_growth:
       x = x[1:]
       y = y[1:] / y[:-1]
+    
+    
+    
     if new_figure:
       plt.figure(figsize=(14, 8), dpi=80);
     #if not plot_growth:
@@ -1448,18 +1461,18 @@ class SimulateTakeOff():
   def _plot_vlines(self, line_color = 'black'):
     
     if self.rampup_start:
-      
       plt.axvline(self.rampup_start, 
                 linestyle='dotted',
                 color=line_color,
                 label='rampup_start');
+                
     if self.rampup_mid:
       plt.axvline(self.rampup_mid, 
                 linestyle='-.',
                 color=line_color,
                 label='mid_rampup');
+                
     if self.agi_year:
-
       plt.axvline(self.agi_year, 
                 linestyle='dashed',
                 color=line_color,
@@ -1467,16 +1480,16 @@ class SimulateTakeOff():
 
       
   
-  def plot_compute_decomposition(self, new_figure = True, crop_to_rampup = False):
+  def plot_compute_decomposition(self, new_figure=True, crop_after_agi = True):
     """ Show the growth of the factors that drive compute
     """
     
     if new_figure:
       plt.figure(figsize=(14, 8), dpi=80);
 
-    start_idx = self.time_to_index(self.rampup_start) if self.rampup_start is not None and crop_to_rampup else 0
+    start_idx = 0
     reference_idx = self.time_to_index(self.rampup_start) if self.rampup_start is not None else 0
-    end_idx = self.time_to_index(self.agi_year) if self.agi_year is not None and crop_to_rampup else self.t_idx
+    end_idx = min(self.time_to_index(self.agi_year+5), self.t_idx) if self.agi_year is not None and crop_after_agi else self.t_idx
     
     plt.plot(self.timesteps[start_idx:end_idx], self.compute_investment[start_idx:end_idx]/self.compute_investment[reference_idx], label='Compute investment', color = 'blue')
     plt.plot(self.timesteps[start_idx:end_idx], self.hardware_performance[start_idx:end_idx]/self.hardware_performance[reference_idx], label='Hardware performance', color = 'orange')
@@ -1539,27 +1552,44 @@ class SimulateTakeOff():
   def get_summary_table(self):
     summary_table = []
     
-    for period, t in {'prerampup' : np.mean([self.t_start, self.rampup_start]) , 
+    prerampup = np.mean([self.t_start, self.rampup_start]) if self.rampup_start is not None else None
+    raw_metrics = ['biggest_training_run', 'frac_tasks_automated_goods', 'frac_tasks_automated_rnd']
+    doubling_time_metrics = ['hardware_performance', 'software', 'compute_investment', 'frac_compute_training', 'gwp', 'capital']
+    
+    for period, t in {'prerampup' : prerampup , 
                       'rampup_start': self.rampup_start, 
                       'mid rampup': self.rampup_mid, 
                       'agi': self.agi_year}.items() :
+      
+      if t is None:
+        summary_row = {
+          'period' : period,
+          'year' : np.nan,
+        }
+      
+        for raw_metric in raw_metrics:
+          summary_row[f"{raw_metric}"] = np.nan
+      
+        for doubling_time_metric in doubling_time_metrics:
+          summary_row[f"{doubling_time_metric} doubling time"] = np.nan
+          
+        summary_table.append(summary_row)
+        continue
+        
       idx = self.time_to_index(t)
       t = self.index_to_time(idx)
       t_end = t + 1
       idx_end = self.time_to_index(t_end)
       
-
       summary_row = {
         'period' : period,
         'year' : t,
       }
-
-      # Auxiliary function to compute doubling times 
-      dt = lambda s : self.t_step / np.log2(s[idx_end]/s[idx]) \
-                      if np.log2(s[idx_end]/s[idx]) != 0 else np.nan
-      doubling_time_metrics = ['hardware_performance', 'software', 'compute_investment', 'frac_compute_training', 'gwp', 'capital']
       
-      raw_metrics = ['biggest_training_run', 'frac_tasks_automated_goods', 'frac_tasks_automated_rnd']
+      # Auxiliary function to compute doubling times 
+      dt = lambda s : 1 / np.log2(s[idx_end]/s[idx]) \
+                      if np.log2(s[idx_end]/s[idx]) != 0 else np.nan
+      
       for raw_metric in raw_metrics:
         summary_row[f"{raw_metric}"] = getattr(self, raw_metric)[idx]
       
