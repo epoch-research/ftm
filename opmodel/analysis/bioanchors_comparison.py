@@ -5,7 +5,10 @@ Comparison of our model with Bio Anchors.
 from . import log
 from . import *
 
-def bioanchors_comparison(report_file_path='bioanchors_comparison.html', report_dir_path=None):
+def bioanchors_comparison(report_file_path=None, report_dir_path=None):
+  if report_file_path is None:
+    report_file_path = 'bioanchors_comparison.html'
+
   log.info('Retrieving parameters...')
 
   parameter_table = pd.read_csv('https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/export?format=csv#gid=0')
