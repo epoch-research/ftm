@@ -1513,27 +1513,44 @@ class SimulateTakeOff():
   def get_summary_table(self):
     summary_table = []
     
-    for period, t in {'prerampup' : np.mean([self.t_start, self.rampup_start]) , 
+    prerampup = np.mean([self.t_start, self.rampup_start]) if self.rampup_start is not None else None
+    raw_metrics = ['biggest_training_run', 'frac_tasks_automated_goods', 'frac_tasks_automated_rnd']
+    doubling_time_metrics = ['hardware_performance', 'software', 'compute_investment', 'frac_compute_training', 'gwp', 'capital']
+    
+    for period, t in {'prerampup' : prerampup , 
                       'rampup_start': self.rampup_start, 
                       'mid rampup': self.rampup_mid, 
                       'agi': self.agi_year}.items() :
+      
+      if t is None:
+        summary_row = {
+          'period' : period,
+          'year' : np.nan,
+        }
+      
+        for raw_metric in raw_metrics:
+          summary_row[f"{raw_metric}"] = np.nan
+      
+        for doubling_time_metric in doubling_time_metrics:
+          summary_row[f"{doubling_time_metric} doubling time"] = np.nan
+          
+        summary_table.append(summary_row)
+        continue
+        
       idx = self.time_to_index(t)
       t = self.index_to_time(idx)
       t_end = t + 1
       idx_end = self.time_to_index(t_end)
       
-
       summary_row = {
         'period' : period,
         'year' : t,
       }
-
-      # Auxiliary function to compute doubling times 
-      dt = lambda s : self.t_step / np.log2(s[idx_end]/s[idx]) \
-                      if np.log2(s[idx_end]/s[idx]) != 0 else np.nan
-      doubling_time_metrics = ['hardware_performance', 'software', 'compute_investment', 'frac_compute_training', 'gwp', 'capital']
       
-      raw_metrics = ['biggest_training_run', 'frac_tasks_automated_goods', 'frac_tasks_automated_rnd']
+      # Auxiliary function to compute doubling times 
+      dt = lambda s : 1 / np.log2(s[idx_end]/s[idx]) \
+                      if np.log2(s[idx_end]/s[idx]) != 0 else np.nan
+      
       for raw_metric in raw_metrics:
         summary_row[f"{raw_metric}"] = getattr(self, raw_metric)[idx]
       
