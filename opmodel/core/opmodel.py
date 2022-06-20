@@ -1330,9 +1330,7 @@ class SimulateTakeOff():
     return (idx2 - idx1) * self.t_step
 
   takeoff_metrics = [
-    'gwp_growth', 
-    'cog_output_multiplier', 
-    'rnd_automation', 
+    'cog_output_multiplier',
     'rnd_billion_agis', 
     'full_automation', 
     'rampup_to_agi',
@@ -1354,14 +1352,6 @@ class SimulateTakeOff():
       self._length_between_thresholds(
           self.automation_multiplier_rnd > 2,
           self.automation_multiplier_rnd > 10,
-      )
-
-    # Time from AI that automates 20% of cognitive tasks to when 
-    # we have trained AGI (AI that can automate 100% of tasks)
-    self.takeoff_metrics["rnd_automation"] = \
-      self._length_between_thresholds(
-          self.frac_tasks_automated_rnd > 0.2,
-          self.frac_tasks_automated_rnd >= 0.99,
       )
     
     # Time from AI that automates 20% of cognitive tasks to when 
@@ -1398,14 +1388,6 @@ class SimulateTakeOff():
     ## Combined metric
     self.takeoff_metrics["combined"] = \
       np.mean([self.takeoff_metrics[metric] for metric in self.takeoff_metrics])
-
-    # Years from 5% GWP growth to 20% GWP growth
-    self.gwp_growth = self.gwp[1:self.t_idx] / self.gwp[:self.t_idx-1] - 1
-    self.takeoff_metrics['gwp_growth'] = \
-      self._length_between_thresholds(
-          self.gwp_growth > 0.05,
-          self.gwp_growth > 0.2,
-      )
 
   def compute_doubling_times(self):
     self.doubling_times = [self.t_step / np.log2(self.gwp[1]/self.gwp[0])]
