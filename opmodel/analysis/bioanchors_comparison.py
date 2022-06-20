@@ -19,18 +19,30 @@ def bioanchors_comparison(report_file_path='bioanchors_comparison.html', report_
   log.info('Writing report...')
   report = Report(report_file_path = report_file_path, report_dir_path = report_dir_path)
 
+
+  text_legend = '''
+      Text legend:
+      <span style="color:blue">blue</span>: $ on training FLOP;
+      <span style="color:orange">orange</span>: hardware quality;
+      <span style="color:green">green</span>: software.
+  '''
+
   # Plot our forecast
   report.add_header("Our model", level = 3)
   plt.figure(figsize=(14, 8), dpi=80)
+  report.add_paragraph(text_legend)
   model.plot_compute_decomposition_bioanchors_style(new_figure = False)
+  our_ylims = plt.gca().get_ylim()
   report.add_figure()
 
   # Plot the bioanchors model forecast
   report.add_header("Bio Anchors model", level = 3)
   plt.figure(figsize=(14, 8), dpi=80)
-  plot_bioanchors_model(t_step = model.t_step)
+  report.add_paragraph(text_legend)
+  plot_bioanchors_model(t_step = model.t_step, ylims = our_ylims)
   report.add_figure()
 
+  # Wrap up
   report.add_header("Simulation parameters", level = 3)
 
   report.add_data_frame(pd.DataFrame(best_guess_parameters, index = ['Best guess']).transpose())
@@ -69,7 +81,7 @@ def bioanchors_model(
 
   return timesteps, training_investment, hardware, software
 
-def plot_bioanchors_model(*args, **kwargs):
+def plot_bioanchors_model(*args, ylims = None, **kwargs):
   [timesteps, training_investment, hardware, software] = bioanchors_model(*args, **kwargs)
 
   plt.plot(timesteps, training_investment, label = 'Training compute investment', color = 'blue')
@@ -77,6 +89,10 @@ def plot_bioanchors_model(*args, **kwargs):
   plt.plot(timesteps, software, label = 'Software', color = 'green')
 
   plt.yscale('log')
+
+  if ylims is not None:
+    plt.gca().set_ylim(ylims)
+
   utils.draw_oom_lines()
 
 
