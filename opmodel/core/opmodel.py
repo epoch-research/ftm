@@ -1418,6 +1418,9 @@ class SimulateTakeOff():
     
     # Round doubling times
     self.doubling_times = [round(dt, 2) for dt in self.doubling_times]
+    
+    # We are only interested in the first five doubling times
+    self.doubling_times = self.doubling_times[:5]
 
   ###########################################################################
 
