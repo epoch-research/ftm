@@ -1335,6 +1335,7 @@ class SimulateTakeOff():
     'rnd_billion_agis', 
     'full_automation', 
     'rampup_to_agi',
+    'gwp_growth',
     'combined'
     ]
 
@@ -1386,6 +1387,15 @@ class SimulateTakeOff():
     self.takeoff_metrics["rampup_to_agi"] = max(self.takeoff_metrics["rampup_to_agi"], 0.0)
     ## BUG: IF RAMPUP AND AGI HAPPEN AT THE SAME TIME THEN THIS WOULD BE NEGATIVE!
     
+    # Time from 5% GWP growth to 15% GWP growth
+    delta = int(1 / self.t_step)
+    gwp_growth = np.log(self.gwp[delta:self.t_idx] / self.gwp[:self.t_idx-delta])
+    self.takeoff_metrics["gwp_growth"] = \
+      self._length_between_thresholds(
+          gwp_growth > 0.05,
+          gwp_growth > 0.15,
+      )
+    
     ## Combined metric
     self.takeoff_metrics["combined"] = \
       np.mean([self.takeoff_metrics[metric] for metric in self.takeoff_metrics])
@@ -1426,7 +1436,7 @@ class SimulateTakeOff():
       # Plot annual growth
       delta = int(1 / self.t_step)
       x = x[delta:]
-      y = y[delta:] / y[:-delta]
+      y = np.log(y[delta:] / y[:-delta])
     
     if new_figure:
       plt.figure(figsize=(14, 8), dpi=80);
@@ -1607,6 +1617,7 @@ if __name__ == "__main__":
 
   # Plot things
   model.plot('gwp')
+  model.plot('gwp', plot_growth=True)
   model.plot_compute_decomposition()
   model.display_summary_table()
   model.display_takeoff_metrics()
