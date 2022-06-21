@@ -1536,7 +1536,7 @@ class SimulateTakeOff():
     
     prerampup = np.mean([self.t_start, self.rampup_start]) if self.rampup_start is not None else None
     raw_metrics = ['biggest_training_run', 'frac_tasks_automated_goods', 'frac_tasks_automated_rnd']
-    doubling_time_metrics = ['hardware_performance', 'software', 'compute_investment', 'frac_compute_training', 'gwp', 'capital']
+    doubling_time_metrics = ['hardware_performance', 'software', 'compute_investment', 'frac_compute_training', 'gwp', 'capital', 'labour', 'tfp_rnd', "rnd_input_software", "cumulative_rnd_input_software"]
     
     for period, t in {'prerampup' : prerampup , 
                       'rampup_start': self.rampup_start, 
@@ -1553,6 +1553,7 @@ class SimulateTakeOff():
           summary_row[f"{raw_metric}"] = np.nan
       
         for doubling_time_metric in doubling_time_metrics:
+          summary_row[f"{doubling_time_metric} growth rate"] = np.nan
           summary_row[f"{doubling_time_metric} doubling time"] = np.nan
           
         summary_table.append(summary_row)
@@ -1568,14 +1569,17 @@ class SimulateTakeOff():
         'year' : t,
       }
       
-      # Auxiliary function to compute doubling times 
+      # Auxiliary functions
       dt = lambda s : 1 / np.log2(s[idx_end]/s[idx]) \
                       if np.log2(s[idx_end]/s[idx]) != 0 else np.nan
+      
+      gr = lambda s : np.log(s[idx_end] / s[idx])
       
       for raw_metric in raw_metrics:
         summary_row[f"{raw_metric}"] = getattr(self, raw_metric)[idx]
       
       for doubling_time_metric in doubling_time_metrics:
+        summary_row[f"{doubling_time_metric} growth rate"] = gr(getattr(self, doubling_time_metric))
         summary_row[f"{doubling_time_metric} doubling time"] = dt(getattr(self, doubling_time_metric))
 
       summary_table.append(summary_row)
