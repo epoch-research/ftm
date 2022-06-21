@@ -139,3 +139,4 @@ dmypy.json
 # Misc
 _ignore*
 _output_/
+_cache_/
