@@ -1,11 +1,10 @@
-import sys
+import os
+import time
 import base64
 from io import BytesIO
 import matplotlib.pyplot as plt
 import pandas as pd
 from xml.etree import ElementTree as et
-import os
-import time
 
 DEFAULT_REPORT_DIRECTORY = '_output_'     # Relative to the root of the repository
 DEFAULT_REPORT_FILE      = 'report.html'  # Relative to the DEFAULT_REPORT_DIRECTORY
@@ -32,6 +31,12 @@ class Report:
 
         * {
           color: #222;
+        }
+
+        .banner {
+          background-color: #ddd;
+          padding: 8px;
+          text-align: center;
         }
 
         table {
@@ -444,6 +449,9 @@ class Report:
     self.html.append(self.body)
     self.body.append(self.content)
 
+  def add_title(self, title):
+    self.head.append(et.fromstring(f'<title>{title}</title>'))
+
   def add_header(self, title, level=1):
     element = et.Element(f'h{max(1, level)}')
     element.text = title
@@ -490,6 +498,11 @@ class Report:
 
     self.content.append(container)
 
+  def add_banner_message(self, message, classes = []):
+    element = et.fromstring(f'<div>{message}</div>')
+    element.set('class', 'banner ' + ' '.join(classes))
+    self.body.insert(0, element)
+
   def write(self):
     if os.path.isabs(self.report_file_path):
       report_abs_path = self.report_file_path
@@ -500,7 +513,9 @@ class Report:
 
     tree = et.ElementTree(self.html)
     et.indent(tree, space="  ", level=0)
-    tree.write(report_abs_path, encoding='unicode', method='html')
+    with open(report_abs_path, 'w') as f:
+      f.write('<!DOCTYPE html>')
+      tree.write(f, encoding='unicode', method='html')
 
     return report_abs_path
 
@@ -508,6 +523,13 @@ class Report:
     module_path = os.path.dirname(os.path.realpath(__file__))
     report_dir_path = os.path.abspath(os.path.join(module_path, '..', '..', DEFAULT_REPORT_DIRECTORY))
     return report_dir_path
+
+  def escape(s):
+      s = s.replace("&", "&amp;")
+      s = s.replace("<", "&lt;")
+      s = s.replace(">", "&gt;")
+      s = s.replace("\"", "&quot;")
+      return s
 
 
 if __name__ == '__main__':
