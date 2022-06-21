@@ -58,7 +58,7 @@ max_steps = 10
 eps = 1e-20
 repo_url = 'https://github.com/epoch-research/opmodel'
 repo_ssh_url = 'ssh://git@github.com/epoch-research/opmodel.git'
-cache_dir = '_cache_'
+cache_dir = '_cache_/diffy'
 output_dir = '_output_'
 
 module_path = os.path.dirname(os.path.realpath(__file__))
@@ -81,6 +81,7 @@ class VarInfo:
 
 class ModelData:
   params_cache = {} # url -> dataframe
+  opened_models = []
 
   def __init__(
       self,
@@ -92,6 +93,11 @@ class ModelData:
       relative_module_path = '/core/opmodel.py',
       module_name = 'core.opmodel',
     ):
+
+    self.model_index = 0
+    while self.model_index in ModelData.opened_models:
+      self.model_index += 1
+    ModelData.opened_models.append(self.model_index)
 
     self.project_ref = project_ref
     self.source_path = project_ref
@@ -127,9 +133,9 @@ class ModelData:
 
   def get_sim_module(self):
     if self.is_branch(self.project_ref):
-      project_path = self.get_source_from_ref(self.branch)
+      project_path = self.get_source_from_git_ref(self.branch)
     elif self.is_commit(self.project_ref):
-      project_path = self.get_source_from_ref(self.commit)
+      project_path = self.get_source_from_git_ref(self.commit)
     else:
       project_path = self.project_ref
 
@@ -147,21 +153,20 @@ class ModelData:
 
     return module
 
-  def get_source_from_ref(self, ref):
-    repo_copy_path = os.path.join(cache_dir, ref)
-    if not os.path.exists(repo_copy_path):
-      os.makedirs(cache_dir, exist_ok=True)
-      repo = Repo.clone_from(repo_ssh_url, repo_copy_path)
-      repo.git.checkout(ref)
-
-    repo = Repo(repo_copy_path)
-    if not self.is_commit(ref):
-      # it's a branch, then
-      repo.git.checkout(ref)
-      repo.git.pull(rebase = True)
+  def get_source_from_git_ref(self, ref):
+    repo = self.get_local_repo()
+    repo.git.pull()
+    repo.git.checkout(ref)
     self.timestamp = repo.head.commit.committed_date
+    return os.path.join(repo.working_tree_dir, 'opmodel')
 
-    return os.path.join(repo_copy_path, 'opmodel')
+  def get_local_repo(self):
+    path = os.path.join(cache_dir, 'repos', f'repo_{self.model_index}')
+    if not os.path.exists(path):
+      os.makedirs(path, exist_ok=True)
+      Repo.clone_from(repo_ssh_url, path)
+    repo = Repo(path)
+    return repo
 
   def simulate(self):
     inputs = {}
@@ -288,6 +293,9 @@ class ModelData:
         variables[attribute] = value
 
     return variables
+
+  def close(self):
+    ModelData.opened_models.remove(self.model_index)
 
 
 def get_var_info(module):
