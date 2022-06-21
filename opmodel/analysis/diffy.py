@@ -53,14 +53,12 @@ class Model:
     self.project_ref = project_ref
     self.ref_type = self.get_ref_type(self.project_ref)
 
-    if self.ref_type == 'commit':
-      self.commit = self.project_ref
-      self.source_href = f'{REPO_URL}/tree/{self.commit}'
-    elif self.ref_type == 'branch':
-      self.branch = self.get_branch_from_ref(project_ref)
-      self.source_href = f'{REPO_URL}/tree/{self.branch}'
+    if self.ref_type == 'git':
+      self.git_ref = self.get_git_ref(self.project_ref)
+      self.source_href = f'{REPO_URL}/tree/{self.git_ref}'
     else:
       self.source_href = project_ref
+
     self.module = self.load_sim_module()
     self.model = self.module.SimulateTakeOff
 
@@ -70,20 +68,16 @@ class Model:
   # Load the module from path/commit/branch
 
   def get_ref_type(self, ref):
-    if re.match('^[0-9a-f]{8,40}$', ref):
-      return 'commit'
-    if ref.startswith('b:'):
-      return 'branch'
+    if ref.startswith('g:'):
+      return 'git'
     return 'local-path'
 
-  def get_branch_from_ref(self, ref):
-    return ref[len('b:'):]
+  def get_git_ref(self, ref):
+    return ref[len('g:'):]
 
   def load_sim_module(self):
-    if self.ref_type == 'branch':
-      project_path = self.load_source_from_git_ref(self.branch)
-    elif self.ref_type == 'commit':
-      project_path = self.load_source_from_git_ref(self.commit)
+    if self.ref_type == 'git':
+      project_path = self.load_source_from_git_ref(self.git_ref)
     else:
       project_path = self.project_ref
       self.timestamp = time.time()
