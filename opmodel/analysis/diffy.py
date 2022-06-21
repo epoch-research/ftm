@@ -826,33 +826,41 @@ if __name__ == '__main__':
     "-a",
     "--ref-a",
     default=None,
-    help="Reference to model a"
+    help="Reference to model a",
   )
 
   parser.add_argument(
     "-b",
     "--ref-b",
     default=None,
-    help="Reference to model a"
+    help="Reference to model a",
   )
 
   parser.add_argument(
     "-p",
     "--params",
     default=None,
-    help="Parameters URL or local path"
+    help="Parameters URL or local path",
   )
 
   parser.add_argument(
     "--params-a",
     default=None,
-    help="Parameters URL or local path for model a"
+    help="Parameters URL or local path for model a",
   )
 
   parser.add_argument(
     "--params-b",
     default=None,
-    help="Parameters URL or local path for model b"
+    help="Parameters URL or local path for model b",
+  )
+
+  parser.add_argument(
+    "-s",
+    "--max-steps",
+    type=int,
+    default=10,
+    help="Outputs to the report at most this number of steps",
   )
 
   args = parser.parse_args()
@@ -868,5 +876,7 @@ if __name__ == '__main__':
 
   if args.params_a: diff_args['params_url_a'] = args.params_a
   if args.params_b: diff_args['params_url_b'] = args.params_b
+
+  diff_args['max_steps'] = args.max_steps
 
   diffy(**diff_args)
