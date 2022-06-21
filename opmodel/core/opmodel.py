@@ -1446,19 +1446,19 @@ class SimulateTakeOff():
       plt.axvline(self.rampup_start, 
                 linestyle='dotted',
                 color=line_color,
-                label='rampup_start');
+                label='Start of ramp-up');
                 
     if self.rampup_mid:
       plt.axvline(self.rampup_mid, 
                 linestyle='-.',
                 color=line_color,
-                label='mid_rampup');
+                label='Middle of ramp-up');
                 
     if self.agi_year:
       plt.axvline(self.agi_year, 
                 linestyle='dashed',
                 color=line_color,
-                label='agi_date');
+                label='Full automation');
 
       
   
@@ -1473,10 +1473,10 @@ class SimulateTakeOff():
     reference_idx = self.time_to_index(self.rampup_start) if self.rampup_start is not None else 0
     end_idx = min(self.time_to_index(self.agi_year+5), self.t_idx) if self.agi_year is not None and crop_after_agi else self.t_idx
     
-    plt.plot(self.timesteps[start_idx:end_idx], self.compute_investment[start_idx:end_idx]/self.compute_investment[reference_idx], label='Compute investment', color = 'blue')
-    plt.plot(self.timesteps[start_idx:end_idx], self.hardware_performance[start_idx:end_idx]/self.hardware_performance[reference_idx], label='Hardware performance', color = 'orange')
-    plt.plot(self.timesteps[start_idx:end_idx], self.software[start_idx:end_idx]/self.software[reference_idx], label='Software', color = 'green')
-    plt.plot(self.timesteps[start_idx:end_idx], self.frac_compute_training[start_idx:end_idx]/self.frac_compute_training[reference_idx], label='Frac compute training', color = 'red')
+    plt.plot(self.timesteps[start_idx:end_idx], self.compute_investment[start_idx:end_idx]/self.compute_investment[reference_idx], label='$ on FLOP globally', color = 'blue')
+    plt.plot(self.timesteps[start_idx:end_idx], self.hardware_performance[start_idx:end_idx]/self.hardware_performance[reference_idx], label='Hardware (FLOP/$)', color = 'orange')
+    plt.plot(self.timesteps[start_idx:end_idx], self.software[start_idx:end_idx]/self.software[reference_idx], label='Software (2020-FLOP per FLOP)', color = 'green')
+    plt.plot(self.timesteps[start_idx:end_idx], self.frac_compute_training[start_idx:end_idx]/self.frac_compute_training[reference_idx], label='Fraction global FLOP on training', color = 'red')
     
     plt.yscale('log')
 
@@ -1497,8 +1497,6 @@ class SimulateTakeOff():
             )
     for oom in range(math.floor(np.log10(low)), math.ceil(np.log10(high))):
       plt.axhline(10**oom, linestyle='dotted', color='black',)
-
-    labels = ["Compute investment ", "Hardare performance", "Software", "Frac compute training"]
     
     if new_figure:
       plt.title(f"Compute increase decomposition");

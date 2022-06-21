@@ -103,6 +103,8 @@ def explore(exploration_target='compare', report_file_path=None, report_dir_path
   low_model.plot_compute_decomposition(new_figure=False)
   plt.ylabel("Conservative")
   plt.title(f"Compute increase over time");
+  plt.legend(bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0);
+  plt.tight_layout();
   plt.subplot(3, 1, 2)
   med_model.plot_compute_decomposition(new_figure=False)
   plt.ylabel("Best guess")
