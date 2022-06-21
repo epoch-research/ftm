@@ -375,7 +375,7 @@ def diffy(
   #--------------------------------------------------------------------------
   # Inputs
   #--------------------------------------------------------------------------
-  current_section = add_section(content, 'Inputs')
+  current_section = add_section(content, 'Parameters')
 
   inputs_table = compare_dicts(model_a.inputs, model_b.inputs, var_to_lineno, add_line_numbers = False)
   current_section.append(diff_table_to_html(inputs_table))
