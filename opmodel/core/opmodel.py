@@ -1423,10 +1423,10 @@ class SimulateTakeOff():
       y = y[:idx_end]
       
     if plot_growth:
-      x = x[1:]
-      y = y[1:] / y[:-1]
-    
-    
+      # Plot annual growth
+      delta = int(1 / self.t_step)
+      x = x[delta:]
+      y = y[delta:] / y[:-delta]
     
     if new_figure:
       plt.figure(figsize=(14, 8), dpi=80);
