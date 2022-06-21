@@ -512,7 +512,6 @@ def collect_var_info(module):
 
   import inspect
   import ast
-  import astunparse
 
   ass_nodes = []
 
