@@ -1504,7 +1504,6 @@ class SimulateTakeOff():
       plt.title(f"Compute increase decomposition");
       plt.legend(bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0);
       plt.tight_layout();
-      plt.show();
 
   def plot_compute_decomposition_bioanchors_style(self, new_figure = True):
     """ Show the growth of the factors that drive compute in the style of the Bio Anchors report
@@ -1529,7 +1528,6 @@ class SimulateTakeOff():
       plt.title(f"Compute increase decomposition")
       plt.legend(bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0)
       plt.tight_layout()
-      plt.show()
 
   def get_summary_table(self):
     summary_table = []
@@ -1586,11 +1584,14 @@ class SimulateTakeOff():
   
   def display_summary_table(self):
     display(self.get_summary_table())
-  
-  def display_takeoff_metrics(self):
+
+  def get_takeoff_metrics(self):
     metrics_df = pd.DataFrame(self.takeoff_metrics, index = [0])
     metrics_df["doubling times"] = repr(self.doubling_times[:4])
-    display(metrics_df)
+    return metrics_df
+  
+  def display_takeoff_metrics(self):
+    display(self.get_takeoff_metrics())
 
     
 if __name__ == "__main__":
@@ -1606,5 +1607,6 @@ if __name__ == "__main__":
   # Plot things
   model.plot('gwp')
   model.plot_compute_decomposition()
+  plt.show()
   model.display_summary_table()
   model.display_takeoff_metrics()

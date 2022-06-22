@@ -1,7 +1,3 @@
-"""
-Explore year by year.
-"""
-
 from . import log
 from . import *
 
@@ -137,44 +133,6 @@ def explore(exploration_target='compare', report_file_path=None, report_dir_path
     log.info(f'Report stored in {report_path}')
 
   log.info('Done')
-
-def explore_year(year = 2020):
-  parameter_table = pd.read_csv('https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/export?format=csv#gid=0')
-  parameter_table = parameter_table.set_index("Parameter")
-  best_guess_parameters = {parameter : row['Best guess'] for parameter, row in parameter_table.iterrows()}
-
-  # Run model
-  model = SimulateTakeOff(**best_guess_parameters, t_step=1)
-  model.run_simulation()
-
-  # Plot things
-  model.plot('gwp')
-  model.plot_compute_decomposition()
-  model.display_summary_table()
-  model.display_takeoff_metrics()
-
-  index = model.time_to_index(year)
-  print(f"rampup = {model.rampup[index]}")
-  print(f"hardware performance = {np.log10(model.hardware_performance[index])}")
-  print(f"frac_gwp_compute = {model.frac_gwp_compute[index]}")
-  print(f"hardware = {np.log10(model.hardware[index])}")
-  print(f"software = {model.software[index]}")
-  print(f"compute = {np.log10(model.compute[index])}")
-  print(f"labour = {model.labour[index] / model.labour[0]}")
-  print(f"capital = {model.capital[index] / model.capital[0] * 0.025}")
-  print(f"automatable tasks goods = {model.automatable_tasks_goods[index]}")
-  print(f"frac automatable tasks goods = {model.frac_automatable_tasks_goods[index]}")
-  print(f"automatable tasks rnd = {model.automatable_tasks_rnd[index]}")
-  print(f"frac automatable tasks rnd = {model.frac_automatable_tasks_rnd[index]}")
-  print(f"gwp = {model.gwp[index]:e}")
-  print(f"frac_capital_rnd = {model.frac_capital_hardware_rnd[index]}")
-  print(f"frac_labour_rnd = {model.frac_labour_hardware_rnd[index]}")
-  print(f"frac_compute_rnd = {model.frac_compute_hardware_rnd[index]}")
-  print(f"rnd input hardware = {model.rnd_input_hardware[index] / model.rnd_input_hardware[0] * 0.003048307243707020}")
-  print(f"cumulative input hardware = {model.cumulative_rnd_input_hardware[index] / model.rnd_input_hardware[0] * 0.003048307243707020}")
-  print(f"ratio rnd input hardware = {model.rnd_input_hardware[0]**model.rnd_parallelization_penalty / model.cumulative_rnd_input_hardware[0]}")
-  print(f"biggest_training_run = {np.log10(model.biggest_training_run[index])}")
-  print(f"compute share goods = {model.compute_share_goods[index]}")
 
 if __name__ == '__main__':
   parser = init_cli_arguments()

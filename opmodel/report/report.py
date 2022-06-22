@@ -58,34 +58,39 @@ class Report:
         }
 
         .figure-container img {
-          max-width: 90vw;
+          max-width: 1200px;
+          max-height: 550px;
         }
 
         table, td, tr, th {
           border: none;
         }
 
-        table.dataframe {
+        .dataframe-container table {
           border-collapse: collapse;
           white-space: nowrap;
         }
 
-        table.dataframe thead {
+        .table-container {
+          margin-bottom: 1em;
+        }
+
+        .dataframe-container table thead {
           border-bottom: 1px solid #aaa;
           vertical-align: bottom;
           background-color: #ddd;
         }
 
-        table.dataframe td, table.dataframe th {
+        .dataframe-container table td, .dataframe-container table th {
           text-align: right;
           padding: 0.2em 1.5em;
         }
 
-        table.dataframe tbody tr:nth-child(odd) {
+        .dataframe-container table tbody tr:nth-child(odd) {
           background-color: #eee;
         }
 
-        table.dataframe tbody tr:hover {
+        .dataframe-container table tbody tr:hover {
           background-color: #ddd;
         }
 
@@ -452,24 +457,32 @@ class Report:
   def add_title(self, title):
     self.head.append(et.fromstring(f'<title>{title}</title>'))
 
-  def add_header(self, title, level=1):
+  def add_header(self, title, level=1, parent=None):
+    if parent is None: parent = self.content
+
     element = et.Element(f'h{max(1, level)}')
     element.text = title
-    self.content.append(element)
+    parent.append(element)
 
-  def add_paragraph(self, paragraph):
+  def add_paragraph(self, paragraph, parent=None):
+    if parent is None: parent = self.content
+
     element = et.fromstring(f'<p>{paragraph}</p>')
-    self.content.append(element)
+    parent.append(element)
 
-  def add_vspace(self, px=100):
+  def add_vspace(self, px=100, parent=None):
+    if parent is None: parent = self.content
+
     element = et.fromstring(f'<div style="height:{px}px"></div>')
-    self.content.append(element)
+    parent.append(element)
 
-  def add_all_figures(self):
+  def add_all_figures(self, parent=None):
     for fignum in plt.get_fignums():
-      self.add_figure(plt.figure(fignum))
+      self.add_figure(plt.figure(fignum), parent)
 
-  def add_figure(self, figure = None):
+  def add_figure(self, figure = None, parent=None):
+    if parent is None: parent = self.content
+
     if not figure: figure = plt.gcf()
 
     image = BytesIO()
@@ -480,14 +493,23 @@ class Report:
     img = et.Element('img', {'class': 'figure', 'src': f'data:image/svg+xml;base64,{base64_image}'})
     container.append(img)
 
-    self.content.append(container)
+    parent.append(container)
     plt.close(figure)
 
-  def add_data_frame(self, df):
+  def add_data_frame(self, df, index = None, show_index = True, use_render = False, parent=None, **to_html_args):
+    if parent is None: parent = self.content
+
+    if isinstance(df, dict):
+      if not isinstance(index, (list, tuple)): index = [index]
+      df = pd.DataFrame(df, index = index).transpose()
+
     container = et.Element('div', {'class': 'table-container'})
     dataframe_wrapper = et.Element('div', {'class': 'dataframe-container'})
 
-    table = et.fromstring(df.to_html())
+    html = df.to_html(index = show_index, **to_html_args)
+    html = html.replace('&nbsp;', '') # hack!
+
+    table = et.fromstring(f'<div>{html}</div>')
     dataframe_wrapper.append(table)
     container.append(dataframe_wrapper)
 
@@ -496,7 +518,8 @@ class Report:
       copy_button_container.append(et.fromstring(f'<div class="copy-button" data-clipboard-text="{df.to_csv()}">Copy CSV</div>'))
       container.append(copy_button_container)
 
-    self.content.append(container)
+    parent.append(container)
+    return container
 
   def add_banner_message(self, message, classes = []):
     element = et.fromstring(f'<div>{message}</div>')
