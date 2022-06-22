@@ -597,28 +597,7 @@ class SimulateTakeOff():
     self.capital_goods[t_idx] = self.capital[t_idx] * self.frac_capital_goods[t_idx]
     self.labour_goods[t_idx] = self.labour[t_idx] * self.frac_labour_goods[t_idx]
     self.compute_goods[t_idx] = self.compute[t_idx] * self.frac_compute_goods[t_idx]
-
-    # Compute optimal task allocation
-    self.labour_task_input_goods[t_idx, :], \
-    self.compute_task_input_goods[t_idx, :] = \
-      SimulateTakeOff.solve_allocation(
-          self.labour_goods[t_idx], 
-          self.compute_goods[t_idx],
-          self.labour_task_weights_goods, 
-          self.labour_substitution_goods, 
-          self.task_compute_to_labour_ratio_goods[t_idx], 
-          self.automatable_tasks_goods[t_idx]
-          )
-
-    self.task_input_goods[t_idx, :] = \
-      self.labour_task_input_goods[t_idx, :] + \
-      self.task_compute_to_labour_ratio_goods[t_idx]*self.compute_task_input_goods[t_idx, :]
     
-    self.frac_tasks_automated_goods[t_idx] =\
-      (np.sum(self.compute_task_input_goods[t_idx, :] > 0) - 1) \
-      / self.n_labour_tasks_goods
-    ## We substract 1 to account for the initial compute task
-
     # Initialize task weights to match the initial economy share ratio
     if t_idx == 0:
       
@@ -645,6 +624,27 @@ class SimulateTakeOff():
           initial_capital_to_cognitive_share_ratio_goods,
           initial_compute_to_labour_share_ratio_goods,
         )
+
+    # Compute optimal task allocation
+    self.labour_task_input_goods[t_idx, :], \
+    self.compute_task_input_goods[t_idx, :] = \
+      SimulateTakeOff.solve_allocation(
+          self.labour_goods[t_idx], 
+          self.compute_goods[t_idx],
+          self.labour_task_weights_goods, 
+          self.labour_substitution_goods, 
+          self.task_compute_to_labour_ratio_goods[t_idx], 
+          self.automatable_tasks_goods[t_idx]
+          )
+
+    self.task_input_goods[t_idx, :] = \
+      self.labour_task_input_goods[t_idx, :] + \
+      self.task_compute_to_labour_ratio_goods[t_idx]*self.compute_task_input_goods[t_idx, :]
+    
+    self.frac_tasks_automated_goods[t_idx] =\
+      (np.sum(self.compute_task_input_goods[t_idx, :] > 0) - 1) \
+      / self.n_labour_tasks_goods
+    ## We substract 1 to account for the initial compute task
     
     # Keep track of economy share ratios
     self.capital_share_goods[t_idx],   \
@@ -715,28 +715,6 @@ class SimulateTakeOff():
     self.capital_hardware_rnd[t_idx] = self.capital[t_idx] * self.frac_capital_hardware_rnd[t_idx]
     self.labour_hardware_rnd[t_idx] = self.labour[t_idx] * self.frac_labour_hardware_rnd[t_idx]
     self.compute_hardware_rnd[t_idx] = self.compute[t_idx] * self.frac_compute_hardware_rnd[t_idx]
-
-    # Compute optimal task allocation
-    self.labour_task_input_hardware_rnd[t_idx, :], \
-    self.compute_task_input_hardware_rnd[t_idx, :] = \
-      SimulateTakeOff.solve_allocation(
-          self.labour_hardware_rnd[t_idx], 
-          self.compute_hardware_rnd[t_idx], 
-          self.labour_task_weights_rnd, 
-          self.labour_substitution_rnd, 
-          self.task_compute_to_labour_ratio_rnd[t_idx], 
-          self.automatable_tasks_rnd[t_idx]
-          )
-    
-    self.task_input_hardware_rnd[t_idx, :] = \
-      self.labour_task_input_hardware_rnd[t_idx, :] + \
-      self.task_compute_to_labour_ratio_rnd[t_idx]*self.compute_task_input_hardware_rnd[t_idx, :]
-    
-    # Note down fraction of tasks automated
-    self.frac_tasks_automated_rnd[t_idx] =\
-      (np.sum(self.compute_task_input_hardware_rnd[t_idx, :] > 0) - 1) \
-      / self.n_labour_tasks_rnd
-    ## We substract 1 to account for the initial compute task
     
     # Initialize task weights to match the initial economy share ratio
     if t_idx == 0:
@@ -763,6 +741,28 @@ class SimulateTakeOff():
           initial_capital_to_cognitive_share_ratio_rnd,
           initial_compute_to_labour_share_ratio_rnd,
         )
+
+    # Compute optimal task allocation
+    self.labour_task_input_hardware_rnd[t_idx, :], \
+    self.compute_task_input_hardware_rnd[t_idx, :] = \
+      SimulateTakeOff.solve_allocation(
+          self.labour_hardware_rnd[t_idx], 
+          self.compute_hardware_rnd[t_idx], 
+          self.labour_task_weights_rnd, 
+          self.labour_substitution_rnd, 
+          self.task_compute_to_labour_ratio_rnd[t_idx], 
+          self.automatable_tasks_rnd[t_idx]
+          )
+    
+    self.task_input_hardware_rnd[t_idx, :] = \
+      self.labour_task_input_hardware_rnd[t_idx, :] + \
+      self.task_compute_to_labour_ratio_rnd[t_idx]*self.compute_task_input_hardware_rnd[t_idx, :]
+    
+    # Note down fraction of tasks automated
+    self.frac_tasks_automated_rnd[t_idx] =\
+      (np.sum(self.compute_task_input_hardware_rnd[t_idx, :] > 0) - 1) \
+      / self.n_labour_tasks_rnd
+    ## We substract 1 to account for the initial compute task
     
     # Keep track of economy shares
     self.capital_share_hardware_rnd[t_idx], \
