@@ -114,6 +114,12 @@ def mc_analysis(n_trials=100, report_file_path=None, report_dir_path=None):
   parameter_table = pd.read_csv('https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/export?format=csv#gid=0')
   parameter_table = parameter_table.set_index("Parameter")
 
+  param_samples = {
+    parameter : []
+    for parameter, row in parameter_table.iterrows()
+    if not np.isnan(row['Conservative']) and not np.isnan(row['Aggressive'])
+  }
+
   log.info(f'Running simulations...')
   for trial in range(n_trials):
     log.info(f'  Running simulation {trial+1}/{n_trials}...')
@@ -128,6 +134,11 @@ def mc_analysis(n_trials=100, report_file_path=None, report_dir_path=None):
                     else row['Best guess']
         for parameter, row in parameter_table.iterrows()
     }
+
+
+    # Collect parameter samples
+    for param, samples in param_samples.items():
+      samples.append(mc_params[param])
 
     # Run simulation
     mc_model = SimulateTakeOff(**mc_params)
@@ -158,6 +169,7 @@ def mc_analysis(n_trials=100, report_file_path=None, report_dir_path=None):
   log.info('Writing report...')
   report = Report(report_file_path=report_file_path, report_dir_path=report_dir_path)
 
+
   # Display summary of scalar metrics
   quantiles = [0.01, 0.1, 0.2, 0.5, 0.8, 0.9, 0.99]
   results = []
@@ -182,6 +194,19 @@ def mc_analysis(n_trials=100, report_file_path=None, report_dir_path=None):
     state_metrics[state_metric] = np.stack(state_metrics[state_metric])
     plot_quantiles(mc_model.timesteps, state_metrics[state_metric], "Year", state_metric)
     report.add_figure()
+
+  # Display input parameter statistics
+  param_stats = []
+  for samples in param_samples.values():
+    stats = [np.mean(samples)] + [np.quantile(samples, q) for q in quantiles]
+    param_stats.append(stats)
+  param_names = param_samples.keys()
+  columns = [['mean'] + quantiles]
+
+  report.add_header("Input parameters stats", level = 3)
+  params_stats_table = pd.DataFrame(param_stats, index = param_names, columns = columns)
+  params_stats_table.columns.name = 'quantiles'
+  report.add_data_frame(params_stats_table)
 
   # Write down the parameters
   report.add_header("Inputs", level = 3)
