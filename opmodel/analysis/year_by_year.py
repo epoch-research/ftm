@@ -26,19 +26,6 @@ def explore_year(report_file_path=None, report_dir_path=None):
   log.info('Writing report...')
   report = Report(report_file_path=report_file_path, report_dir_path=report_dir_path)
 
-  # Plot things
-  model.plot('gwp')
-  report.add_figure()
-
-  model.plot_compute_decomposition()
-  report.add_figure()
-
-  report.add_header("Summary", level = 3)
-  report.add_data_frame(model.get_summary_table(), show_index = False)
-
-  report.add_header("Take off metrics", level = 3)
-  report.add_data_frame(model.get_takeoff_metrics(), show_index = False)
-
   #############################################################################
   # Year exploration
 
@@ -114,7 +101,7 @@ def explore_year(report_file_path=None, report_dir_path=None):
   all_years_container = et.Element('div', {'id': 'all-years-container'})
   report.content.append(all_years_container)
 
-  all_years_container.append(et.fromstring('<p>Show funny cell bars <input id="show-cell-bars" type="checkbox" checked="true"></input></p>'))
+  all_years_container.append(et.fromstring('<p>Show funny cell bars <input id="show-cell-bars" type="checkbox"></input></p>'))
 
   df = pd.DataFrame(all_years_table, index = years).style \
     .format({'gwp': '{:e}', 'rampup': lambda x: 'Y' if x else 'N'}) \
