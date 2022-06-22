@@ -1335,6 +1335,7 @@ class SimulateTakeOff():
     'rnd_billion_agis', 
     'full_automation', 
     'rampup_to_agi',
+    'gwp_growth',
     'combined'
     ]
 
@@ -1386,6 +1387,15 @@ class SimulateTakeOff():
     self.takeoff_metrics["rampup_to_agi"] = max(self.takeoff_metrics["rampup_to_agi"], 0.0)
     ## BUG: IF RAMPUP AND AGI HAPPEN AT THE SAME TIME THEN THIS WOULD BE NEGATIVE!
     
+    # Time from 5% GWP growth to 15% GWP growth
+    delta = int(1 / self.t_step)
+    gwp_growth = np.log(self.gwp[delta:self.t_idx] / self.gwp[:self.t_idx-delta])
+    self.takeoff_metrics["gwp_growth"] = \
+      self._length_between_thresholds(
+          gwp_growth > 0.05,
+          gwp_growth > 0.15,
+      )
+    
     ## Combined metric
     self.takeoff_metrics["combined"] = \
       np.mean([self.takeoff_metrics[metric] for metric in self.takeoff_metrics])
@@ -1423,10 +1433,10 @@ class SimulateTakeOff():
       y = y[:idx_end]
       
     if plot_growth:
-      x = x[1:]
-      y = y[1:] / y[:-1]
-    
-    
+      # Plot annual growth
+      delta = int(1 / self.t_step)
+      x = x[delta:]
+      y = np.log(y[delta:] / y[:-delta])
     
     if new_figure:
       plt.figure(figsize=(14, 8), dpi=80);
@@ -1446,19 +1456,19 @@ class SimulateTakeOff():
       plt.axvline(self.rampup_start, 
                 linestyle='dotted',
                 color=line_color,
-                label='rampup_start');
+                label='Start of ramp-up');
                 
     if self.rampup_mid:
       plt.axvline(self.rampup_mid, 
                 linestyle='-.',
                 color=line_color,
-                label='mid_rampup');
+                label='Middle of ramp-up');
                 
     if self.agi_year:
       plt.axvline(self.agi_year, 
                 linestyle='dashed',
                 color=line_color,
-                label='agi_date');
+                label='Full automation');
 
       
   
@@ -1473,10 +1483,10 @@ class SimulateTakeOff():
     reference_idx = self.time_to_index(self.rampup_start) if self.rampup_start is not None else 0
     end_idx = min(self.time_to_index(self.agi_year+5), self.t_idx) if self.agi_year is not None and crop_after_agi else self.t_idx
     
-    plt.plot(self.timesteps[start_idx:end_idx], self.compute_investment[start_idx:end_idx]/self.compute_investment[reference_idx], label='Compute investment', color = 'blue')
-    plt.plot(self.timesteps[start_idx:end_idx], self.hardware_performance[start_idx:end_idx]/self.hardware_performance[reference_idx], label='Hardware performance', color = 'orange')
-    plt.plot(self.timesteps[start_idx:end_idx], self.software[start_idx:end_idx]/self.software[reference_idx], label='Software', color = 'green')
-    plt.plot(self.timesteps[start_idx:end_idx], self.frac_compute_training[start_idx:end_idx]/self.frac_compute_training[reference_idx], label='Frac compute training', color = 'red')
+    plt.plot(self.timesteps[start_idx:end_idx], self.compute_investment[start_idx:end_idx]/self.compute_investment[reference_idx], label='$ on FLOP globally', color = 'blue')
+    plt.plot(self.timesteps[start_idx:end_idx], self.hardware_performance[start_idx:end_idx]/self.hardware_performance[reference_idx], label='Hardware (FLOP/$)', color = 'orange')
+    plt.plot(self.timesteps[start_idx:end_idx], self.software[start_idx:end_idx]/self.software[reference_idx], label='Software (2020-FLOP per FLOP)', color = 'green')
+    plt.plot(self.timesteps[start_idx:end_idx], self.frac_compute_training[start_idx:end_idx]/self.frac_compute_training[reference_idx], label='Fraction global FLOP on training', color = 'red')
     
     plt.yscale('log')
 
@@ -1497,8 +1507,6 @@ class SimulateTakeOff():
             )
     for oom in range(math.floor(np.log10(low)), math.ceil(np.log10(high))):
       plt.axhline(10**oom, linestyle='dotted', color='black',)
-
-    labels = ["Compute investment ", "Hardare performance", "Software", "Frac compute training"]
     
     if new_figure:
       plt.title(f"Compute increase decomposition");
@@ -1534,7 +1542,7 @@ class SimulateTakeOff():
     
     prerampup = np.mean([self.t_start, self.rampup_start]) if self.rampup_start is not None else None
     raw_metrics = ['biggest_training_run', 'frac_tasks_automated_goods', 'frac_tasks_automated_rnd']
-    doubling_time_metrics = ['hardware_performance', 'software', 'compute_investment', 'frac_compute_training', 'gwp', 'capital']
+    doubling_time_metrics = ['hardware_performance', 'software', 'compute_investment', 'frac_compute_training', 'gwp', 'capital', 'labour', 'tfp_rnd', "rnd_input_software", "cumulative_rnd_input_software"]
     
     for period, t in {'prerampup' : prerampup , 
                       'rampup_start': self.rampup_start, 
@@ -1551,6 +1559,7 @@ class SimulateTakeOff():
           summary_row[f"{raw_metric}"] = np.nan
       
         for doubling_time_metric in doubling_time_metrics:
+          summary_row[f"{doubling_time_metric} growth rate"] = np.nan
           summary_row[f"{doubling_time_metric} doubling time"] = np.nan
           
         summary_table.append(summary_row)
@@ -1566,14 +1575,17 @@ class SimulateTakeOff():
         'year' : t,
       }
       
-      # Auxiliary function to compute doubling times 
+      # Auxiliary functions
       dt = lambda s : 1 / np.log2(s[idx_end]/s[idx]) \
                       if np.log2(s[idx_end]/s[idx]) != 0 else np.nan
+      
+      gr = lambda s : np.log(s[idx_end] / s[idx])
       
       for raw_metric in raw_metrics:
         summary_row[f"{raw_metric}"] = getattr(self, raw_metric)[idx]
       
       for doubling_time_metric in doubling_time_metrics:
+        summary_row[f"{doubling_time_metric} growth rate"] = gr(getattr(self, doubling_time_metric))
         summary_row[f"{doubling_time_metric} doubling time"] = dt(getattr(self, doubling_time_metric))
 
       summary_table.append(summary_row)
@@ -1606,6 +1618,7 @@ if __name__ == "__main__":
 
   # Plot things
   model.plot('gwp')
+  model.plot('gwp', plot_growth=True)
   model.plot_compute_decomposition()
   plt.show()
   model.display_summary_table()
