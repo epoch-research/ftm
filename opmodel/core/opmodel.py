@@ -1054,11 +1054,7 @@ class SimulateTakeOff():
       if prev_quantile == next_quantile:
         value = prev_value
       else:
-        try:
-          value = prev_value*((next_value/prev_value)**((q-prev_quantile)/(next_quantile-prev_quantile)))
-        except FloatingPointError as e:
-          assert np.abs(q - prev_quantile) < 0.001
-          value = prev_value
+        value = prev_value*((next_value/prev_value)**((q-prev_quantile)/(next_quantile-prev_quantile)))
 
       values.append(value)
     values = np.array(values)
