@@ -10,7 +10,7 @@ from numpy.random import default_rng
 rng = default_rng()
 from matplotlib import cm
 
-def credence_interval(low, high, alpha=0.9, kind='pos'):
+def credence_interval(low, med, high, alpha=0.9, kind='pos', skewed_sampling=True):
   """ Returns a random number sampled from a lognormal
       with a given 70% confidence interval
       If frac, we transform the space to sample from odds space
@@ -21,21 +21,32 @@ def credence_interval(low, high, alpha=0.9, kind='pos'):
 
   if kind == "frac":
     low = low / (1. - low)
+    med = med / (1. - med)
     high = high / (1. - high)
 
   elif kind == 'neg':
-    low, high = -high, -low
+    low, med, high = -high, -med, -low
 
   elif kind == "inv_frac":
-    low, high = 1/high, 1/low
+    low, med, high = 1/high, 1/med, 1/low
     low = low / (1. - low)
+    med = med / (1. - med)
     high = high / (1. - high)
 
   elif not kind == "pos":
     raise ValueError(f"Unimplemented kind: {kind}")
 
-  assert low < high
-
+  assert low < med and med < high
+  
+  if skewed_sampling:
+    coin_flip = rng.integers(0,1)
+    if coin_flip == 0:
+      low = med
+    elif coin_flip == 1:
+      high = med
+    else:
+      assert False, "This should be unreachable"
+    
   inv_error = erfinv(alpha)
   mu = np.log(np.sqrt(low* high))
   sigma = (1./(np.sqrt(2)*inv_error))*np.log(np.sqrt(high/low))
@@ -108,6 +119,7 @@ def mc_analysis(n_trials=100, report_file_path=None, report_dir_path=None):
     # Sample parameters
     mc_params = {
         parameter : credence_interval(row['Conservative'],
+                                      row['Best guess'],
                                       row['Aggressive'],
                                       kind=row['Type'])
                     if not np.isnan(row['Conservative'])\
@@ -153,6 +165,13 @@ def mc_analysis(n_trials=100, report_file_path=None, report_dir_path=None):
     for scalar_metric in scalar_metrics:
       result[scalar_metric] = np.quantile(scalar_metrics[scalar_metric],q)
     results.append(result)
+  
+  ## Add mean
+  result = {"quantile" : "mean"}
+  for scalar_metric in scalar_metrics:
+    result[scalar_metric] = np.mean(scalar_metrics[scalar_metric])
+  results.append(result)
+  
   results = pd.DataFrame(results)
   display(results)
   report.add_data_frame(results)
