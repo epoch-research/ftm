@@ -12,7 +12,7 @@ from matplotlib import cm
 
 def credence_interval(low, med, high, alpha=0.9, kind='pos', skewed_sampling=True):
   """ Returns a random number sampled from a lognormal
-      with a given 70% confidence interval
+      with a given 90% confidence interval
       If frac, we transform the space to sample from odds space
   """
 
@@ -38,19 +38,20 @@ def credence_interval(low, med, high, alpha=0.9, kind='pos', skewed_sampling=Tru
 
   assert low < med and med < high
   
-  if skewed_sampling:
+  if not skewed_sampling:
+    inv_error = erfinv(alpha)
+    mu = np.log(np.sqrt(low* high))
+    sigma = (1./(np.sqrt(2)*inv_error))*np.log(np.sqrt(high/low))
+    sample = rng.lognormal(mu, sigma)
+  
+  else: #if skewed_sampling:
     coin_flip = rng.integers(0,1)
     if coin_flip == 0:
       low = med
-    elif coin_flip == 1:
+    else: # if coin_flip == 1:
       high = med
-    else:
-      assert False, "This should be unreachable"
     
-  inv_error = erfinv(alpha)
-  mu = np.log(np.sqrt(low* high))
-  sigma = (1./(np.sqrt(2)*inv_error))*np.log(np.sqrt(high/low))
-  sample = rng.lognormal(mu, sigma)
+    sample = np.exp(rng.uniform(np.log(low), np.log(high)))
 
   if kind == "frac":
     sample = 1. / (1. + 1. / sample)
