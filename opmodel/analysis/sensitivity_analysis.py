@@ -5,7 +5,10 @@ Sensitivity analysis.
 from . import log
 from . import *
 
-def sensitivity_analysis(report_file_path='sensitivity_analysis.html', report_dir_path=None):
+def sensitivity_analysis(report_file_path=None, report_dir_path=None):
+  if report_file_path is None:
+    report_file_path = 'sensitivity_analysis.html'
+
   log.info('Retrieving parameters...')
   parameter_table = pd.read_csv('https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/export?format=csv#gid=0')
   parameter_table = parameter_table.set_index("Parameter")
