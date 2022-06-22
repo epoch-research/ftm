@@ -1387,6 +1387,10 @@ class SimulateTakeOff():
     self.takeoff_metrics["rampup_to_agi"] = max(self.takeoff_metrics["rampup_to_agi"], 0.0)
     ## BUG: IF RAMPUP AND AGI HAPPEN AT THE SAME TIME THEN THIS WOULD BE NEGATIVE!
     
+    ## Combined metric
+    self.takeoff_metrics["combined"] = \
+      np.mean([self.takeoff_metrics[metric] for metric in self.takeoff_metrics])
+    
     # Time from 5% GWP growth to 15% GWP growth
     delta = int(1 / self.t_step)
     gwp_growth = np.log(self.gwp[delta:self.t_idx] / self.gwp[:self.t_idx-delta])
@@ -1395,10 +1399,6 @@ class SimulateTakeOff():
           gwp_growth > 0.05,
           gwp_growth > 0.15,
       )
-    
-    ## Combined metric
-    self.takeoff_metrics["combined"] = \
-      np.mean([self.takeoff_metrics[metric] for metric in self.takeoff_metrics])
 
   def compute_doubling_times(self):
     self.doubling_times = [self.t_step / np.log2(self.gwp[1]/self.gwp[0])]
