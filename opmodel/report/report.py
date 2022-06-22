@@ -4,6 +4,7 @@ import base64
 from io import BytesIO
 import matplotlib.pyplot as plt
 import pandas as pd
+import pandas.io.formats.style
 from xml.etree import ElementTree as et
 
 DEFAULT_REPORT_DIRECTORY = '_output_'     # Relative to the root of the repository
@@ -66,7 +67,7 @@ class Report:
           border: none;
         }
 
-        .dataframe-container table {
+        table.dataframe {
           border-collapse: collapse;
           white-space: nowrap;
         }
@@ -75,22 +76,22 @@ class Report:
           margin-bottom: 1em;
         }
 
-        .dataframe-container table thead {
+        table.dataframe thead {
           border-bottom: 1px solid #aaa;
           vertical-align: bottom;
           background-color: #ddd;
         }
 
-        .dataframe-container table td, .dataframe-container table th {
+        table.dataframe td, table.dataframe th {
           text-align: right;
           padding: 0.2em 1.5em;
         }
 
-        .dataframe-container table tbody tr:nth-child(odd) {
+        table.dataframe tbody tr:nth-child(odd) {
           background-color: #eee;
         }
 
-        .dataframe-container table tbody tr:hover {
+        table.dataframe tbody tr:hover {
           background-color: #ddd;
         }
 
@@ -503,14 +504,15 @@ class Report:
       if not isinstance(index, (list, tuple)): index = [index]
       df = pd.DataFrame(df, index = index).transpose()
 
-    container = et.Element('div', {'class': 'table-container'})
-    dataframe_wrapper = et.Element('div', {'class': 'dataframe-container'})
+    if isinstance(df, pd.io.formats.style.Styler):
+      df.set_table_attributes('class="dataframe"')
 
     html = df.to_html(index = show_index, **to_html_args)
     html = html.replace('&nbsp;', '') # hack!
 
-    table = et.fromstring(f'<div>{html}</div>')
-    dataframe_wrapper.append(table)
+    dataframe_wrapper = et.fromstring(f'<div class="dataframe-container">{html}</div>')
+
+    container = et.Element('div', {'class': 'table-container'})
     container.append(dataframe_wrapper)
 
     if self.add_csv_copy_button:
