@@ -1,7 +1,9 @@
 import os
 import re
 import sys
+import ast
 import time
+import inspect
 import traceback
 import importlib
 import numpy as np
@@ -15,8 +17,8 @@ from . import log, Report, CACHE_DIR
 from . import Report
 
 EPS = 1e-40 # frankly, just some arbitrary number that feels low enough
-REPO_URL = 'https://github.com/epoch-research/opmodel'
-REPO_SSH_URL = 'https://github.com/epoch-research/opmodel.git'
+REPO_WEB_URL = 'https://github.com/epoch-research/opmodel'
+REPO_URL = 'https://github.com/epoch-research/opmodel.git'
 DIFF_COL = 'Diff (%)'
 
 class Model:
@@ -55,7 +57,7 @@ class Model:
 
     if self.ref_type == 'git':
       self.git_ref = self.get_git_ref(self.project_ref)
-      self.source_href = f'{REPO_URL}/tree/{self.git_ref}'
+      self.source_href = f'{REPO_WEB_URL}/tree/{self.git_ref}'
     else:
       self.source_href = project_ref
 
@@ -113,7 +115,7 @@ class Model:
     path = os.path.join(CACHE_DIR, 'repos', f'repo_{self.model_index}')
     if not os.path.exists(path):
       os.makedirs(path, exist_ok=True)
-      Repo.clone_from(REPO_SSH_URL, path)
+      Repo.clone_from(REPO_URL, path)
     repo = Repo(path)
     return repo
 
@@ -509,9 +511,6 @@ def collect_var_info(module):
   """
 
   var_to_lineno = {}
-
-  import inspect
-  import ast
 
   ass_nodes = []
 
