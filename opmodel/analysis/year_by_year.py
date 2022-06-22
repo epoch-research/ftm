@@ -97,9 +97,13 @@ def explore_year(report_file_path=None, report_dir_path=None):
       'biggest_training_run':         np.log10(model.biggest_training_run[index]),
       'compute share goods':          model.compute_share_goods[index],
     }
-    all_years_table.append(row)
+    all_years_table.append(row.copy())
 
-    table = report.add_data_frame(row, index = f'{year}', parent = year_by_year_container)
+    # Yikes!
+    row['gwp'] = f'{row["gwp"]:e}'
+    row['rampup'] = 'Y' if row['rampup'] else 'N'
+
+    table = report.add_data_frame(row, parent = year_by_year_container)
     table.set('id', f'year-{year}')
     table.set('class', f'{table.get("class")} year-data')
 
@@ -110,11 +114,11 @@ def explore_year(report_file_path=None, report_dir_path=None):
   all_years_container = et.Element('div', {'id': 'all-years-container'})
   report.content.append(all_years_container)
 
-  all_years_container.append(et.fromstring('<p>Show cell bars <input id="show-cell-bars" type="checkbox" checked="true"></input></p>'))
+  all_years_container.append(et.fromstring('<p>Show funny cell bars <input id="show-cell-bars" type="checkbox" checked="true"></input></p>'))
 
   df = pd.DataFrame(all_years_table, index = years).style \
     .format({'gwp': '{:e}', 'rampup': lambda x: 'Y' if x else 'N'}) \
-    .bar(align = 'mid', color = 'lightgray', props = '')
+    .bar(color = '#ddd')
   report.add_data_frame(df, parent = all_years_container)
 
 
