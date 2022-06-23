@@ -159,14 +159,6 @@ class SimulateTakeOff():
     self.initial_hardware = \
       self.initial_hardware_production \
       * self.ratio_hardware_to_initial_hardware_production
-
-    # The labour task weights are initially all equal
-    # They will be adjusted in step 0 of the simulation
-    self.labour_task_weights_goods =\
-      np.array([1. for i in range(self.n_labour_tasks_goods + 1)]) # Add 1 for the initial compute task
-
-    self.labour_task_weights_rnd =\
-      np.array([1. for i in range(self.n_labour_tasks_rnd + 1)]) # Add 1 for the initial compute task
     
     # Economy shares
     self.initial_capital_share_goods = 1 - self.initial_cognitive_share_goods
