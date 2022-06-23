@@ -1043,11 +1043,10 @@ class SimulateTakeOff():
       prev_value = quantile_dict[prev_quantile]
       next_value = quantile_dict[next_quantile]
 
-      try:
-        value = prev_value*((next_value/prev_value)**((q-prev_quantile)/(next_quantile-prev_quantile)))
-      except FloatingPointError as e:
-        assert np.abs(q - prev_quantile) < 0.001
+      if prev_quantile == next_quantile:
         value = prev_value
+      else:
+        value = prev_value*((next_value/prev_value)**((q-prev_quantile)/(next_quantile-prev_quantile)))
 
       values.append(value)
     values = np.array(values)
