@@ -31,18 +31,19 @@ def bioanchors_comparison(report_file_path=None, report_dir_path=None):
   '''
 
   # Plot our forecast
-  report.add_header("Our model", level = 3)
+  report.add_header("Our model vs bioanchors", level = 3)
   plt.figure(figsize=(14, 8), dpi=80)
   report.add_paragraph(text_legend)
+
   model.plot_compute_decomposition_bioanchors_style(new_figure = False)
   our_ylims = plt.gca().get_ylim()
-  report.add_figure()
+  #report.add_figure()
 
   # Plot the bioanchors model forecast
-  report.add_header("Bio Anchors model", level = 3)
-  plt.figure(figsize=(14, 8), dpi=80)
-  report.add_paragraph(text_legend)
+  #report.add_header("Bio Anchors model", level = 3)
+  #plt.figure(figsize=(14, 8), dpi=80)
   plot_bioanchors_model(t_step = model.t_step, ylims = our_ylims)
+
   report.add_figure()
 
   # Wrap up
@@ -87,10 +88,11 @@ def bioanchors_model(
 def plot_bioanchors_model(*args, ylims = None, **kwargs):
   [timesteps, training_investment, hardware, software] = bioanchors_model(*args, **kwargs)
 
-  plt.plot(timesteps, training_investment, label = 'Training compute investment', color = 'blue')
-  plt.plot(timesteps, 1.25*hardware, label = 'Hardware quality', color = 'orange') # displaced so that it's visible
-  plt.plot(timesteps, software, label = 'Software', color = 'green')
+  linestyle = 'dotted'
 
+  plt.plot(timesteps, training_investment, label = 'Training compute investment', color = 'blue', linestyle = linestyle)
+  plt.plot(timesteps, 1.25*hardware, label = 'Hardware quality', color = 'orange', linestyle = linestyle) # displaced so that it's visible
+  plt.plot(timesteps, software, label = 'Software', color = 'green', linestyle = linestyle)
   plt.yscale('log')
 
   if ylims is not None:
