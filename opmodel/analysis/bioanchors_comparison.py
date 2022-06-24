@@ -88,7 +88,7 @@ def bioanchors_model(
 def plot_bioanchors_model(*args, ylims = None, **kwargs):
   [timesteps, training_investment, hardware, software] = bioanchors_model(*args, **kwargs)
 
-  linestyle = 'dotted'
+  linestyle = '--'
 
   plt.plot(timesteps, training_investment, label = 'Training compute investment', color = 'blue', linestyle = linestyle)
   plt.plot(timesteps, 1.25*hardware, label = 'Hardware quality', color = 'orange', linestyle = linestyle) # displaced so that it's visible
