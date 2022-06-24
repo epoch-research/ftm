@@ -1515,7 +1515,7 @@ class SimulateTakeOff():
 
     training_investment = self.compute_investment * self.frac_compute_training
     
-    plt.plot(self.timesteps, training_investment/training_investment[reference_idx], label = 'Training compute investment', color = 'blue')
+    plt.plot(self.timesteps, training_investment/training_investment[reference_idx], label = 'Training compute investment', color = 'purple')
     plt.plot(self.timesteps, self.hardware_performance/self.hardware_performance[reference_idx], label = 'Hardware performance', color = 'orange')
     plt.plot(self.timesteps, self.software/self.software[reference_idx], label = 'Software', color = 'green')
     

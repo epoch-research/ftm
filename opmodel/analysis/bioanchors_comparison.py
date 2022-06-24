@@ -25,7 +25,7 @@ def bioanchors_comparison(report_file_path=None, report_dir_path=None):
 
   text_legend = '''
       Text legend:
-      <span style="color:blue">blue</span>: $ on training FLOP;
+      <span style="color:purple">purple</span>: $ on training FLOP;
       <span style="color:orange">orange</span>: hardware quality;
       <span style="color:green">green</span>: software.
   '''
@@ -90,7 +90,7 @@ def plot_bioanchors_model(*args, ylims = None, **kwargs):
 
   linestyle = '--'
 
-  plt.plot(timesteps, training_investment, label = 'Training compute investment', color = 'blue', linestyle = linestyle)
+  plt.plot(timesteps, training_investment, label = 'Training compute investment', color = 'purple', linestyle = linestyle)
   plt.plot(timesteps, 1.25*hardware, label = 'Hardware quality', color = 'orange', linestyle = linestyle) # displaced so that it's visible
   plt.plot(timesteps, software, label = 'Software', color = 'green', linestyle = linestyle)
   plt.yscale('log')
