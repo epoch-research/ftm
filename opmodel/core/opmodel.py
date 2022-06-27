@@ -1323,7 +1323,7 @@ class SimulateTakeOff():
 
   takeoff_metrics = [
     'cog_output_multiplier',
-    'rnd_billion_agis', 
+    'billion_agis', 
     'full_automation', 
     'rampup_to_agi',
     'gwp_growth',
@@ -1347,17 +1347,23 @@ class SimulateTakeOff():
           self.automation_multiplier_rnd > 10,
       )
     
-    # Time from AI that automates 20% of cognitive tasks to when 
+    # Time from AI that automates 10% of cognitive tasks to when 
     # we have enough compute to run 10 billion AGIs
+    
+    self.frac_automated_tasks = \
+      self.frac_tasks_automated_goods * self.n_labour_tasks_goods \
+    + self.frac_tasks_automated_rnd * self.n_labour_tasks_rnd \
+    / ( self.n_labour_tasks_goods + self.n_labour_tasks_rnd )
+    
     ten_billion_agi_compute = \
       max(np.max(self.automation_runtime_flops_goods), 
           np.max(self.automation_runtime_flops_rnd))*1e10
     full_automation_flops = \
       max(np.max(self.automation_training_flops_goods), 
           np.max(self.automation_training_flops_rnd))
-    self.takeoff_metrics["rnd_billion_agis"] = \
+    self.takeoff_metrics["billion_agis"] = \
       self._length_between_thresholds(
-          self.frac_tasks_automated_rnd > 0.2,
+          self.frac_automated_tasks > 0.1,
           (self.compute >= ten_billion_agi_compute) &\
           (self.biggest_training_run >= full_automation_flops),
       )
