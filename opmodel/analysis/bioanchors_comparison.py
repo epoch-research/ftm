@@ -5,44 +5,57 @@ Comparison of our model with Bio Anchors.
 from . import log
 from . import *
 
+from matplotlib.patches import Rectangle
+
 def bioanchors_comparison(report_file_path=None, report_dir_path=None):
   if report_file_path is None:
     report_file_path = 'bioanchors_comparison.html'
 
   log.info('Retrieving parameters...')
 
+  t_end = 2050
+
   parameter_table = pd.read_csv('https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/export?format=csv#gid=0')
   parameter_table = parameter_table.set_index("Parameter")
   best_guess_parameters = {parameter : row['Best guess'] for parameter, row in parameter_table.iterrows()}
 
   log.info('Running our simulation...')
-  model = SimulateTakeOff(**best_guess_parameters)
+  model = SimulateTakeOff(**best_guess_parameters, t_end = t_end)
   model.run_simulation()
 
   log.info('Writing report...')
   report = Report(report_file_path = report_file_path, report_dir_path = report_dir_path)
 
-
-  text_legend = '''
-      Text legend:
-      <span style="color:purple">purple</span>: $ on training FLOP;
-      <span style="color:orange">orange</span>: hardware quality;
-      <span style="color:green">green</span>: software.
-  '''
-
   # Plot our forecast
   report.add_header("Our model vs bioanchors", level = 3)
   plt.figure(figsize=(14, 8), dpi=80)
-  report.add_paragraph(text_legend)
 
   model.plot_compute_decomposition_bioanchors_style(new_figure = False)
   our_ylims = plt.gca().get_ylim()
-  #report.add_figure()
 
   # Plot the bioanchors model forecast
-  #report.add_header("Bio Anchors model", level = 3)
-  #plt.figure(figsize=(14, 8), dpi=80)
-  plot_bioanchors_model(t_step = model.t_step, ylims = our_ylims)
+  plot_bioanchors_model(t_step = model.t_step, t_end = model.t_end, ylims = our_ylims)
+
+  # Hacky legend
+  handles, labels = plt.gca().get_legend_handles_labels()
+
+  our_handles = handles[:3]
+  our_labels = labels[:3]
+  bio_handles = handles[3:]
+  bio_labels = labels[3:]
+
+  our_legend = plt.legend(our_handles, our_labels, bbox_to_anchor = (1.02, 1), borderaxespad = 0, title = 'Our model')
+  bio_legend = plt.legend(bio_handles, bio_labels, bbox_to_anchor = (1.02, 0.85), borderaxespad = 0, title = 'Bioanchors')
+
+  our_legend.set_frame_on(False)
+  bio_legend.set_frame_on(False)
+
+  our_legend._legend_box.align = "left"
+  bio_legend._legend_box.align = "left"
+
+  plt.gcf().add_artist(our_legend)
+  plt.gcf().add_artist(bio_legend)
+
 
   report.add_figure()
 
