@@ -557,24 +557,24 @@ class SimulateTakeOff():
     self.task_compute_to_labour_ratio_rnd[t_idx] = \
       1 / self.automation_runtime_flops_rnd
 
+    t_year = self.index_to_time(t_idx)
+
     # Update list of automation years
     if t_idx > 0 and \
        self.frac_automatable_tasks_goods[t_idx] > \
        self.frac_automatable_tasks_goods[t_idx-1]:
-      t_year = t_idx*self.t_step + self.t_start
       self.automation_years_goods.append(t_year)
     
     if t_idx > 0 and \
        self.frac_automatable_tasks_rnd[t_idx] > \
        self.frac_automatable_tasks_rnd[t_idx-1]:
-      t_year = t_idx*self.t_step + self.t_start
       self.automation_years_rnd.append(t_year)
     
     # Note down when AGI happens
     if t_idx > 0 and \
        self.frac_automatable_tasks[t_idx] >= 1. and \
        self.frac_automatable_tasks[t_idx-1] < 1.:
-      self.agi_year = t_idx*self.t_step + self.t_start
+      self.agi_year = t_year
   
   ##############################################################################
 
