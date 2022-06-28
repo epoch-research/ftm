@@ -487,9 +487,11 @@ def diffy(
       if step_change > 0 and first_change_step is None:
         first_change_step = step_index
 
+    first_change_span.text = ''
+
     if first_change_step is not None:
       step_selector.set('value', str(first_change_step)) # show the first interesting step by default
-      first_change_span.text = f'(first change at step {first_change_step})'
+      first_change_span.text += f'(first change at step {first_change_step})'
 
     if max_change_step is not None:
       first_change_span.text += f' (max change at step {max_change_step} ({step_change:e} %))'
