@@ -470,6 +470,8 @@ def diffy(
     max_change = max(max_change, get_max_change(static_table))
 
     first_change_step = None
+    max_change_step = None
+    max_step_change = None
 
     for step_index in range(len(external_tables)):
       external_table = external_tables[step_index]
@@ -478,12 +480,19 @@ def diffy(
       step_change = max(get_max_change(internal_table), get_max_change(external_table))
       max_change = max(max_change, step_change)
 
+      if max_change_step is None or (step_change > 0 and step_change > max_step_change):
+        max_step_change = step_change
+        max_change_step = step_index
+
       if step_change > 0 and first_change_step is None:
         first_change_step = step_index
 
     if first_change_step is not None:
       step_selector.set('value', str(first_change_step)) # show the first interesting step by default
       first_change_span.text = f'(first change at step {first_change_step})'
+
+    if max_change_step is not None:
+      first_change_span.text += f' (max change at step {max_change_step} ({step_change:e} %))'
 
     if max_change == 0:
       report.add_banner_message('No changes', ['bg-ok'])
