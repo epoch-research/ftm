@@ -1098,13 +1098,13 @@ class SimulateTakeOff():
       ## Equation 18
       labour_input_task[I] =\
         (L + η[I]*compute_input_task[I]) \
-        * β[I]**σ / np.sum(β[I:]**σ) \
+        * (β[I]**σ / np.sum(β[I:]**σ)) \
         - η[I]*compute_input_task[I]
       
       ## Equation 17
       labour_input_task[I+1:] =\
         (L + η[I]*compute_input_task[I]) \
-        * β[I+1:]**σ / np.sum(β[I:]**σ)
+        * (β[I+1:]**σ / np.sum(β[I:]**σ))
       
       ## Equation 14
       Z = np.sum(β[:I+1]**σ * η[:I+1]**(σ-1))
@@ -1132,12 +1132,12 @@ class SimulateTakeOff():
 
       ## Equation 22
       labour_input_task[I+1:] =\
-        L * β[I+1:]**σ / np.sum(β[I+1:]**σ)
+        L * (β[I+1:]**σ / np.sum(β[I+1:]**σ))
     
     # Fix rounding error
     if np.all(labour_input_task==0): 
       labour_input_task[-1] = L
-      
+
     return labour_input_task, compute_input_task
   
   @staticmethod
