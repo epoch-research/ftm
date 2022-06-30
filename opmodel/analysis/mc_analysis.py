@@ -62,6 +62,15 @@ def credence_interval(low, med, high, alpha=0.9, kind='pos', skewed_sampling=Tru
 
   return sample
 
+def sample_from_cdf(cdf):
+  """cdf must be a Numpy table with the values in the first column and the probabilities in the second"""
+  p = np.random.random()
+  for row in cdf:
+    if row[1] > p:
+      break
+  sample = row[0]
+  return sample
+
 # https://stackoverflow.com/questions/18313322/plotting-quantiles-median-and-spread-using-scipy-and-matplotlib
 def plot_quantiles(ts, data, xlabel, ylabel, n_quantiles = 7, colormap = cm.Blues):
   # Fix overflows
@@ -114,11 +123,17 @@ def mc_analysis(n_trials=100, report_file_path=None, report_dir_path=None):
   parameter_table = pd.read_csv('https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/export?format=csv#gid=0')
   parameter_table = parameter_table.set_index("Parameter")
 
+  # We are sampling full_automation_requirements_training from Ajeya's distribution
+  ajeya_cdf = pd.read_csv('https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/export?format=csv&gid=1177136586')
+  ajeya_cdf_numpy = ajeya_cdf.to_numpy()
+  parameter_table.drop('full_automation_requirements_training', inplace = True)
+
   param_samples = {
     parameter : []
     for parameter, row in parameter_table.iterrows()
     if not np.isnan(row['Conservative']) and not np.isnan(row['Aggressive'])
   }
+  param_samples['full_automation_requirements_training'] = []
 
   log.info(f'Running simulations...')
   for trial in range(n_trials):
@@ -135,6 +150,7 @@ def mc_analysis(n_trials=100, report_file_path=None, report_dir_path=None):
         for parameter, row in parameter_table.iterrows()
     }
 
+    mc_params['full_automation_requirements_training'] = 10**sample_from_cdf(ajeya_cdf_numpy)
 
     # Collect parameter samples
     for param, samples in param_samples.items():
@@ -211,6 +227,11 @@ def mc_analysis(n_trials=100, report_file_path=None, report_dir_path=None):
   # Write down the parameters
   report.add_header("Inputs", level = 3)
   report.add_paragraph(f"<span style='font-weight:bold'>n_trials:</span> {n_trials}")
+  report.add_paragraph(f"""
+    <span style='font-weight:bold'>full_automation_requirements_training:</span>
+    <span data-modal-trigger="ajeya-modal">sampled from Ajeya's distribution (click to view)</span>
+  """)
+  report.add_data_frame_modal(ajeya_cdf, 'ajeya-modal', show_index = False)
   report.add_data_frame(parameter_table)
 
   report_path = report.write()

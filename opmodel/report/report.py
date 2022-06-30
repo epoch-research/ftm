@@ -113,6 +113,16 @@ class Report:
           text-align: right;
         }
 
+        [data-modal-trigger] {
+          cursor: pointer;
+        }
+
+        .dataframe-modal .modal-content-content {
+          overflow-y: auto;
+          max-height: 90vh;
+          background-color: white;
+        }
+
         #image-modal img {
           height: 90%;
           max-width: 100%;
@@ -384,6 +394,13 @@ class Report:
             let clipboard = new ClipboardJS('.copy-button');
           }
 
+          for (let trigger of document.querySelectorAll('[data-modal-trigger]')) {
+            trigger.addEventListener('click', () => {
+              let modalId = trigger.dataset.modalTrigger;
+              MicroModal.show(modalId);
+            });
+          }
+
           let panzoomInstance;
           for (let img of document.querySelectorAll('img')) {
             img.addEventListener('click', () => {
@@ -435,7 +452,7 @@ class Report:
     # Figure modal
     self.body.append(et.fromstring('''
       <div class="modal micromodal-slide" id="image-modal" aria-hidden="true">
-        <div class="modal-overlay" tabindex="-1" data-micromodal-close='true'>
+        <div class="modal-overlay" tabindex="-1" data-micromodal-close="true">
           <div class="modal-content-content">
             <img src="" />
           </div>
@@ -465,11 +482,14 @@ class Report:
     element.text = title
     parent.append(element)
 
-  def add_paragraph(self, paragraph, parent=None):
+  def add_html(self, html, parent=None):
     if parent is None: parent = self.content
 
-    element = et.fromstring(f'<p>{paragraph}</p>')
+    element = et.fromstring(html)
     parent.append(element)
+
+  def add_paragraph(self, paragraph, parent=None):
+    return self.add_html(f'<p>{paragraph}</p>')
 
   def add_vspace(self, px=100, parent=None):
     if parent is None: parent = self.content
@@ -496,6 +516,19 @@ class Report:
 
     parent.append(container)
     plt.close(figure)
+
+  def add_data_frame_modal(self, df, modal_id, index = None, show_index = True, use_render = False, parent=None, **to_html_args):
+    if parent is None: parent = self.content
+
+    modal             = et.Element('div', {'class': 'modal micromodal-slide dataframe-modal', 'id': modal_id, 'aria-hidden': 'true'})
+    content_container = et.Element('div', {'class': 'modal-overlay', 'tabindex': '-1', 'data-micromodal-close': 'true'})
+    content           = et.Element('div', {'class': 'modal-content-content'})
+
+    self.add_data_frame(df, index, show_index, use_render, parent = content, **to_html_args)
+
+    modal.append(content_container)
+    content_container.append(content)
+    parent.append(modal)
 
   def add_data_frame(self, df, index = None, show_index = True, use_render = False, parent=None, **to_html_args):
     if parent is None: parent = self.content
