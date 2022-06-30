@@ -1083,6 +1083,16 @@ class SimulateTakeOff():
     N = len(β)
     σ = 1. / (1.-ρ)
 
+    # Precompute partial sums
+
+    # np.sum(β[I:]**σ)
+    sums_β = np.zeros(N + 1)
+    sums_β[:-1] = np.flip(np.cumsum(np.flip(β[:]**σ))) # double flip trick
+
+    # np.sum(β[:I]**σ * η[:I]**(σ-1))
+    sums_β_η = np.zeros(N + 1)
+    sums_β_η[1:] = np.cumsum(β[:]**σ * η[:]**(σ-1))
+
     # Iterate over critical indices
     for I in range(AT):
       # Initialize
@@ -1090,30 +1100,30 @@ class SimulateTakeOff():
       compute_input_task = np.zeros(N)
 
       ## Equation 20
-      A = η[I]**σ * np.sum(β[I:]**σ)
-      B = np.sum(β[:I]**σ * η[:I]**(σ-1))
+      A = η[I]**σ * sums_β[I]
+      B = sums_β_η[I]
       compute_input_task[I] =\
         (C*A - L*B) / (A + η[I]*B)
       
       ## Equation 18
       labour_input_task[I] =\
         (L + η[I]*compute_input_task[I]) \
-        * (β[I]**σ / np.sum(β[I:]**σ)) \
+        * (β[I]**σ / sums_β[I]) \
         - η[I]*compute_input_task[I]
       
-      ## Equation 17
-      labour_input_task[I+1:] =\
-        (L + η[I]*compute_input_task[I]) \
-        * (β[I+1:]**σ / np.sum(β[I:]**σ))
-      
-      ## Equation 14
-      Z = np.sum(β[:I+1]**σ * η[:I+1]**(σ-1))
-      compute_input_task[:I] =\
-        (C + labour_input_task[I]/η[I]) \
-        * β[:I]**σ * η[:I]**(σ-1) / Z
-      
-      if labour_input_task[I] >= 0: break
-    
+      if labour_input_task[I] >= 0:
+        ## Equation 17
+        labour_input_task[I+1:] =\
+          (L + η[I]*compute_input_task[I]) \
+          * (β[I+1:]**σ / sums_β[I])
+        
+        ## Equation 14
+        Z = sums_β_η[I+1]
+        compute_input_task[:I] =\
+          (C + labour_input_task[I]/η[I]) \
+          * β[:I]**σ * η[:I]**(σ-1) / Z
+
+        break
     else:
       # The critical index is the last one
       I = AT-1
@@ -1123,7 +1133,7 @@ class SimulateTakeOff():
       compute_input_task = np.zeros(N)
 
       ## Equations 14 & 15
-      Z = np.sum(β[:I+1]**σ * η[:I+1]**(σ-1))
+      Z = sums_β_η[I+1]
       compute_input_task[:I+1] =\
         C * β[:I+1]**σ * η[:I+1]**(σ-1) / Z
       
@@ -1132,7 +1142,7 @@ class SimulateTakeOff():
 
       ## Equation 22
       labour_input_task[I+1:] =\
-        L * (β[I+1:]**σ / np.sum(β[I+1:]**σ))
+        L * (β[I+1:]**σ / sums_β[I+1])
     
     # Fix rounding error
     if np.all(labour_input_task==0): 
