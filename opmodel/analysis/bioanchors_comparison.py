@@ -57,6 +57,8 @@ def bioanchors_comparison(report_file_path=None, report_dir_path=None):
   plt.gcf().add_artist(bio_legend)
 
 
+  plt.xticks(np.arange(2020, 2055, 5))
+
   report.add_figure()
 
   # Wrap up
@@ -70,15 +72,19 @@ def bioanchors_comparison(report_file_path=None, report_dir_path=None):
 def bioanchors_model(
     t_start                                = 2022,
     t_end                                  = 2100,
-    t_step                                 = 0.1,  # Step duration, in years
-    hardware_doubling_time                 = 2.5,  # In years
-    software_doubling_start                = 2025, # When the software starts doubling
-    software_doubling_time                 = 2.5,  # In years
-    software_ceiling                       = 1e3,  # Max software performance from 2022 levels
-    initial_training_investment            = 50,
-    fast_training_investment_duration      = 23,   # In years
-    fast_training_investment_doubling_time = 2.5,  # In years
-    slow_training_investment_growth        = 1.03, # Per year
+    t_step                                 = 0.1,   # Step duration, in years
+
+    initial_hardware                       = 1.7/3, # Compared to our model
+    hardware_doubling_time                 = 2.5,   # In years
+
+    software_doubling_start                = 2025,  # When the software starts doubling
+    software_doubling_time                 = 2.5,   # In years
+    software_ceiling                       = 1e3,   # Max software performance from 2022 levels
+
+    initial_training_investment            = 50,    # Compared to our model
+    fast_training_investment_duration      = 23,    # In years
+    fast_training_investment_doubling_time = 2.5,   # In years
+    slow_training_investment_growth        = 1.03,  # Per year
   ):
 
   hardware_growth = 2**(1/hardware_doubling_time)
@@ -95,7 +101,7 @@ def bioanchors_model(
       slow_training_investment_growth ** (timesteps[slow_training_investment_start_index:] - timesteps[slow_training_investment_start_index-1])
   training_investment = np.concatenate([fast_training_investment, slow_training_investment])
 
-  hardware = hardware_growth ** (timesteps - t_start)
+  hardware = initial_hardware * hardware_growth ** (timesteps - t_start)
 
   software_timesteps = np.arange(software_doubling_start, t_end, t_step)
   software = software_growth ** (software_timesteps - software_doubling_start)
