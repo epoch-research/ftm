@@ -1087,7 +1087,7 @@ class SimulateTakeOff():
 
     # np.sum(β[I:]**σ)
     sums_β = np.zeros(N + 1)
-    sums_β[:-1] = np.flip(np.cumsum(np.flip(β[:]**σ))) # double flip trick
+    sums_β[:-1] = np.cumsum(β[::-1]**σ)[::-1]
 
     # np.sum(β[:I]**σ * η[:I]**(σ-1))
     sums_β_η = np.zeros(N + 1)
