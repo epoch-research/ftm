@@ -72,7 +72,9 @@ def bioanchors_model(
     t_end                                  = 2100,
     t_step                                 = 0.1,  # Step duration, in years
     hardware_doubling_time                 = 2.5,  # In years
+    software_doubling_start                = 2025, # When the software starts doubling
     software_doubling_time                 = 2.5,  # In years
+    software_ceiling                       = 1e3,  # Max software performance from 2022 levels
     initial_training_investment            = 50,
     fast_training_investment_duration      = 23,   # In years
     fast_training_investment_doubling_time = 2.5,  # In years
@@ -94,18 +96,21 @@ def bioanchors_model(
   training_investment = np.concatenate([fast_training_investment, slow_training_investment])
 
   hardware = hardware_growth ** (timesteps - t_start)
-  software = software_growth ** (timesteps - t_start)
 
-  return timesteps, training_investment, hardware, software
+  software_timesteps = np.arange(software_doubling_start, t_end, t_step)
+  software = software_growth ** (software_timesteps - software_doubling_start)
+  software = np.clip(software, a_min = None, a_max = software_ceiling)
+
+  return timesteps, training_investment, hardware, software_timesteps, software
 
 def plot_bioanchors_model(*args, ylims = None, **kwargs):
-  [timesteps, training_investment, hardware, software] = bioanchors_model(*args, **kwargs)
+  [timesteps, training_investment, hardware, software_timesteps, software] = bioanchors_model(*args, **kwargs)
 
   linestyle = '--'
 
   plt.plot(timesteps, training_investment, label = 'Training compute investment', color = 'purple', linestyle = linestyle)
-  plt.plot(timesteps, 1.25*hardware, label = 'Hardware quality', color = 'orange', linestyle = linestyle) # displaced so that it's visible
-  plt.plot(timesteps, software, label = 'Software', color = 'green', linestyle = linestyle)
+  plt.plot(timesteps, hardware, label = 'Hardware quality', color = 'orange', linestyle = linestyle)
+  plt.plot(software_timesteps, software, label = 'Software', color = 'green', linestyle = linestyle)
   plt.yscale('log')
 
   if ylims is not None:
