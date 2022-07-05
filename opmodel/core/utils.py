@@ -19,3 +19,30 @@ except ModuleNotFoundError:
   def display(x):
     print(x)
 
+class Log:
+  ERROR_LEVEL = 1
+  INFO_LEVEL  = 2
+
+  def __init__(self, level=None):
+    self.level = level if (level is not None) else INFO_LEVEL
+    self.indentation_level = 0
+
+  def indent(self):
+    self.indentation_level += 1
+
+  def deindent(self):
+    self.indentation_level -= 1
+    if self.indentation_level < 0: self.indentation_level = 0
+
+  def info(self, *args, **kwargs):
+    if self.level < Log.INFO_LEVEL: return
+    print(' ' * self.indentation_level, end = '')
+    print(*args, **kwargs)
+
+  def error(self, *args, **kwargs):
+    if self.level < Log.ERROR_LEVEL: return
+    print(' ' * self.indentation_level, end = '', file = sys.stderr)
+    print(*args, **kwargs, file = sys.stderr)
+
+log = Log(level=Log.INFO_LEVEL)
+

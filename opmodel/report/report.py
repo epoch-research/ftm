@@ -488,6 +488,9 @@ class Report:
     element = et.fromstring(html)
     parent.append(element)
 
+  def add_html_lines(self, html_lines, parent=None):
+    self.add_html("\n".join(html_lines))
+
   def add_paragraph(self, paragraph, parent=None):
     return self.add_html(f'<p>{paragraph}</p>')
 
@@ -582,13 +585,13 @@ class Report:
     report_dir_path = os.path.abspath(os.path.join(module_path, '..', '..', DEFAULT_REPORT_DIRECTORY))
     return report_dir_path
 
+  @staticmethod
   def escape(s):
       s = s.replace("&", "&amp;")
       s = s.replace("<", "&lt;")
       s = s.replace(">", "&gt;")
       s = s.replace("\"", "&quot;")
       return s
-
 
 if __name__ == '__main__':
   import numpy as np
