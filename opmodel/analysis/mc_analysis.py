@@ -210,14 +210,36 @@ def mc_analysis(n_trials = 100):
   return results
   
 
-def write_mc_analysis_report(n_trials=100, report_file_path=None, report_dir_path=None):
+def write_mc_analysis_report(n_trials=100, report_file_path=None, report_dir_path=None, report=None):
   if report_file_path is None:
     report_file_path = 'mc_analysis.html'
 
-  results = mc_analysis(n_trials)
+  #############################################################################
+  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  # TODO Remove this block and uncomment the line below it
+  # TEST
+  import os
+  import pickle
+  from . import CACHE_DIR
+  cache_filename = os.path.join(CACHE_DIR, 'mc_analysis.pickle')
+
+  if not os.path.exists(cache_filename):
+    results = mc_analysis(n_trials)
+    with open(cache_filename, 'wb') as f:
+      pickle.dump(results, f) # , pickle.HIGHEST_PROTOCOL)
+
+  with open(cache_filename, 'rb') as f:
+    results = pickle.load(f)
+  # end testing
+  #############################################################################
+
+  # TODO uncomment this line
+  #results = mc_analysis(n_trials)
 
   log.info('Writing report...')
-  report = Report(report_file_path=report_file_path, report_dir_path=report_dir_path)
+  new_report = report is None
+  if new_report:
+    report = Report(report_file_path=report_file_path, report_dir_path=report_dir_path)
 
   metrics_quantiles = pd.DataFrame(results.metrics_quantiles)
   display(metrics_quantiles)
@@ -252,8 +274,9 @@ def write_mc_analysis_report(n_trials=100, report_file_path=None, report_dir_pat
   report.add_data_frame_modal(results.ajeya_cdf, 'ajeya-modal', show_index = False)
   report.add_data_frame(results.parameter_table)
 
-  report_path = report.write()
-  log.info(f'Report stored in {report_path}')
+  if new_report:
+    report_path = report.write()
+    log.info(f'Report stored in {report_path}')
 
   log.info('Done')
 

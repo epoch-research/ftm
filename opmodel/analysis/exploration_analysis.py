@@ -1,6 +1,57 @@
 from . import log
 from . import *
 
+def add_scenario_group_to_report(scenario_group, report, exploration_target = 'compare'):
+  results = []
+
+  for scenario in scenario_group:
+    row = {**{'type' : scenario_group.name, 'value' : scenario.name}, **scenario.model.takeoff_metrics}
+    for metric in ['rampup_start', 'agi_year', 'doubling_times']:
+      row[metric] = getattr(scenario.model, metric)
+    results.append(row)
+
+  results = pd.DataFrame(results)
+  report.add_data_frame(results)
+
+  # Plot results
+  metrics = ['gwp'] #, 'compute', 'hardware_performance', 'software', 'frac_gwp_compute', 'frac_training_compute']
+  colors = ['red', 'orange', 'green']
+  for metric in metrics:
+    for i, scenario in enumerate(scenario_group):
+      scenario.model.plot(metric, new_figure = (i > 0), line_color=colors[i % len(colors)])
+
+  # Plot compute decomposition
+  plt.figure(figsize=(14, 8), dpi=80);
+
+  for i, scenario in enumerate(scenario_group):
+    plt.subplot(len(scenario_group), 1, i + 1)
+    scenario.model.plot_compute_decomposition(new_figure=False)
+    plt.ylabel(scenario.name)
+
+    if i == 0:
+      plt.title(f"Compute increase over time")
+      plt.legend(bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0)
+
+  plt.tight_layout()
+
+  report.add_figure()
+
+  # Plot doubling times
+  report.add_header("Model summaries", level = 3)
+
+  for scenario in scenario_group:
+    report.add_header(scenario.name, level = 4)
+    report.add_data_frame(scenario.model.get_summary_table())
+
+  # Write down the parameters
+  report.add_header("Inputs", level = 3)
+  report.add_paragraph(f"<span style='font-weight:bold'>exploration_target:</span> {exploration_target}")
+  input_parameters = pd.DataFrame(
+    [scenario.params for scenario in scenario_group],
+    index = [scenario.name for scenario in scenario_group]
+  ).transpose()
+  report.add_data_frame(input_parameters)
+
 def explore(exploration_target='compare', report_file_path=None, report_dir_path=None, parameter_table=None, report=None):
   if report_file_path is None:
     report_file_path = 'exploration_analysis.html'

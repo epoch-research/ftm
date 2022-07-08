@@ -83,17 +83,34 @@ def write_sensitivity_analysis_report(report_file_path=None, report_dir_path=Non
   if report_file_path is None:
     report_file_path = 'sensitivity_analysis.html'
 
+  #############################################################################
+  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  # TODO Remove this block and uncomment the line below it
+  # TEST
+  import os
+  import pickle
+  from . import CACHE_DIR
+  cache_filename = os.path.join(CACHE_DIR, 'sensitivity_analysis.pickle')
+
+  if not os.path.exists(cache_filename):
+    results = sensitivity_analysis()
+    with open(cache_filename, 'wb') as f:
+      pickle.dump(results, f) # , pickle.HIGHEST_PROTOCOL)
+
+  with open(cache_filename, 'rb') as f:
+    results = pickle.load(f)
+  # end testing
+  #############################################################################
+
+  # TODO uncomment this line
+  #results = sensitivity_analysis()
+
+  log.info('Writing report...')
+
   new_report = report is None
   if new_report:
     report = Report(report_file_path=report_file_path, report_dir_path=report_dir_path)
 
-  log.info('Writing report...')
-
-  results = sensitivity_analysis()
-
-  display(results.df)
-
-  report = Report(report_file_path=report_file_path, report_dir_path=report_dir_path)
   report.add_data_frame(results.table)
 
   report.add_header("Simulation parameters", level = 3)
