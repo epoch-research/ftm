@@ -10,6 +10,9 @@ from numpy.random import default_rng
 rng = default_rng()
 from matplotlib import cm
 
+class McAnalysisResults:
+  pass
+
 def credence_interval(low, med, high, alpha=0.9, kind='pos', skewed_sampling=True):
   """ Returns a random number sampled from a lognormal
       with a given 90% confidence interval
@@ -101,10 +104,7 @@ def plot_quantiles(ts, data, xlabel, ylabel, n_quantiles = 7, colormap = cm.Blue
   ax1.set_ylabel(ylabel, fontsize=14)
   fig.tight_layout()
 
-def mc_analysis(n_trials=100, report_file_path=None, report_dir_path=None):
-  if report_file_path is None:
-    report_file_path = 'mc_analysis.html'
-
+def mc_analysis(n_trials = 100):
   scalar_metrics = ['rampup_start', 'agi_year']
   state_metrics = ['gwp', 'biggest_training_run', 'compute']
 
@@ -182,42 +182,60 @@ def mc_analysis(n_trials=100, report_file_path=None, report_dir_path=None):
       assert metric_value.shape == (mc_model.n_timesteps,)
       state_metrics[state_metric].append(metric_value)
 
+  # Summary of scalar metrics
+  quantiles = [0.01, 0.1, 0.2, 0.5, 0.8, 0.9, 0.99]
+  metrics_quantiles = []
+  for q in quantiles:
+    row = {"quantile" : q}
+    for scalar_metric in scalar_metrics:
+      row[scalar_metric] = np.quantile(scalar_metrics[scalar_metric], q)
+    metrics_quantiles.append(row)
+  
+  ## Add mean
+  row = {"quantile" : "mean"}
+  for scalar_metric in scalar_metrics:
+    row[scalar_metric] = np.mean(scalar_metrics[scalar_metric])
+  metrics_quantiles.append(row)
+
+  results = McAnalysisResults()
+  results.quantiles         = quantiles
+  results.metrics_quantiles = metrics_quantiles
+  results.state_metrics     = state_metrics
+  results.n_trials          = n_trials
+  results.timesteps         = mc_model.timesteps
+  results.param_samples     = param_samples
+  results.ajeya_cdf         = ajeya_cdf
+  results.parameter_table   = parameter_table
+
+  return results
+  
+
+def write_mc_analysis_report(n_trials=100, report_file_path=None, report_dir_path=None):
+  if report_file_path is None:
+    report_file_path = 'mc_analysis.html'
+
+  results = mc_analysis(n_trials)
+
   log.info('Writing report...')
   report = Report(report_file_path=report_file_path, report_dir_path=report_dir_path)
 
-
-  # Display summary of scalar metrics
-  quantiles = [0.01, 0.1, 0.2, 0.5, 0.8, 0.9, 0.99]
-  results = []
-  for q in quantiles:
-    result = {"quantile" : q}
-    for scalar_metric in scalar_metrics:
-      result[scalar_metric] = np.quantile(scalar_metrics[scalar_metric],q)
-    results.append(result)
-  
-  ## Add mean
-  result = {"quantile" : "mean"}
-  for scalar_metric in scalar_metrics:
-    result[scalar_metric] = np.mean(scalar_metrics[scalar_metric])
-  results.append(result)
-  
-  results = pd.DataFrame(results)
-  display(results)
-  report.add_data_frame(results)
+  metrics_quantiles = pd.DataFrame(results.metrics_quantiles)
+  display(metrics_quantiles)
+  report.add_data_frame(metrics_quantiles)
 
   # Plot trajectories
-  for state_metric in state_metrics:
-    state_metrics[state_metric] = np.stack(state_metrics[state_metric])
-    plot_quantiles(mc_model.timesteps, state_metrics[state_metric], "Year", state_metric)
+  for state_metric in results.state_metrics:
+    results.state_metrics[state_metric] = np.stack(results.state_metrics[state_metric])
+    plot_quantiles(results.timesteps, results.state_metrics[state_metric], "Year", state_metric)
     report.add_figure()
 
   # Display input parameter statistics
   param_stats = []
-  for samples in param_samples.values():
-    stats = [np.mean(samples)] + [np.quantile(samples, q) for q in quantiles]
+  for samples in results.param_samples.values():
+    stats = [np.mean(samples)] + [np.quantile(samples, q) for q in results.quantiles]
     param_stats.append(stats)
-  param_names = param_samples.keys()
-  columns = [['mean'] + quantiles]
+  param_names = results.param_samples.keys()
+  columns = [['mean'] + results.quantiles]
 
   report.add_header("Input parameters stats", level = 3)
   params_stats_table = pd.DataFrame(param_stats, index = param_names, columns = columns)
@@ -231,8 +249,8 @@ def mc_analysis(n_trials=100, report_file_path=None, report_dir_path=None):
     <span style='font-weight:bold'>full_automation_requirements_training:</span>
     <span data-modal-trigger="ajeya-modal">sampled from Ajeya's distribution (click to view)</span>
   """)
-  report.add_data_frame_modal(ajeya_cdf, 'ajeya-modal', show_index = False)
-  report.add_data_frame(parameter_table)
+  report.add_data_frame_modal(results.ajeya_cdf, 'ajeya-modal', show_index = False)
+  report.add_data_frame(results.parameter_table)
 
   report_path = report.write()
   log.info(f'Report stored in {report_path}')
@@ -248,5 +266,5 @@ if __name__ == '__main__':
     default=100,
   )
   args = parser.parse_args()
-  mc_analysis(n_trials=args.n_trials, report_file_path=args.output_file, report_dir_path=args.output_dir)
+  write_mc_analysis_report(n_trials=args.n_trials, report_file_path=args.output_file, report_dir_path=args.output_dir)
 

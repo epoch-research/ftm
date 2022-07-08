@@ -10,12 +10,17 @@ from xml.etree import ElementTree as et
 DEFAULT_REPORT_DIRECTORY = '_output_'     # Relative to the root of the repository
 DEFAULT_REPORT_FILE      = 'report.html'  # Relative to the DEFAULT_REPORT_DIRECTORY
 
+# Tab code taking from https://inspirationalpixels.com/creating-tabs-with-html-css-and-jquery/
+
 class Report:
   def __init__(self, report_file_path=None, report_dir_path=None, add_csv_copy_button=False):
     self.report_file_path = report_file_path or DEFAULT_REPORT_FILE
     self.report_dir_path  = report_dir_path  or Report.default_report_path()
 
     self.add_csv_copy_button = add_csv_copy_button
+
+    self.tab_groups = []
+    self.tab_groups_parents = []
 
     self.html    = et.Element('html')
     self.head    = et.Element('head')
@@ -135,6 +140,83 @@ class Report:
 
         *:focus {
           outline: none;
+        }
+      </style>
+    '''))
+
+    # Tabs
+    # See https://inspirationalpixels.com/creating-tabs-with-html-css-and-jquery/#step-css
+    self.head.append(et.fromstring('''
+      <style>
+        /*----- Tabs -----*/
+        .tabs {
+          width:100%;
+          display:inline-block;
+        }
+
+        .tab-links {
+          padding-left: 0;
+          margin-bottom: 0;
+        }
+
+        /*----- Tab Links -----*/
+        /* Clearfix */
+        .tab-links:after {
+          display:block;
+          clear:both;
+          content:'';
+        }
+
+        .tab-links li {
+          float:left;
+          list-style:none;
+        }
+
+        .tab-links li:first-child a {
+          border-top-left-radius: 3px;
+        }
+
+        .tab-links li:last-child a {
+          border-top-right-radius: 3px;
+        }
+
+        .tab-links a {
+          padding:9px 15px;
+          margin-right: 1px;
+          display:inline-block;
+          background:#7FB5DA;
+          font-size:16px;
+          font-weight:600;
+          text-decoration: none;
+          color:#4c4c4c;
+        }
+
+        .tab-links a:hover {
+          background:#a7cce5;
+          text-decoration:none;
+        }
+
+        li.active a, li.active a:hover {
+          background:#fff;
+          color:#4c4c4c;
+        }
+
+        /*----- Content of Tabs -----*/
+        .tab-content {
+          padding:15px;
+          border-radius: 0px 3px 3px 3px;
+          box-shadow: 0px 0px 8px rgba(0,0,0,0.15);
+          background:#fff;
+          overflow-x: auto;
+          width: calc(100vw - 75px);
+        }
+
+        .tab {
+          display:none;
+        }
+
+        .tab.active {
+          display:block;
         }
       </style>
     '''))
@@ -380,6 +462,7 @@ class Report:
     self.head.append(et.fromstring('<script defer="true" src="https://cdn.jsdelivr.net/npm/clipboard@2.0.10/dist/clipboard.min.js"></script>'))
     self.head.append(et.fromstring('<script defer="true" src="https://unpkg.com/micromodal/dist/micromodal.min.js"></script>'))
     self.head.append(et.fromstring('<script defer="true" src="https://unpkg.com/panzoom@9.4.0/dist/panzoom.min.js"></script>'))
+    self.head.append(et.fromstring('<script src="https://code.jquery.com/jquery-3.6.0.slim.min.js"></script>'))
 
     self.head.append(et.fromstring(f'''
       <script>
@@ -449,6 +532,26 @@ class Report:
       </script>
     '''))
 
+    # Tabs
+    # See https://inspirationalpixels.com/creating-tabs-with-html-css-and-jquery/#step-jquery
+    self.content.append(et.fromstring('''
+      <script>
+        jQuery(document).ready(function() {
+          jQuery('.tabs .tab-links a').on('click', function(e) {
+            var currentAttrValue = jQuery(this).attr('href');
+
+            // Show/Hide Tabs
+            jQuery('.tabs ' + currentAttrValue).show().siblings().hide();
+
+            // Change/remove current tab to active
+            jQuery(this).parent('li').addClass('active').siblings().removeClass('active');
+
+            e.preventDefault();
+          });
+        });
+      </script>
+    '''))
+
     # Figure modal
     self.body.append(et.fromstring('''
       <div class="modal micromodal-slide" id="image-modal" aria-hidden="true">
@@ -472,18 +575,20 @@ class Report:
     self.html.append(self.body)
     self.body.append(self.content)
 
+    self.default_parent = self.content
+
   def add_title(self, title):
     self.head.append(et.fromstring(f'<title>{title}</title>'))
 
   def add_header(self, title, level=1, parent=None):
-    if parent is None: parent = self.content
+    if parent is None: parent = self.default_parent
 
     element = et.Element(f'h{max(1, level)}')
     element.text = title
     parent.append(element)
 
   def add_html(self, html, parent=None):
-    if parent is None: parent = self.content
+    if parent is None: parent = self.default_parent
 
     element = et.fromstring(html)
     parent.append(element)
@@ -492,7 +597,7 @@ class Report:
     return self.add_html(f'<p>{paragraph}</p>')
 
   def add_vspace(self, px=100, parent=None):
-    if parent is None: parent = self.content
+    if parent is None: parent = self.default_parent
 
     element = et.fromstring(f'<div style="height:{px}px"></div>')
     parent.append(element)
@@ -502,7 +607,7 @@ class Report:
       self.add_figure(plt.figure(fignum), parent)
 
   def add_figure(self, figure = None, parent=None):
-    if parent is None: parent = self.content
+    if parent is None: parent = self.default_parent
 
     if not figure: figure = plt.gcf()
 
@@ -518,7 +623,7 @@ class Report:
     plt.close(figure)
 
   def add_data_frame_modal(self, df, modal_id, index = None, show_index = True, use_render = False, parent=None, **to_html_args):
-    if parent is None: parent = self.content
+    if parent is None: parent = self.default_parent
 
     modal             = et.Element('div', {'class': 'modal micromodal-slide dataframe-modal', 'id': modal_id, 'aria-hidden': 'true'})
     content_container = et.Element('div', {'class': 'modal-overlay', 'tabindex': '-1', 'data-micromodal-close': 'true'})
@@ -531,7 +636,7 @@ class Report:
     parent.append(modal)
 
   def add_data_frame(self, df, index = None, show_index = True, use_render = False, parent=None, **to_html_args):
-    if parent is None: parent = self.content
+    if parent is None: parent = self.default_parent
 
     if isinstance(df, dict):
       if not isinstance(index, (list, tuple)): index = [index]
@@ -561,6 +666,53 @@ class Report:
     element.set('class', 'banner ' + ' '.join(classes))
     self.body.insert(0, element)
 
+  # ---------------------------------------------------------------------------
+  # Tabs
+  # ---------------------------------------------------------------------------
+
+  def begin_tab_group(self, parent = None):
+    if parent is None: parent = self.default_parent
+
+    self.tab_groups.append([])
+    self.tab_groups_parents.append(parent)
+
+  def end_tab_group(self):
+    group = self.tab_groups.pop()
+    parent = self.tab_groups_parents.pop()
+
+    tab_group_el = et.Element('div', {'class': 'tabs'})
+
+    tab_links = et.Element('ul', {'class': 'tab-links'})
+    for i, tab in enumerate(group):
+      li = et.fromstring(f'<li><a href="#{tab.id}">{tab.name}</a></li>')
+      if i == 0: li.set('class', 'active')
+      tab_links.append(li)
+    tab_group_el.append(tab_links)
+
+    tab_content = et.Element('div', {'class': 'tab-content'})
+    tab_group_el.append(tab_content)
+    for i, tab in enumerate(group):
+      classes = 'tab'
+      if i == 0: classes += ' active'
+
+      tab.node.set('class', classes)
+      tab.node.set('id', tab.id)
+      tab_content.append(tab.node)
+
+    parent.append(tab_group_el)
+    self.default_parent = parent
+
+  def begin_tab(self, name):
+    node = et.Element('div', {'class': 'tab'})
+
+    self.tab_groups[-1].append(Tab(name, node))
+    self.default_parent = node
+
+
+  # ---------------------------------------------------------------------------
+  # Writing
+  # ---------------------------------------------------------------------------
+
   def write(self):
     if os.path.isabs(self.report_file_path):
       report_abs_path = self.report_file_path
@@ -582,6 +734,11 @@ class Report:
     report_dir_path = os.path.abspath(os.path.join(module_path, '..', '..', DEFAULT_REPORT_DIRECTORY))
     return report_dir_path
 
+  # ---------------------------------------------------------------------------
+  # Utils
+  # ---------------------------------------------------------------------------
+
+  @staticmethod
   def escape(s):
       s = s.replace("&", "&amp;")
       s = s.replace("<", "&lt;")
@@ -589,6 +746,15 @@ class Report:
       s = s.replace("\"", "&quot;")
       return s
 
+class Tab:
+  id = 0
+
+  def __init__(self, name, node):
+    self.name = name
+    self.node = node
+
+    self.id = f'tab_{Tab.id}'
+    Tab.id += 1
 
 if __name__ == '__main__':
   import numpy as np

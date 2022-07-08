@@ -5,19 +5,21 @@ Sensitivity analysis.
 from . import log
 from . import *
 
-def sensitivity_analysis(report_file_path=None, report_dir_path=None):
-  if report_file_path is None:
-    report_file_path = 'sensitivity_analysis.html'
+class SensitivityAnalysisResults:
+  def __init__(self, parameter_table = None, table = None):
+    self.parameter_table = parameter_table
+    self.table = table
 
+def sensitivity_analysis():
   log.info('Retrieving parameters...')
-  parameter_table = pd.read_csv('https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/export?format=csv#gid=0')
-  parameter_table = parameter_table.set_index("Parameter")
+
+  parameter_table = get_parameter_table()
   best_guess_parameters = {parameter : row["Best guess"] \
                            for parameter, row in parameter_table.iterrows()}
 
   parameter_count = len(parameter_table[parameter_table[['Conservative', 'Aggressive']].notna().all(1)])
 
-  results = []
+  table = []
   current_parameter_index = 0
   for parameter, row in parameter_table.iterrows():
     # Skip if there are no values for comparison
@@ -62,30 +64,49 @@ def sensitivity_analysis(report_file_path=None, report_dir_path=None):
 
     # Add GWP doubling times
     result["GWP doubling times"] = f"[{low_model.doubling_times[:4]}, {high_model.doubling_times[:4]}]"
+    result["doubling times"] = result["GWP doubling times"] # alias
 
-    results.append(result)
+    table.append(result)
 
     current_parameter_index += 1
 
+  table = pd.DataFrame(table)
+  table = table.set_index('Parameter').sort_values(by='delta', ascending=False)
+
+  results = SensitivityAnalysisResults()
+  results.parameter_table = parameter_table
+  results.table = table
+
+  return results
+
+def write_sensitivity_analysis_report(report_file_path=None, report_dir_path=None, report=None):
+  if report_file_path is None:
+    report_file_path = 'sensitivity_analysis.html'
+
+  new_report = report is None
+  if new_report:
+    report = Report(report_file_path=report_file_path, report_dir_path=report_dir_path)
+
   log.info('Writing report...')
 
-  results = pd.DataFrame(results)
-  results = results.sort_values(by='delta', ascending=False)
-  display(results)
+  results = sensitivity_analysis()
+
+  display(results.df)
 
   report = Report(report_file_path=report_file_path, report_dir_path=report_dir_path)
-  report.add_data_frame(results)
+  report.add_data_frame(results.table)
 
   report.add_header("Simulation parameters", level = 3)
-  report.add_data_frame(parameter_table)
+  report.add_data_frame(results.parameter_table)
 
-  report_path = report.write()
-  log.info(f'Report stored in {report_path}')
+  if new_report:
+    report_path = report.write()
+    log.info(f'Report stored in {report_path}')
 
   log.info('Done')
 
 if __name__ == '__main__':
   parser = init_cli_arguments()
   args = parser.parse_args()
-  sensitivity_analysis(report_file_path=args.output_file, report_dir_path=args.output_dir)
+  write_sensitivity_analysis_report(report_file_path=args.output_file, report_dir_path=args.output_dir)
 

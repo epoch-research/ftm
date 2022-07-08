@@ -1576,6 +1576,11 @@ class SimulateTakeOff():
       t = self.index_to_time(idx)
       t_end = t + 1
       idx_end = self.time_to_index(t_end)
+
+      if idx_end >= len(self.timesteps):
+        diff = idx_end - (len(self.timesteps) - 1)
+        idx -= diff
+        idx_end -= diff
       
       summary_row = {
         'period' : period,

@@ -13,8 +13,8 @@ def explore(exploration_target='compare', report_file_path=None, report_dir_path
 
   # Define parameters
   med_params = {
-      parameter : row['Best guess']
-      for parameter, row in parameter_table.iterrows()
+    parameter : row['Best guess']
+    for parameter, row in parameter_table.iterrows()
   }
 
   if exploration_target == 'compare':
