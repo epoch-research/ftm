@@ -587,11 +587,17 @@ class Report:
     element.text = title
     parent.append(element)
 
+  def add_element(self, element, parent=None):
+    if parent is None: parent = self.default_parent
+    parent.append(element)
+    return element
+
   def add_html(self, html, parent=None):
     if parent is None: parent = self.default_parent
 
     element = et.fromstring(html)
     parent.append(element)
+    return element
 
   def add_paragraph(self, paragraph, parent=None):
     return self.add_html(f'<p>{paragraph}</p>')
@@ -606,7 +612,7 @@ class Report:
     for fignum in plt.get_fignums():
       self.add_figure(plt.figure(fignum), parent)
 
-  def add_figure(self, figure = None, parent=None):
+  def add_figure(self, figure = None, parent = None):
     if parent is None: parent = self.default_parent
 
     if not figure: figure = plt.gcf()

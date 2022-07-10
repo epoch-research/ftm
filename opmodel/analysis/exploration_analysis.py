@@ -13,27 +13,7 @@ def add_scenario_group_to_report(scenario_group, report, exploration_target = 'c
   results = pd.DataFrame(results)
   report.add_data_frame(results)
 
-  # Plot results
-  metrics = ['gwp'] #, 'compute', 'hardware_performance', 'software', 'frac_gwp_compute', 'frac_training_compute']
-  colors = ['red', 'orange', 'green']
-  for metric in metrics:
-    for i, scenario in enumerate(scenario_group):
-      scenario.model.plot(metric, new_figure = (i > 0), line_color=colors[i % len(colors)])
-
-  # Plot compute decomposition
-  plt.figure(figsize=(14, 8), dpi=80);
-
-  for i, scenario in enumerate(scenario_group):
-    plt.subplot(len(scenario_group), 1, i + 1)
-    scenario.model.plot_compute_decomposition(new_figure=False)
-    plt.ylabel(scenario.name)
-
-    if i == 0:
-      plt.title(f"Compute increase over time")
-      plt.legend(bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0)
-
-  plt.tight_layout()
-
+  plot_compute_increase()
   report.add_figure()
 
   # Plot doubling times
@@ -51,6 +31,29 @@ def add_scenario_group_to_report(scenario_group, report, exploration_target = 'c
     index = [scenario.name for scenario in scenario_group]
   ).transpose()
   report.add_data_frame(input_parameters)
+
+def plot_compute_increase(scenario_group, title = "Compute increase over time", show_legend = True):
+  # Plot results
+  metrics = ['gwp'] #, 'compute', 'hardware_performance', 'software', 'frac_gwp_compute', 'frac_training_compute']
+  colors = ['red', 'orange', 'green']
+  for metric in metrics:
+    for i, scenario in enumerate(scenario_group):
+      scenario.model.plot(metric, new_figure = (i > 0), line_color=colors[i % len(colors)])
+
+  # Plot compute decomposition
+  plt.figure(figsize=(14 if show_legend else 12, 8), dpi=80)
+
+  for i, scenario in enumerate(scenario_group):
+    plt.subplot(len(scenario_group), 1, i + 1)
+    scenario.model.plot_compute_decomposition(new_figure=False)
+    plt.ylabel(scenario.name)
+
+    if i == 0:
+      plt.title(title)
+      if show_legend:
+        plt.legend(bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0)
+
+  plt.tight_layout()
 
 def explore(exploration_target='compare', report_file_path=None, report_dir_path=None, parameter_table=None, report=None):
   if report_file_path is None:
