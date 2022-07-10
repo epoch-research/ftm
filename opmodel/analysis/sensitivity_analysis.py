@@ -113,7 +113,7 @@ def write_sensitivity_analysis_report(report_file_path=None, report_dir_path=Non
 
   report.add_data_frame(results.table)
 
-  report.add_header("Simulation parameters", level = 3)
+  report.add_header("Inputs", level = 3)
   report.add_data_frame(results.parameter_table)
 
   if new_report:

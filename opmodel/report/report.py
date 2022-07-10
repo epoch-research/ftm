@@ -1,5 +1,6 @@
 import os
 import time
+import json
 import base64
 from io import BytesIO
 import matplotlib.pyplot as plt
@@ -9,6 +10,8 @@ from xml.etree import ElementTree as et
 
 DEFAULT_REPORT_DIRECTORY = '_output_'     # Relative to the root of the repository
 DEFAULT_REPORT_FILE      = 'report.html'  # Relative to the DEFAULT_REPORT_DIRECTORY
+
+from ..core.scenarios import get_parameters_meanings, get_metrics_meanings
 
 # Tab code taking from https://inspirationalpixels.com/creating-tabs-with-html-css-and-jquery/
 
@@ -35,8 +38,14 @@ class Report:
           font-size: 15px;
         }
 
+        /*
         * {
           color: #222;
+        }
+        */
+
+        .tippy-content {
+          text-align: left;
         }
 
         .banner {
@@ -462,6 +471,8 @@ class Report:
     self.head.append(et.fromstring('<script defer="true" src="https://cdn.jsdelivr.net/npm/clipboard@2.0.10/dist/clipboard.min.js"></script>'))
     self.head.append(et.fromstring('<script defer="true" src="https://unpkg.com/micromodal/dist/micromodal.min.js"></script>'))
     self.head.append(et.fromstring('<script defer="true" src="https://unpkg.com/panzoom@9.4.0/dist/panzoom.min.js"></script>'))
+    self.head.append(et.fromstring('<script src="https://unpkg.com/@popperjs/core@2"></script>'))
+    self.head.append(et.fromstring('<script src="https://unpkg.com/tippy.js@6"></script>'))
     self.head.append(et.fromstring('<script src="https://code.jquery.com/jquery-3.6.0.slim.min.js"></script>'))
 
     self.head.append(et.fromstring(f'''
@@ -551,6 +562,39 @@ class Report:
         });
       </script>
     '''))
+
+    # Tooltips explaining the params and metrics on hover 
+    script = et.Element('script')
+    self.body.append(script);
+    script.text = '''
+        let paramNotes = ''' + json.dumps(get_parameters_meanings()) + ''';
+
+        let metricNotes = ''' + json.dumps(get_metrics_meanings()) + ''';
+
+        function reloadMeaningTooltips() {
+          document.querySelectorAll('th').forEach(node => {
+            if (node._tippy) {
+              node._tippy.destroy();
+            }
+
+            let name = node.innerText;
+            let note = paramNotes[name] || metricNotes[name];
+
+            if (note) {
+              tippy(node, {
+                content: note,
+                allowHTML: true,
+                interactive: true,
+                placement: (node.parentElement.parentElement.tagName == 'THEAD') ? 'top' : 'left',
+              });
+            }
+          });
+        }
+
+        window.onload = () => {
+          reloadMeaningTooltips();
+        };
+    '''
 
     # Figure modal
     self.body.append(et.fromstring('''

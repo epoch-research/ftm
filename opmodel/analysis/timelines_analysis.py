@@ -19,49 +19,48 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
   if new_report:
     report = Report(report_file_path=report_file_path, report_dir_path=report_dir_path)
 
-  if False:
-    #
-    # Metrics
-    #
+  #
+  # Metrics
+  #
 
-    report.add_header("Metrics", level = 3)
+  report.add_header("Metrics", level = 3)
 
-    table = []
+  table = []
 
-    for group in results.scenario_groups:
-      for scenario in group:
-        row = {**{'timeline' : group.name, 'scenario' : scenario.name}, **scenario.model.takeoff_metrics}
-        for metric in ['rampup_start', 'agi_year', 'doubling_times']:
-          row[metric] = getattr(scenario.model, metric)
-        table.append(row)
-    table = pd.DataFrame(table)
+  for group in results.scenario_groups:
+    for scenario in group:
+      row = {**{'timeline' : group.name, 'scenario' : scenario.name}, **scenario.model.takeoff_metrics}
+      for metric in ['rampup_start', 'agi_year', 'doubling_times']:
+        row[metric] = getattr(scenario.model, metric)
+      table.append(row)
+  table = pd.DataFrame(table)
 
-    container = report.add_html('<div style="overflow-x: auto;"></div>')
-    report.add_data_frame(table, show_index = False, parent = container)
+  container = report.add_html('<div style="overflow-x: auto;"></div>')
+  report.add_data_frame(table, show_index = False, parent = container)
 
 
-    #
-    # Graphs
-    #
+  #
+  # Graphs
+  #
 
-    report.add_header("Compute increase over time", level = 3)
+  report.add_header("Compute increase over time", level = 3)
 
-    # Hackily add legend as an independent separate figure
-    plot_compute_increase(results.scenario_groups[0], title = group.name, show_legend = False)
-    ax = plt.gca()
-    legend_fig = plt.figure()
-    plt.figlegend(*ax.get_legend_handles_labels())
-    report.add_figure(legend_fig)
+  # Hackily add legend as an independent separate figure
+  plot_compute_increase(results.scenario_groups[0], title = group.name, show_legend = False)
+  ax = plt.gca()
+  legend_fig = plt.figure()
+  plt.figlegend(*ax.get_legend_handles_labels())
+  report.add_figure(legend_fig)
 
-    graph_container = report.add_html('<div style="display: flex; overflow-x: auto;"></div>')
+  graph_container = report.add_html('<div style="display: flex; overflow-x: auto;"></div>')
 
-    for i, group in enumerate(results.scenario_groups):
-      plot_compute_increase(group, title = group.name, show_legend = False)
-      report.add_figure(parent = graph_container)
+  for i, group in enumerate(results.scenario_groups):
+    plot_compute_increase(group, title = group.name, show_legend = False)
+    report.add_figure(parent = graph_container)
 
-    if new_report:
-      report_path = report.write()
-      log.info(f'Report stored in {report_path}')
+  if new_report:
+    report_path = report.write()
+    log.info(f'Report stored in {report_path}')
 
   #
   # Model summaries and inputs
@@ -298,6 +297,8 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
       }
 
       tbody.innerHTML = html;
+
+      reloadMeaningTooltips();
     }
 
     function renderInputs(scenarios) {
@@ -336,6 +337,8 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
       theadHtml += '</tr>';
       tbody.innerHTML = html;
       thead.innerHTML = theadHtml;
+
+      reloadMeaningTooltips();
     }
 
     let scenario1Selector = document.getElementById('scenario-1-selector');

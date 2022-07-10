@@ -147,6 +147,7 @@ class Metric:
 
 cached_parameter_table = None
 cached_timelines_parameters = None
+cached_metrics_meanings = None
 
 def get_parameter_table():
   global cached_parameter_table
@@ -167,3 +168,14 @@ def get_timelines_parameters():
 
   return cached_timelines_parameters
 
+def get_parameters_meanings():
+  param_table = get_parameter_table()
+  return param_table['Meaning'].to_dict()
+
+def get_metrics_meanings():
+  global cached_metrics_meanings
+  if cached_metrics_meanings is None:
+    timelines_parameters = pd.read_csv('https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/export?format=csv&gid=1111244907')
+    timelines_parameters = timelines_parameters.set_index(timelines_parameters.columns[0])
+    cached_metrics_meanings = timelines_parameters
+  return cached_metrics_meanings['Meaning'].to_dict()
