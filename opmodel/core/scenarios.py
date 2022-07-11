@@ -2,6 +2,7 @@ from . import utils
 from .utils import log
 from .opmodel import SimulateTakeOff
 
+import urllib.request
 import numpy as np
 import pandas as pd
 
@@ -145,37 +146,31 @@ class Metric:
 # Parameters memory-cache
 #--------------------------------------------------------------------------
 
-cached_parameter_table = None
-cached_timelines_parameters = None
-cached_metrics_meanings = None
+cached_omni_excel = None
+
+def get_omni_excel():
+  global cached_omni_excel
+  if cached_omni_excel is None:
+    response = urllib.request.urlopen('https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/export?format=xlsx')
+    cached_omni_excel = response.read()
+  return cached_omni_excel
 
 def get_parameter_table():
-  global cached_parameter_table
-  if cached_parameter_table is None:
-    parameter_table = pd.read_csv('https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/export?format=csv#gid=0')
-    parameter_table = parameter_table.set_index("Parameter")
-    cached_parameter_table = parameter_table
-    cached_parameter_table.fillna(np.nan, inplace = True)
-
-  return cached_parameter_table
+  parameter_table = pd.read_excel(get_omni_excel(), sheet_name = 'Parameters')
+  parameter_table = parameter_table.set_index("Parameter")
+  parameter_table.fillna(np.nan, inplace = True)
+  return parameter_table
 
 def get_timelines_parameters():
-  global cached_timelines_parameters
-  if cached_timelines_parameters is None:
-    timelines_parameters = pd.read_csv('https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/export?format=csv&gid=2101919125')
-    timelines_parameters = timelines_parameters.set_index(timelines_parameters.columns[0])
-    cached_timelines_parameters = timelines_parameters
-
-  return cached_timelines_parameters
+  timelines_parameters = pd.read_excel(get_omni_excel(), sheet_name = 'Guess FLOP gap & timelines')
+  timelines_parameters = timelines_parameters.set_index(timelines_parameters.columns[0])
+  return timelines_parameters
 
 def get_parameters_meanings():
   param_table = get_parameter_table()
   return param_table['Meaning'].to_dict()
 
 def get_metrics_meanings():
-  global cached_metrics_meanings
-  if cached_metrics_meanings is None:
-    timelines_parameters = pd.read_csv('https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/export?format=csv&gid=1111244907')
-    timelines_parameters = timelines_parameters.set_index(timelines_parameters.columns[0])
-    cached_metrics_meanings = timelines_parameters
-  return cached_metrics_meanings['Meaning'].to_dict()
+  metric_meanings = pd.read_excel(get_omni_excel(), sheet_name = 'Output metrics')
+  metric_meanings = metric_meanings.set_index(metric_meanings.columns[0])
+  return metric_meanings['Meaning'].to_dict()

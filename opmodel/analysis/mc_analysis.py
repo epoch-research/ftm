@@ -269,7 +269,7 @@ def write_mc_analysis_report(n_trials=100, report_file_path=None, report_dir_pat
   report.add_paragraph(f"<span style='font-weight:bold'>n_trials:</span> {n_trials}")
   report.add_paragraph(f"""
     <span style='font-weight:bold'>full_automation_requirements_training:</span>
-    <span data-modal-trigger="ajeya-modal">sampled from Ajeya's distribution (click to view)</span>
+    <span data-modal-trigger="ajeya-modal">sampled from Ajeya's distribution (click here to view)</span>
   """)
   report.add_data_frame_modal(results.ajeya_cdf, 'ajeya-modal', show_index = False)
   report.add_data_frame(results.parameter_table)
