@@ -11,7 +11,7 @@ from xml.etree import ElementTree as et
 DEFAULT_REPORT_DIRECTORY = '_output_'     # Relative to the root of the repository
 DEFAULT_REPORT_FILE      = 'report.html'  # Relative to the DEFAULT_REPORT_DIRECTORY
 
-from ..core.scenarios import get_parameters_meanings, get_metrics_meanings
+from ..core.scenarios import get_parameters_meanings, get_metrics_meanings, get_parameters_colors
 
 # Tab code taking from https://inspirationalpixels.com/creating-tabs-with-html-css-and-jquery/
 
@@ -568,7 +568,7 @@ class Report:
     self.body.append(script);
     script.text = '''
         let paramNotes = ''' + json.dumps(get_parameters_meanings()) + ''';
-
+        let backgroundColors = ''' + json.dumps(get_parameters_colors()) + ''';
         let metricNotes = ''' + json.dumps(get_metrics_meanings()) + ''';
 
         function reloadMeaningTooltips() {
@@ -591,8 +591,20 @@ class Report:
           });
         }
 
+        function reloadParamBgColors() {
+          document.querySelectorAll('th').forEach(node => {
+            let name = node.innerText;
+            let color = backgroundColors[name];
+
+            if (color) {
+              node.style.backgroundColor = color;
+            }
+          });
+        }
+
         window.addEventListener('load', () => {
           reloadMeaningTooltips();
+          reloadParamBgColors();
         });
     '''
 

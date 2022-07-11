@@ -2,9 +2,11 @@ from . import utils
 from .utils import log
 from .opmodel import SimulateTakeOff
 
+import io
 import urllib.request
 import numpy as np
 import pandas as pd
+from openpyxl import load_workbook
 
 class ScenarioRunner:
   def __init__(self):
@@ -143,7 +145,7 @@ class Metric:
     self.value = value
 
 #--------------------------------------------------------------------------
-# Parameters memory-cache
+# Parameters (with a cache)
 #--------------------------------------------------------------------------
 
 cached_omni_excel = None
@@ -169,6 +171,19 @@ def get_timelines_parameters():
 def get_parameters_meanings():
   param_table = get_parameter_table()
   return param_table['Meaning'].to_dict()
+
+def get_parameters_colors():
+  colors = {}
+
+  workbook = load_workbook(io.BytesIO(get_omni_excel()))
+  sheet = workbook['Parameters']
+  for row in sheet.iter_rows(min_row = 2, max_col = 1):
+    cell = row[0]
+    if not cell.value: break
+
+    colors[cell.value] = f'#{cell.fill.bgColor.rgb}'
+
+  return colors
 
 def get_metrics_meanings():
   metric_meanings = pd.read_excel(get_omni_excel(), sheet_name = 'Output metrics')
