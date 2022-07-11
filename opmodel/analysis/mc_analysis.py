@@ -227,16 +227,8 @@ class AjeyaDistribution(rv_continuous):
     self.v = ajeya_cdf_log10[:, 0]
     self.p = ajeya_cdf_log10[:, 1]
 
-    # Extend the distribution to p = 1 (make it continuous)
-    extrapolation_p = np.linspace(self.p[-1], 1, 100)
-    extrapolation_v = self.v[-1] + 10 * (extrapolation_p - self.p[-1])
-
-    # Exclude duplicated point
-    extrapolation_p = extrapolation_p[1:]
-    extrapolation_v = extrapolation_v[1:]
-
-    self.p = np.append(self.p, extrapolation_p)
-    self.v = np.append(self.v, extrapolation_v)
+    # Normalize the distribution
+    self.p /= self.p[-1]
 
     super().__init__(a = 10**np.min(self.v), b = 10**np.max(self.v))
 
