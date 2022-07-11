@@ -483,7 +483,7 @@ class Report:
 
     self.head.append(et.fromstring('''
       <script>
-        window.onload = () => {
+        window.addEventListener('load', () => {
           if (addCsvCopyButton) {
             let clipboard = new ClipboardJS('.copy-button');
           }
@@ -512,7 +512,7 @@ class Report:
               });
             });
           }
-        };
+        });
       </script>
     '''))
 
@@ -591,9 +591,9 @@ class Report:
           });
         }
 
-        window.onload = () => {
+        window.addEventListener('load', () => {
           reloadMeaningTooltips();
-        };
+        });
     '''
 
     # Figure modal
