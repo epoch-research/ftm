@@ -298,6 +298,7 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
       tbody.innerHTML = html;
 
       reloadMeaningTooltips();
+      reloadParamBgColors();
     }
 
     function renderInputs(scenarios) {
@@ -338,6 +339,7 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
       thead.innerHTML = theadHtml;
 
       reloadMeaningTooltips();
+      reloadParamBgColors();
     }
 
     let scenario1Selector = document.getElementById('scenario-1-selector');

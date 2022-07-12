@@ -179,9 +179,9 @@ def get_parameters_colors():
   sheet = workbook['Parameters']
   for row in sheet.iter_rows(min_row = 2, max_col = 1):
     cell = row[0]
-    if not cell.value: break
-
-    colors[cell.value] = f'#{cell.fill.bgColor.rgb}'
+    param = cell.value
+    if not param: break
+    colors[param] = f'#{cell.fill.bgColor.rgb[2:]}' # get rid of alpha
 
   return colors
 
