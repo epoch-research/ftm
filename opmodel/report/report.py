@@ -168,6 +168,9 @@ class Report:
         .tab-links {
           padding-left: 0;
           margin-bottom: 0;
+          height: 37px;
+          border-bottom: 1px solid grey;
+          border-left: 1px solid grey;
         }
 
         /*----- Tab Links -----*/
@@ -181,42 +184,39 @@ class Report:
         .tab-links li {
           float:left;
           list-style:none;
-        }
-
-        .tab-links li:first-child a {
-          border-top-left-radius: 3px;
-        }
-
-        .tab-links li:last-child a {
-          border-top-right-radius: 3px;
+          border: 1px solid grey;
+          border-left: none;
+          background:#b7b7b7;
         }
 
         .tab-links a {
           padding:9px 15px;
           margin-right: 1px;
           display:inline-block;
-          background:#7FB5DA;
           font-size:16px;
           font-weight:600;
           text-decoration: none;
-          color:#4c4c4c;
+          color:black;
+        }
+
+        .tab-links li:hover {
+          background:#aaa;
         }
 
         .tab-links a:hover {
-          background:#a7cce5;
           text-decoration:none;
         }
 
-        li.active a, li.active a:hover {
-          background:#fff;
-          color:#4c4c4c;
+        .tab-links li.active {
+          background:white;
+          border-bottom: 1px solid white;
         }
 
         /*----- Content of Tabs -----*/
         .tab-content {
           padding:15px;
-          border-radius: 0px 3px 3px 3px;
-          box-shadow: 0px 0px 8px rgba(0,0,0,0.15);
+          border: 1px solid grey;
+          border-top: none;
           background:#fff;
           overflow-x: auto;
           width: calc(100vw - 75px);
@@ -686,20 +686,20 @@ class Report:
     parent.append(container)
     plt.close(figure)
 
-  def add_data_frame_modal(self, df, modal_id, index = None, show_index = True, use_render = False, parent=None, **to_html_args):
+  def add_data_frame_modal(self, df, modal_id, index = None, show_index = True, show_index_header = False, use_render = False, parent=None, **to_html_args):
     if parent is None: parent = self.default_parent
 
     modal             = et.Element('div', {'class': 'modal micromodal-slide dataframe-modal', 'id': modal_id, 'aria-hidden': 'true'})
     content_container = et.Element('div', {'class': 'modal-overlay', 'tabindex': '-1', 'data-micromodal-close': 'true'})
     content           = et.Element('div', {'class': 'modal-content-content'})
 
-    self.add_data_frame(df, index, show_index, use_render, parent = content, **to_html_args)
+    self.add_data_frame(df, index, show_index, show_index_header, use_render, parent = content, **to_html_args)
 
     modal.append(content_container)
     content_container.append(content)
     parent.append(modal)
 
-  def add_data_frame(self, df, index = None, show_index = True, use_render = False, parent=None, **to_html_args):
+  def add_data_frame(self, df, index = None, show_index = True, show_index_header = False, use_render = False, parent=None, **to_html_args):
     if parent is None: parent = self.default_parent
 
     if isinstance(df, dict):
@@ -709,7 +709,7 @@ class Report:
     if isinstance(df, pd.io.formats.style.Styler):
       df.set_table_attributes('class="dataframe"')
 
-    html = df.to_html(index = show_index, **to_html_args)
+    html = df.to_html(index = show_index, index_names = show_index_header, **to_html_args)
     html = html.replace('&nbsp;', '') # hack!
 
     dataframe_wrapper = et.fromstring(f'<div class="dataframe-container">{html}</div>')

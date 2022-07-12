@@ -14,6 +14,7 @@ def sensitivity_analysis():
   log.info('Retrieving parameters...')
 
   parameter_table = get_parameter_table()
+  parameter_table = parameter_table[['Conservative', 'Best guess', 'Aggressive']]
   best_guess_parameters = {parameter : row["Best guess"] \
                            for parameter, row in parameter_table.iterrows()}
 
@@ -99,6 +100,10 @@ def write_sensitivity_analysis_report(report_file_path=None, report_dir_path=Non
 
   with open(cache_filename, 'rb') as f:
     results = pickle.load(f)
+
+    parameter_table = get_parameter_table()
+    parameter_table = parameter_table[['Conservative', 'Best guess', 'Aggressive']]
+    results.parameter_table = parameter_table
   # end testing
   #############################################################################
 

@@ -120,8 +120,9 @@ def mc_analysis(n_trials = 100):
 
   # Retrieve parameter table
   log.info('Retrieving parameters...')
-  parameter_table = pd.read_csv('https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/export?format=csv#gid=0')
+  parameter_table = get_parameter_table()
   parameter_table = parameter_table.set_index("Parameter")
+  parameter_table = parameter_table[['Conservative', 'Best guess', 'Aggressive', 'Type']]
 
   # We are sampling full_automation_requirements_training from Ajeya's distribution
   ajeya_cdf = pd.read_csv('https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/export?format=csv&gid=1177136586')
@@ -230,6 +231,10 @@ def write_mc_analysis_report(n_trials=100, report_file_path=None, report_dir_pat
 
   with open(cache_filename, 'rb') as f:
     results = pickle.load(f)
+
+    parameter_table = get_parameter_table()
+    parameter_table = parameter_table[['Conservative', 'Best guess', 'Aggressive', 'Type']]
+    results.parameter_table = parameter_table
   # end testing
   #############################################################################
 
@@ -243,7 +248,7 @@ def write_mc_analysis_report(n_trials=100, report_file_path=None, report_dir_pat
 
   metrics_quantiles = pd.DataFrame(results.metrics_quantiles)
   display(metrics_quantiles)
-  report.add_data_frame(metrics_quantiles)
+  report.add_data_frame(metrics_quantiles, show_index = False)
 
   # Plot trajectories
   for state_metric in results.state_metrics:
