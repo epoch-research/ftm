@@ -57,7 +57,8 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
 
   for i, group in enumerate(results.scenario_groups):
     plot_compute_increase(group, title = group.name, show_legend = False)
-    report.add_figure(parent = graph_container)
+    figure = report.add_figure(parent = graph_container)
+    figure.set('style', 'min-width: 900px')
 
   #
   # Model summaries and inputs

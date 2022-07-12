@@ -50,6 +50,10 @@ class Report:
           text-align: left;
         }
 
+        .tippy-content a {
+          color: white;
+        }
+
         .banner {
           background-color: #ddd;
           padding: 8px;
@@ -688,6 +692,8 @@ class Report:
 
     parent.append(container)
     plt.close(figure)
+
+    return container
 
   def add_data_frame_modal(self, df, modal_id, index = None, show_index = True, show_index_header = False, use_render = False, parent=None, **to_html_args):
     if parent is None: parent = self.default_parent
