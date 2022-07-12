@@ -5,6 +5,7 @@ Monte carlo analysis.
 from . import log
 from . import *
 
+from scipy.interpolate import interp1d
 from scipy.stats import rv_continuous
 from scipy.special import erfinv
 from numpy.random import default_rng
@@ -244,9 +245,6 @@ class AjeyaDistribution(rv_continuous):
       AjeyaDistribution.cdf_pd = pd.read_csv('https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/export?format=csv&gid=1177136586')
       AjeyaDistribution.cdf_np = AjeyaDistribution.cdf_pd.to_numpy()
 
-      # Normalize the distribution
-      AjeyaDistribution.cdf_pd.iloc[:, 1] = AjeyaDistribution.cdf_pd.iloc[:, 1]/AjeyaDistribution.cdf_pd.iloc[-1, 1]
-
     ajeya_cdf_log10 = AjeyaDistribution.cdf_np
 
     self.ajeya_cdf_log10 = ajeya_cdf_log10
@@ -255,15 +253,10 @@ class AjeyaDistribution(rv_continuous):
 
     super().__init__(a = 10**np.min(self.v), b = 10**np.max(self.v))
 
-  def _cdf(self, x):
-    y = np.log10(x)
-    v = np.interp(y, self.v, self.p)
-    return v
-
   def _ppf(self, q):
-    # We'll approximate the PPF ourselves (scipy is unable to handle it)
-    v = np.interp(q, self.p, self.v)
-    return 10**v
+    # Ajeya's distribution stops at p ~= 0.9. We are completing it by placing the missing
+    # p = 0.1 over 10**100.
+    return 10**interp1d(self.p, self.v, bounds_error = False, fill_value = 100)(q)
 
 class SkewedLogUniform(rv_continuous):
   def __init__(self, low, med, high, kind = 'pos'):
