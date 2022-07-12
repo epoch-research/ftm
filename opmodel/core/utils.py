@@ -69,6 +69,11 @@ def get_parameter_table():
   parameter_table.fillna(np.nan, inplace = True)
   return parameter_table
 
+def get_rank_correlations():
+  rank_correlations = pd.read_excel(get_omni_excel(), sheet_name = 'Rank correlations', skiprows = 2)
+  rank_correlations = rank_correlations.set_index(rank_correlations.columns[0])
+  return rank_correlations
+
 def get_timelines_parameters():
   timelines_parameters = pd.read_excel(get_omni_excel(), sheet_name = 'Guess FLOP gap & timelines')
   timelines_parameters = timelines_parameters.set_index(timelines_parameters.columns[0])

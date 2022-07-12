@@ -75,7 +75,7 @@ class Report:
         }
 
         .figure-container img {
-          max-width: 1200px;
+          max-width: calc(min(100%, 1200px));
           max-height: 550px;
         }
 

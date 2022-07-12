@@ -11,6 +11,7 @@ from numpy.random import default_rng
 from matplotlib import cm
 from xml.etree import ElementTree as et
 from copula_wrapper import joint_distribution
+from ..core.utils import get_parameter_table, get_rank_correlations
 
 rng = default_rng()
 
@@ -92,11 +93,8 @@ def mc_analysis(n_trials = 100):
 def sample_params(param_count):
   # Retrieve parameter table
   log.info('Retrieving parameters...')
-  parameter_table = pd.read_csv('https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/export?format=csv#gid=0')
-  parameter_table = parameter_table.set_index("Parameter")
-
-  rank_correlations = pd.read_csv('https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/export?format=csv&gid=605978895', skiprows = 2)
-  rank_correlations = rank_correlations.set_index(rank_correlations.columns[0])
+  parameter_table = get_parameter_table()
+  rank_correlations = get_rank_correlations()
 
   # We'll use Ajeya's distribution for this one
   parameter_table.drop('full_automation_requirements_training', inplace = True)
@@ -123,6 +121,16 @@ def sample_params(param_count):
       r = rank_correlations[right][left]
       if not np.isnan(r) and r != 0:
         pairwise_rank_corr[(left, right)] = r
+
+  ###################################################################
+  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  # For testing purposes. Remove when the real correlations are fixed
+  for left in marginals:
+    for right in marginals:
+      if left != right:
+        pairwise_rank_corr[(left, right)] = 0.2
+  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  ###################################################################
 
   log.info(f'Generating samples...')
   joint = joint_distribution.JointDistribution(marginals, pairwise_rank_corr, rank_corr_method = "spearman")
@@ -167,7 +175,6 @@ def write_mc_analysis_report(n_trials=100, report_file_path=None, report_dir_pat
     report = Report(report_file_path=report_file_path, report_dir_path=report_dir_path)
 
   metrics_quantiles = pd.DataFrame(results.metrics_quantiles)
-  display(metrics_quantiles)
   report.add_data_frame(metrics_quantiles)
 
   # Plot trajectories
@@ -257,14 +264,15 @@ class AjeyaDistribution(rv_continuous):
     if AjeyaDistribution.cdf_np is None:
       AjeyaDistribution.cdf_pd = pd.read_csv('https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/export?format=csv&gid=1177136586')
       AjeyaDistribution.cdf_np = AjeyaDistribution.cdf_pd.to_numpy()
+
+      # Normalize the distribution
+      AjeyaDistribution.cdf_pd.iloc[:, 1] = AjeyaDistribution.cdf_pd.iloc[:, 1]/AjeyaDistribution.cdf_pd.iloc[-1, 1]
+
     ajeya_cdf_log10 = AjeyaDistribution.cdf_np
 
     self.ajeya_cdf_log10 = ajeya_cdf_log10
     self.v = ajeya_cdf_log10[:, 0]
     self.p = ajeya_cdf_log10[:, 1]
-
-    # Normalize the distribution
-    self.p /= self.p[-1]
 
     super().__init__(a = 10**np.min(self.v), b = 10**np.max(self.v))
 
