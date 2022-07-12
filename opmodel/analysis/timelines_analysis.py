@@ -35,8 +35,7 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
       table.append(row)
   table = pd.DataFrame(table)
 
-  container = report.add_html('<div style="overflow-x: auto;"></div>')
-  report.add_data_frame(table, show_index = False, parent = container)
+  report.add_data_frame(table, show_index = False)
 
 
   #

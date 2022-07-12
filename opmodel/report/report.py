@@ -20,6 +20,8 @@ class Report:
     self.report_file_path = report_file_path or DEFAULT_REPORT_FILE
     self.report_dir_path  = report_dir_path  or Report.default_report_path()
 
+    self.make_tables_scrollable = True
+
     self.add_csv_copy_button = add_csv_copy_button
 
     self.tab_groups = []
@@ -714,6 +716,9 @@ class Report:
 
     container = et.Element('div', {'class': 'table-container'})
     container.append(dataframe_wrapper)
+
+    if self.make_tables_scrollable:
+      container.set('style', 'overflow-x: auto')
 
     if self.add_csv_copy_button:
       copy_button_container = et.Element('div', {'class': 'copy-button-container'})
