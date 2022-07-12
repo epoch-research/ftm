@@ -4,7 +4,6 @@ from xml.etree import ElementTree as et
 from . import log
 from . import *
 from .exploration_analysis import add_scenario_group_to_report, plot_compute_increase
-from ..core.utils import get_parameter_table
 from ..core.scenarios import ScenarioRunner
 
 class TimelinesAnalysisResults:
@@ -383,30 +382,10 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
   log.info(f'Done')
 
 def timelines_analysis(report_file_path=None, report_dir_path=None):
-  #############################################################################
-  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  # TODO Remove this block and uncomment the lines below it
-  # TEST
-  import os
-  import pickle
-  from . import CACHE_DIR
-  cache_filename = os.path.join(CACHE_DIR, 'timelines_analysis.pickle')
-
-  if not os.path.exists(cache_filename):
-    scenarios = ScenarioRunner()
-    scenarios.simulate_all_scenarios()
-    with open(cache_filename, 'wb') as f:
-      pickle.dump(scenarios, f) # , pickle.HIGHEST_PROTOCOL)
-
-  with open(cache_filename, 'rb') as f:
-    scenarios = pickle.load(f)
-  # end testing
-  #############################################################################
-
   log.info(f'Simulating scenarios...')
-  # TODO uncomment the lines below
-  #scenarios = ScenarioRunner()
-  #scenarios.simulate_all_scenarios()
+
+  scenarios = ScenarioRunner()
+  scenarios.simulate_all_scenarios()
 
   results = TimelinesAnalysisResults()
   results.scenario_groups = [group for group in scenarios.groups if group.name != 'normal']

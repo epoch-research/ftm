@@ -7,7 +7,7 @@ from .sensitivity_analysis import write_sensitivity_analysis_report
 from .timelines_analysis import write_timelines_analysis_report
 from .mc_analysis import write_mc_analysis_report
 
-def joint_analysis(report_file_path=None, report_dir_path=None, report=None):
+def joint_analysis(report_file_path=None, report_dir_path=None, quick_test_mode=False, report=None):
   if report_file_path is None:
     report_file_path = 'joint_report.html'
 
@@ -26,14 +26,17 @@ def joint_analysis(report_file_path=None, report_dir_path=None, report=None):
   log.info('Generating sensitivity analysis tab')
   log.indent()
   report.begin_tab('Sensitivity analysis')
-  write_sensitivity_analysis_report(report = report)
+  write_sensitivity_analysis_report(report = report, quick_test_mode = quick_test_mode)
   log.deindent()
   log.info()
 
   log.info('Generating Monte Carlo analysis tab')
   log.indent()
   report.begin_tab('Monte Carlo analysis')
-  write_mc_analysis_report(report = report)
+  if quick_test_mode:
+    write_mc_analysis_report(report = report, n_trials = 4)
+  else:
+    write_mc_analysis_report(report = report)
   log.deindent()
   log.info()
 
@@ -47,5 +50,11 @@ def joint_analysis(report_file_path=None, report_dir_path=None, report=None):
 
 if __name__ == '__main__':
   parser = init_cli_arguments()
+  parser.add_argument(
+    "-q",
+    "--quick-test-mode",
+    action='store_true',
+  )
   args = parser.parse_args()
-  joint_analysis(report_file_path=args.output_file, report_dir_path=args.output_dir)
+
+  joint_analysis(report_file_path=args.output_file, report_dir_path=args.output_dir, quick_test_mode=args.quick_test_mode)

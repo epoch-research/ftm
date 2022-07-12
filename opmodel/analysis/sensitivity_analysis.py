@@ -10,7 +10,7 @@ class SensitivityAnalysisResults:
     self.parameter_table = parameter_table
     self.table = table
 
-def sensitivity_analysis():
+def sensitivity_analysis(quick_test_mode=False):
   log.info('Retrieving parameters...')
 
   parameter_table = get_parameter_table()
@@ -71,6 +71,9 @@ def sensitivity_analysis():
 
     current_parameter_index += 1
 
+    if quick_test_mode and current_parameter_index >= 1:
+      break
+
   table = pd.DataFrame(table)
   table = table.set_index('Parameter').sort_values(by='delta', ascending=False)
 
@@ -80,35 +83,11 @@ def sensitivity_analysis():
 
   return results
 
-def write_sensitivity_analysis_report(report_file_path=None, report_dir_path=None, report=None):
+def write_sensitivity_analysis_report(quick_test_mode=False, report_file_path=None, report_dir_path=None, report=None):
   if report_file_path is None:
     report_file_path = 'sensitivity_analysis.html'
 
-  #############################################################################
-  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  # TODO Remove this block and uncomment the line below it
-  # TEST
-  import os
-  import pickle
-  from . import CACHE_DIR
-  cache_filename = os.path.join(CACHE_DIR, 'sensitivity_analysis.pickle')
-
-  if not os.path.exists(cache_filename):
-    results = sensitivity_analysis()
-    with open(cache_filename, 'wb') as f:
-      pickle.dump(results, f) # , pickle.HIGHEST_PROTOCOL)
-
-  with open(cache_filename, 'rb') as f:
-    results = pickle.load(f)
-
-    parameter_table = get_parameter_table()
-    parameter_table = parameter_table[['Conservative', 'Best guess', 'Aggressive']]
-    results.parameter_table = parameter_table
-  # end testing
-  #############################################################################
-
-  # TODO uncomment this line
-  #results = sensitivity_analysis()
+  results = sensitivity_analysis(quick_test_mode)
 
   log.info('Writing report...')
 

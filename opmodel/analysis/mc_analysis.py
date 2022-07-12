@@ -95,10 +95,8 @@ def sample_params(param_count):
   # Retrieve parameter table
   log.info('Retrieving parameters...')
   parameter_table = get_parameter_table()
+  parameter_table = parameter_table[['Conservative', 'Best guess', 'Aggressive', 'Type']]
   rank_correlations = get_rank_correlations()
-
-  # We'll use Ajeya's distribution for this one
-  parameter_table.drop('full_automation_requirements_training', inplace = True)
 
   marginals = {}
   for parameter, row in parameter_table.iterrows():
@@ -144,31 +142,7 @@ def write_mc_analysis_report(n_trials=100, report_file_path=None, report_dir_pat
   if report_file_path is None:
     report_file_path = 'mc_analysis.html'
 
-  #############################################################################
-  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  # TODO Remove this block and uncomment the line below it
-  # TEST
-  import os
-  import pickle
-  from . import CACHE_DIR
-  cache_filename = os.path.join(CACHE_DIR, 'mc_analysis.pickle')
-
-  if not os.path.exists(cache_filename):
-    results = mc_analysis(n_trials)
-    with open(cache_filename, 'wb') as f:
-      pickle.dump(results, f) # , pickle.HIGHEST_PROTOCOL)
-
-  with open(cache_filename, 'rb') as f:
-    results = pickle.load(f)
-
-    parameter_table = get_parameter_table()
-    parameter_table = parameter_table[['Conservative', 'Best guess', 'Aggressive', 'Type']]
-    results.parameter_table = parameter_table
-  # end testing
-  #############################################################################
-
-  # TODO uncomment this line
-  #results = mc_analysis(n_trials)
+  results = mc_analysis(n_trials)
 
   log.info('Writing report...')
   new_report = report is None

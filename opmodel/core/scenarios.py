@@ -1,5 +1,5 @@
 from . import utils
-from .utils import log
+from .utils import log, get_parameter_table, get_timelines_parameters
 from .opmodel import SimulateTakeOff
 
 import numpy as np
