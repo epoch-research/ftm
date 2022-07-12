@@ -15,21 +15,27 @@ def joint_analysis(report_file_path=None, report_dir_path=None, report=None):
   if new_report:
     report = Report(report_file_path=report_file_path, report_dir_path=report_dir_path)
 
+  log.info('Generating timelines analysis tab')
   log.indent()
   report.begin_tab_group()
   report.begin_tab('Timelines analysis')
   write_timelines_analysis_report(report = report)
   log.deindent()
+  log.info()
 
+  log.info('Generating sensitivity analysis tab')
   log.indent()
   report.begin_tab('Sensitivity analysis')
   write_sensitivity_analysis_report(report = report)
   log.deindent()
+  log.info()
 
+  log.info('Generating Monte Carlo analysis tab')
   log.indent()
   report.begin_tab('Monte Carlo analysis')
   write_mc_analysis_report(report = report)
   log.deindent()
+  log.info()
 
   report.end_tab_group()
 

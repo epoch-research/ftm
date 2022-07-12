@@ -4,7 +4,8 @@ from xml.etree import ElementTree as et
 from . import log
 from . import *
 from .exploration_analysis import add_scenario_group_to_report, plot_compute_increase
-from ..core.scenarios import ScenarioRunner, get_parameter_table
+from ..core.utils import get_parameter_table
+from ..core.scenarios import ScenarioRunner
 
 class TimelinesAnalysisResults:
   pass
@@ -15,6 +16,7 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
 
   results = timelines_analysis()
 
+  log.info('Writing report...')
   new_report = report is None
   if new_report:
     report = Report(report_file_path=report_file_path, report_dir_path=report_dir_path)
@@ -56,10 +58,6 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
   for i, group in enumerate(results.scenario_groups):
     plot_compute_increase(group, title = group.name, show_legend = False)
     report.add_figure(parent = graph_container)
-
-  if new_report:
-    report_path = report.write()
-    log.info(f'Report stored in {report_path}')
 
   #
   # Model summaries and inputs
@@ -377,7 +375,11 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
   '''
   report.body.append(script)
 
+  if new_report:
+    report_path = report.write()
+    log.info(f'Report stored in {report_path}')
 
+  log.info(f'Done')
 
 def timelines_analysis(report_file_path=None, report_dir_path=None):
   #############################################################################
@@ -400,6 +402,7 @@ def timelines_analysis(report_file_path=None, report_dir_path=None):
   # end testing
   #############################################################################
 
+  log.info(f'Simulating scenarios...')
   # TODO uncomment the lines below
   #scenarios = ScenarioRunner()
   #scenarios.simulate_all_scenarios()

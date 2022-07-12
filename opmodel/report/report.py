@@ -11,9 +11,9 @@ from xml.etree import ElementTree as et
 DEFAULT_REPORT_DIRECTORY = '_output_'     # Relative to the root of the repository
 DEFAULT_REPORT_FILE      = 'report.html'  # Relative to the DEFAULT_REPORT_DIRECTORY
 
-from ..core.scenarios import get_parameters_meanings, get_metrics_meanings, get_parameters_colors
+from ..core.utils import get_parameters_meanings, get_metrics_meanings, get_parameters_colors
 
-# Tab code taking from https://inspirationalpixels.com/creating-tabs-with-html-css-and-jquery/
+# Tabs code taking from https://inspirationalpixels.com/creating-tabs-with-html-css-and-jquery/
 
 class Report:
   def __init__(self, report_file_path=None, report_dir_path=None, add_csv_copy_button=False):
@@ -140,7 +140,7 @@ class Report:
         }
 
         #image-modal img {
-          height: 90%;
+          height: 90vh;
           max-width: 100%;
           cursor: move;
         }
@@ -186,7 +186,7 @@ class Report:
           list-style:none;
           border: 1px solid grey;
           border-left: none;
-          background:#b7b7b7;
+          background:#e7e7e7;
         }
 
         .tab-links a {

@@ -9,6 +9,7 @@ from scipy.special import erfinv
 from numpy.random import default_rng
 rng = default_rng()
 from matplotlib import cm
+from xml.etree import ElementTree as et
 
 class McAnalysisResults:
   pass
@@ -247,7 +248,6 @@ def write_mc_analysis_report(n_trials=100, report_file_path=None, report_dir_pat
     report = Report(report_file_path=report_file_path, report_dir_path=report_dir_path)
 
   metrics_quantiles = pd.DataFrame(results.metrics_quantiles)
-  display(metrics_quantiles)
   report.add_data_frame(metrics_quantiles, show_index = False)
 
   # Plot trajectories
@@ -271,13 +271,22 @@ def write_mc_analysis_report(n_trials=100, report_file_path=None, report_dir_pat
 
   # Write down the parameters
   report.add_header("Inputs", level = 3)
-  report.add_paragraph(f"<span style='font-weight:bold'>n_trials:</span> {n_trials}")
-  report.add_paragraph(f"""
-    <span style='font-weight:bold'>full_automation_requirements_training:</span>
-    <span data-modal-trigger="ajeya-modal">sampled from Ajeya's distribution (click here to view)</span>
-  """)
+  report.add_paragraph(f"<span style='font-weight:bold'>Number of samples:</span> {n_trials}")
   report.add_data_frame_modal(results.ajeya_cdf, 'ajeya-modal', show_index = False)
-  report.add_data_frame(results.parameter_table)
+
+  # full_automation_requirements_training is special (we are sampling from Ajeya's distribution)
+  table = report.add_data_frame(results.parameter_table.drop(index = 'full_automation_requirements_training'))
+  tbody = None
+  for element in table.iter():
+    if element.tag == 'tbody':
+      tbody = element
+      break
+  tbody.insert(0, et.fromstring('''
+    <tr>
+      <th>full_automation_requirements_training</th>
+      <td colspan="4" style="text-align: center">sampled from Cotra's distribution <span data-modal-trigger="ajeya-modal">(<i>click here to view</i>)</span></td>
+    </tr>
+  '''))
 
   if new_report:
     report_path = report.write()
