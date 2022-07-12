@@ -8,6 +8,7 @@ import argparse
 from ..core.opmodel import SimulateTakeOff
 from ..core.utils import display, log, get_parameter_table
 from ..report.report import Report
+from ..core.scenarios import get_parameter_table
 
 # Some constants
 CACHE_DIR = '_cache_/diffy'

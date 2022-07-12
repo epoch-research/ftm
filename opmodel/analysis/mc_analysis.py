@@ -5,105 +5,17 @@ Monte carlo analysis.
 from . import log
 from . import *
 
+from scipy.stats import rv_continuous
 from scipy.special import erfinv
 from numpy.random import default_rng
-rng = default_rng()
 from matplotlib import cm
 from xml.etree import ElementTree as et
+from copula_wrapper import joint_distribution
+
+rng = default_rng()
 
 class McAnalysisResults:
   pass
-
-def credence_interval(low, med, high, alpha=0.9, kind='pos', skewed_sampling=True):
-  """ Returns a random number sampled from a lognormal
-      with a given 90% confidence interval
-      If frac, we transform the space to sample from odds space
-  """
-
-  if high < low:
-    low, high = high, low
-
-  if kind == "frac":
-    low = low / (1. - low)
-    med = med / (1. - med)
-    high = high / (1. - high)
-
-  elif kind == 'neg':
-    low, med, high = -high, -med, -low
-
-  elif kind == "inv_frac":
-    low, med, high = 1/high, 1/med, 1/low
-    low = low / (1. - low)
-    med = med / (1. - med)
-    high = high / (1. - high)
-
-  elif not kind == "pos":
-    raise ValueError(f"Unimplemented kind: {kind}")
-
-  assert low < med and med < high
-  
-  if not skewed_sampling:
-    inv_error = erfinv(alpha)
-    mu = np.log(np.sqrt(low* high))
-    sigma = (1./(np.sqrt(2)*inv_error))*np.log(np.sqrt(high/low))
-    sample = rng.lognormal(mu, sigma)
-  
-  else: #if skewed_sampling:
-    coin_flip = rng.integers(0,1)
-    if coin_flip == 0:
-      low = med
-    else: # if coin_flip == 1:
-      high = med
-    
-    sample = np.exp(rng.uniform(np.log(low), np.log(high)))
-
-  if kind == "frac":
-    sample = 1. / (1. + 1. / sample)
-  elif kind == "neg":
-    sample = -sample
-  elif kind == "inv_frac":
-    sample = 1. + 1. / sample
-
-  return sample
-
-def sample_from_cdf(cdf):
-  """cdf must be a Numpy table with the values in the first column and the probabilities in the second"""
-  p = np.random.random()
-  for row in cdf:
-    if row[1] > p:
-      break
-  sample = row[0]
-  return sample
-
-# https://stackoverflow.com/questions/18313322/plotting-quantiles-median-and-spread-using-scipy-and-matplotlib
-def plot_quantiles(ts, data, xlabel, ylabel, n_quantiles = 7, colormap = cm.Blues):
-  # Fix overflows
-  UPPER_BOUND = np.quantile(data, 0.95)
-  data[data == 0.] = UPPER_BOUND
-  data[data > UPPER_BOUND] = UPPER_BOUND
-
-  # Compute quantiles
-  n = len(ts)
-  percentiles = np.linspace(0,100,n_quantiles)
-
-  marks=np.zeros((n,n_quantiles))
-  for i in range(n_quantiles):
-    for t in range(n):
-      marks[t,i]=np.percentile(data[:,t],percentiles[i])
-
-  # Plot
-  half = int((n_quantiles-1)/2)
-  fig, (ax1) = plt.subplots(nrows=1, ncols=1, sharex=True, figsize=(8,4))
-  ax1.plot(ts, marks[:,half],color='k')
-  for i in range(half):
-    ax1.fill_between(ts, marks[:,i],marks[:,-(i+1)],color=colormap(i/half))
-
-  ax1.set_title("Takeoff simulation", fontsize=15)
-  ax1.set_yscale("log")
-  ax1.tick_params(labelsize=11.5)
-  ax1.set_xlabel(xlabel, fontsize=14)
-  ax1.set_ylabel(ylabel, fontsize=14)
-  fig.tight_layout()
 
 def mc_analysis(n_trials = 100):
   scalar_metrics = ['rampup_start', 'agi_year']
@@ -119,44 +31,13 @@ def mc_analysis(n_trials = 100):
       state_metric : [] for state_metric in state_metrics
   }
 
-  # Retrieve parameter table
-  log.info('Retrieving parameters...')
-  parameter_table = get_parameter_table()
-  parameter_table = parameter_table.set_index("Parameter")
-  parameter_table = parameter_table[['Conservative', 'Best guess', 'Aggressive', 'Type']]
-
-  # We are sampling full_automation_requirements_training from Ajeya's distribution
-  ajeya_cdf = pd.read_csv('https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/export?format=csv&gid=1177136586')
-  ajeya_cdf_numpy = ajeya_cdf.to_numpy()
-  parameter_table.drop('full_automation_requirements_training', inplace = True)
-
-  param_samples = {
-    parameter : []
-    for parameter, row in parameter_table.iterrows()
-    if not np.isnan(row['Conservative']) and not np.isnan(row['Aggressive'])
-  }
-  param_samples['full_automation_requirements_training'] = []
+  samples, parameter_table, rank_correlations = sample_params(n_trials)
 
   log.info(f'Running simulations...')
   for trial in range(n_trials):
     log.info(f'  Running simulation {trial+1}/{n_trials}...')
-    # Sample parameters
-    mc_params = {
-        parameter : credence_interval(row['Conservative'],
-                                      row['Best guess'],
-                                      row['Aggressive'],
-                                      kind=row['Type'])
-                    if not np.isnan(row['Conservative'])\
-                    and not np.isnan(row['Aggressive'])
-                    else row['Best guess']
-        for parameter, row in parameter_table.iterrows()
-    }
 
-    mc_params['full_automation_requirements_training'] = 10**sample_from_cdf(ajeya_cdf_numpy)
-
-    # Collect parameter samples
-    for param, samples in param_samples.items():
-      samples.append(mc_params[param])
+    mc_params = samples.iloc[trial].to_dict()
 
     # Run simulation
     mc_model = SimulateTakeOff(**mc_params)
@@ -174,9 +55,6 @@ def mc_analysis(n_trials = 100):
         metric_value = mc_model.t_end
       elif scalar_metric == "agi_year" and metric_value is None:
         metric_value = mc_model.t_end
-      # if metric_value < 0.:
-      #   print(f"{scalar_metric} is negative!")
-      #   raise Exception
       scalar_metrics[scalar_metric].append(metric_value)
 
     for state_metric in state_metrics:
@@ -205,13 +83,54 @@ def mc_analysis(n_trials = 100):
   results.state_metrics     = state_metrics
   results.n_trials          = n_trials
   results.timesteps         = mc_model.timesteps
-  results.param_samples     = param_samples
-  results.ajeya_cdf         = ajeya_cdf
+  results.param_samples     = samples
+  results.ajeya_cdf         = AjeyaDistribution.cdf_pd
   results.parameter_table   = parameter_table
 
   return results
-  
 
+def sample_params(param_count):
+  # Retrieve parameter table
+  log.info('Retrieving parameters...')
+  parameter_table = pd.read_csv('https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/export?format=csv#gid=0')
+  parameter_table = parameter_table.set_index("Parameter")
+
+  rank_correlations = pd.read_csv('https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/export?format=csv&gid=605978895', skiprows = 2)
+  rank_correlations = rank_correlations.set_index(rank_correlations.columns[0])
+
+  # We'll use Ajeya's distribution for this one
+  parameter_table.drop('full_automation_requirements_training', inplace = True)
+
+  marginals = {}
+  for parameter, row in parameter_table.iterrows():
+    if not np.isnan(row['Conservative']) and not np.isnan(row['Aggressive']):
+      marginal = SkewedLogUniform(
+        row['Conservative'],
+        row['Best guess'],
+        row['Aggressive'],
+        kind = row['Type']
+      )
+    else: 
+      marginal = PointDistribution(row['Best guess'])
+
+    marginals[parameter] = marginal
+
+  marginals['full_automation_requirements_training'] = AjeyaDistribution()
+
+  pairwise_rank_corr = {}
+  for left in marginals:
+    for right in marginals:
+      r = rank_correlations[right][left]
+      if not np.isnan(r) and r != 0:
+        pairwise_rank_corr[(left, right)] = r
+
+  log.info(f'Generating samples...')
+  joint = joint_distribution.JointDistribution(marginals, pairwise_rank_corr, rank_corr_method = "spearman")
+  samples = joint.rvs(param_count)
+
+  return samples, parameter_table, rank_correlations
+
+  
 def write_mc_analysis_report(n_trials=100, report_file_path=None, report_dir_path=None, report=None):
   if report_file_path is None:
     report_file_path = 'mc_analysis.html'
@@ -248,7 +167,8 @@ def write_mc_analysis_report(n_trials=100, report_file_path=None, report_dir_pat
     report = Report(report_file_path=report_file_path, report_dir_path=report_dir_path)
 
   metrics_quantiles = pd.DataFrame(results.metrics_quantiles)
-  report.add_data_frame(metrics_quantiles, show_index = False)
+  display(metrics_quantiles)
+  report.add_data_frame(metrics_quantiles)
 
   # Plot trajectories
   for state_metric in results.state_metrics:
@@ -258,10 +178,11 @@ def write_mc_analysis_report(n_trials=100, report_file_path=None, report_dir_pat
 
   # Display input parameter statistics
   param_stats = []
-  for samples in results.param_samples.values():
+  for key, samples in results.param_samples.iteritems():
+    samples = samples.to_numpy()
     stats = [np.mean(samples)] + [np.quantile(samples, q) for q in results.quantiles]
     param_stats.append(stats)
-  param_names = results.param_samples.keys()
+  param_names = results.param_samples.columns
   columns = [['mean'] + results.quantiles]
 
   report.add_header("Input parameters stats", level = 3)
@@ -293,6 +214,151 @@ def write_mc_analysis_report(n_trials=100, report_file_path=None, report_dir_pat
     log.info(f'Report stored in {report_path}')
 
   log.info('Done')
+
+# https://stackoverflow.com/questions/18313322/plotting-quantiles-median-and-spread-using-scipy-and-matplotlib
+def plot_quantiles(ts, data, xlabel, ylabel, n_quantiles = 7, colormap = cm.Blues):
+  # Fix overflows
+  UPPER_BOUND = np.quantile(data, 0.95)
+  data[data == 0.] = UPPER_BOUND
+  data[data > UPPER_BOUND] = UPPER_BOUND
+
+  # Compute quantiles
+  n = len(ts)
+  percentiles = np.linspace(0,100,n_quantiles)
+
+  marks=np.zeros((n,n_quantiles))
+  for i in range(n_quantiles):
+    for t in range(n):
+      marks[t,i]=np.percentile(data[:,t],percentiles[i])
+
+  # Plot
+  half = int((n_quantiles-1)/2)
+  fig, (ax1) = plt.subplots(nrows=1, ncols=1, sharex=True, figsize=(8,4))
+  ax1.plot(ts, marks[:,half],color='k')
+  for i in range(half):
+    ax1.fill_between(ts, marks[:,i],marks[:,-(i+1)],color=colormap(i/half))
+
+  ax1.set_title("Takeoff simulation", fontsize=15)
+  ax1.set_yscale("log")
+  ax1.tick_params(labelsize=11.5)
+  ax1.set_xlabel(xlabel, fontsize=14)
+  ax1.set_ylabel(ylabel, fontsize=14)
+  fig.tight_layout()
+
+# -----------------------------------------------------------------------------
+# Distributions
+# -----------------------------------------------------------------------------
+
+class AjeyaDistribution(rv_continuous):
+  cdf_pd = None
+  cdf_np = None
+
+  def __init__(self):
+    if AjeyaDistribution.cdf_np is None:
+      AjeyaDistribution.cdf_pd = pd.read_csv('https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/export?format=csv&gid=1177136586')
+      AjeyaDistribution.cdf_np = AjeyaDistribution.cdf_pd.to_numpy()
+    ajeya_cdf_log10 = AjeyaDistribution.cdf_np
+
+    self.ajeya_cdf_log10 = ajeya_cdf_log10
+    self.v = ajeya_cdf_log10[:, 0]
+    self.p = ajeya_cdf_log10[:, 1]
+
+    # Normalize the distribution
+    self.p /= self.p[-1]
+
+    super().__init__(a = 10**np.min(self.v), b = 10**np.max(self.v))
+
+  def _cdf(self, x):
+    y = np.log10(x)
+    v = np.interp(y, self.v, self.p)
+    return v
+
+  def _ppf(self, q):
+    # We'll approximate the PPF ourselves (scipy is unable to handle it)
+    v = np.interp(q, self.p, self.v)
+    return 10**v
+
+class SkewedLogUniform(rv_continuous):
+  def __init__(self, low, med, high, kind = 'pos'):
+    if high < low:
+      low, high = high, low
+
+    super().__init__(a = low, b = high)
+
+    # Transform to loguniform
+    if kind == "frac":
+      low = low / (1. - low)
+      med = med / (1. - med)
+      high = high / (1. - high)
+
+    elif kind == 'neg':
+      low = -low
+      med = -med
+      high = -high
+
+    elif kind == "inv_frac":
+      low = 1/low
+      med = 1/med
+      high = 1/high
+
+      low = low / (1. - low)
+      med = med / (1. - med)
+      high = high / (1. - high)
+
+    elif not kind == "pos":
+      raise ValueError(f"Unimplemented kind: {kind}")
+
+    # Apply log to transform to uniform
+    low = np.log(low)
+    med = np.log(med)
+    high = np.log(high)
+
+    self.low = low
+    self.med = med
+    self.high = high
+    self.kind = kind
+
+    self.integration_direction = +1 if (low < high) else -1
+
+    self._cdf = np.vectorize(self._cdf)
+
+  def _cdf(self, x):
+    # Transform to loguniform
+
+    if self.kind == "frac":
+      y = x / (1. - x)
+    elif self.kind == "inv_frac":
+      y = 1 / x
+      y = y / (1. - y)
+    elif self.kind == 'neg':
+      y = -x
+    else:
+      y = x
+    
+    # Apply log to transform to uniform
+    y = np.log(y)
+
+    s = self.integration_direction
+    
+    if s*y < s*self.low:
+      cd = 0
+    elif s*y < s*self.med:
+      cd = 1./2 * (y - self.low) / (self.med - self.low)
+    elif s*y < s*self.high:
+      cd = 1./2 + 1./2 * (y - self.med) / (self.high - self.med)
+    else:
+      cd = 1
+
+    return cd
+
+class PointDistribution(rv_continuous):
+  def __init__(self, v):
+    self.v = v
+    super().__init__(a = v, b = v)
+
+  def _ppf(self, q):
+    return self.v
+
 
 if __name__ == '__main__':
   parser = init_cli_arguments()

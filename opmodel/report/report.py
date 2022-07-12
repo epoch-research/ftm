@@ -657,6 +657,9 @@ class Report:
     parent.append(element)
     return element
 
+  def add_html_lines(self, html_lines, parent=None):
+    self.add_html("\n".join(html_lines))
+
   def add_paragraph(self, paragraph, parent=None):
     return self.add_html(f'<p>{paragraph}</p>')
 
