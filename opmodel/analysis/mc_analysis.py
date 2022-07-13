@@ -20,7 +20,7 @@ class McAnalysisResults:
   pass
 
 class TooManyRetries(Exception):
-    pass
+  pass
 
 def mc_analysis(n_trials = 100):
   scalar_metrics = ['rampup_start', 'agi_year']
@@ -47,9 +47,13 @@ def mc_analysis(n_trials = 100):
       # Try to run the simulation
       try:
         log.info(f'Running simulation {trial+1}/{n_trials}...')
+
         sample = params_dist.rvs(1)
         mc_params = {param: sample[param][0] for param in sample}
+
         mc_model = SimulateTakeOff(**mc_params)
+        if mc_model.some_initial_automatable_task():
+          raise ValueError("Assumption not met: some tasks are automatable from the beginning.")
         mc_model.run_simulation()
       except Exception as e:
         # This was a bad sample. We'll just discard it and try again.
