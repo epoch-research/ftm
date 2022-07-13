@@ -227,8 +227,10 @@ class ParamsDistribution():
     rank_correlations = get_rank_correlations()
 
     marginals = {}
+    directions = {}
     for parameter, row in parameter_table.iterrows():
       if not np.isnan(row['Conservative']) and not np.isnan(row['Aggressive']):
+        directions[parameter] = +1 if (row['Conservative'] < row['Aggressive']) else -1
         marginal = SkewedLogUniform(
           row['Conservative'],
           row['Best guess'],
@@ -252,7 +254,7 @@ class ParamsDistribution():
 
         r = rank_correlations[right][left]
         if not np.isnan(r) and r != 0:
-          pairwise_rank_corr[(left, right)] = r
+          pairwise_rank_corr[(left, right)] = r * directions[left]*directions[right]
 
     ###################################################################
     # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
