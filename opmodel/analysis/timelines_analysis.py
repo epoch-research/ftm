@@ -394,5 +394,5 @@ def timelines_analysis(report_file_path=None, report_dir_path=None):
 
 if __name__ == '__main__':
   parser = init_cli_arguments()
-  args = parser.parse_args()
+  args = handle_cli_arguments(parser)
   write_timelines_analysis_report(report_file_path=args.output_file, report_dir_path=args.output_dir)

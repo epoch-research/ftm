@@ -15,6 +15,8 @@ def megareport(report_file_path=None, report_dir_path=None, quick_test_mode=Fals
   if new_report:
     report = Report(report_file_path=report_file_path, report_dir_path=report_dir_path)
 
+  report.add_paragraph('Note: Hover over metrics and parameter names to see explanations of their meaning.')
+
   log.info('Generating timelines analysis tab')
   log.indent()
   report.begin_tab_group()
@@ -55,6 +57,5 @@ if __name__ == '__main__':
     "--quick-test-mode",
     action='store_true',
   )
-  args = parser.parse_args()
-
+  args = handle_cli_arguments(parser)
   megareport(report_file_path=args.output_file, report_dir_path=args.output_dir, quick_test_mode=args.quick_test_mode)

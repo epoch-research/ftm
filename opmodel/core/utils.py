@@ -3,6 +3,7 @@ Utilities.
 """
 
 import io
+import re
 import sys
 import math
 import numpy as np
@@ -66,25 +67,59 @@ log = Log(level=Log.INFO_LEVEL)
 # Cached parameter retrieval
 #--------------------------------------------------------------------------
 
+omni_excel_url = 'https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/export?format=xlsx'
+
 cached_omni_excel = None
+cached_ajeya_dist = None
 cached_param_table = None
 cached_rank_correlations = None
 cached_timelines_parameters = None
 
+def set_omni_excel_url(url):
+  global omni_excel_url
+  global cached_omni_excel
+  global cached_param_table
+  global cached_rank_correlations
+  global cached_timelines_parameters
+
+  # If it's a Google sheet url, we'll add the 'export?format=xlsx' ourselves
+  pattern = r'https://docs.google.com/spreadsheets/d/([a-zA-Z0-9-_]*)/?.*'
+  m = re.match(pattern, url)
+  if m:
+    workbook_id = m.group(1)
+    url = f'https://docs.google.com/spreadsheets/d/{workbook_id}/export?format=xlsx'
+
+  omni_excel_url = url
+  cached_omni_excel = None
+  cached_param_table = None
+  cached_rank_correlations = None
+  cached_timelines_parameters = None
+
 def get_omni_excel():
   global cached_omni_excel
   if cached_omni_excel is None:
-    response = urllib.request.urlopen('https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/export?format=xlsx')
+    response = urllib.request.urlopen(omni_excel_url)
     cached_omni_excel = response.read()
   return cached_omni_excel
 
 def get_parameter_table():
   global cached_param_table
   if cached_param_table is None:
-    cached_param_table = pd.read_excel(get_omni_excel(), sheet_name = 'Parameters')
+    try:
+      cached_param_table = pd.read_excel(get_omni_excel(), sheet_name = 'Parameters')
+    except ValueError as e:
+      print("Error reading the Excel file (you might want to check it's publicly accessible)", file=sys.stderr)
+      raise e
     cached_param_table = cached_param_table.set_index("Parameter")
     cached_param_table.fillna(np.nan, inplace = True)
   return cached_param_table.copy()
+
+def get_ajeya_dist():
+  global cached_ajeya_dist
+  if cached_ajeya_dist is None:
+    # The sheet name is limited to 31 characters
+    cached_ajeya_dist = pd.read_excel(get_omni_excel(), sheet_name = 'Ajeya distribution of automation FLOP'[:31])
+  return cached_ajeya_dist.copy()
 
 def get_rank_correlations():
   global cached_rank_correlations

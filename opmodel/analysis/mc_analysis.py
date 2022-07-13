@@ -12,7 +12,6 @@ from numpy.random import default_rng
 from matplotlib import cm
 from xml.etree import ElementTree as et
 from copula_wrapper import joint_distribution
-from ..core.utils import get_parameter_table, get_rank_correlations
 
 rng = default_rng()
 
@@ -242,7 +241,7 @@ class AjeyaDistribution(rv_continuous):
 
   def __init__(self):
     if AjeyaDistribution.cdf_np is None:
-      AjeyaDistribution.cdf_pd = pd.read_csv('https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/export?format=csv&gid=1177136586')
+      AjeyaDistribution.cdf_pd = get_ajeya_dist()
       AjeyaDistribution.cdf_np = AjeyaDistribution.cdf_pd.to_numpy()
 
     ajeya_cdf_log10 = AjeyaDistribution.cdf_np
@@ -348,6 +347,6 @@ if __name__ == '__main__':
     type=int,
     default=100,
   )
-  args = parser.parse_args()
+  args = handle_cli_arguments(parser)
   write_mc_analysis_report(n_trials=args.n_trials, report_file_path=args.output_file, report_dir_path=args.output_dir)
 

@@ -108,6 +108,6 @@ def write_sensitivity_analysis_report(quick_test_mode=False, report_file_path=No
 
 if __name__ == '__main__':
   parser = init_cli_arguments()
-  args = parser.parse_args()
+  args = handle_cli_arguments(parser)
   write_sensitivity_analysis_report(report_file_path=args.output_file, report_dir_path=args.output_dir)
 

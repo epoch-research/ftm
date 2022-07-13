@@ -62,8 +62,7 @@ def explore(exploration_target='compare', report_file_path=None, report_dir_path
   if parameter_table is None:
     # Retrieve parameter table
     log.info('Retrieving parameters...')
-    parameter_table = pd.read_csv('https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/export?format=csv#gid=0')
-    parameter_table = parameter_table.set_index("Parameter")
+    parameter_table = get_parameter_table()
 
   # Define parameters
   med_params = {
@@ -198,5 +197,5 @@ if __name__ == '__main__':
     default="compare",
     help="Choose 'compare' to compare aggressive, best guess and conservative scenario"
   )
-  args = parser.parse_args()
+  args = handle_cli_arguments(parser)
   explore(exploration_target=args.exploration_target, report_file_path=args.output_file, report_dir_path=args.output_dir)

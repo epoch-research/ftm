@@ -15,8 +15,7 @@ def bioanchors_comparison(report_file_path=None, report_dir_path=None):
 
   t_end = 2050
 
-  parameter_table = pd.read_csv('https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/export?format=csv#gid=0')
-  parameter_table = parameter_table.set_index("Parameter")
+  parameter_table = get_parameter_table()
   best_guess_parameters = {parameter : row['Best guess'] for parameter, row in parameter_table.iterrows()}
 
   log.info('Running our simulation...')
@@ -122,10 +121,10 @@ def plot_bioanchors_model(*args, ylims = None, **kwargs):
   if ylims is not None:
     plt.gca().set_ylim(ylims)
 
-  utils.draw_oom_lines()
+  draw_oom_lines()
 
 
 if __name__ == '__main__':
   parser = init_cli_arguments()
-  args = parser.parse_args()
+  args = handle_cli_arguments(parser)
   bioanchors_comparison(report_file_path=args.output_file, report_dir_path=args.output_dir)

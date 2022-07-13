@@ -1,6 +1,5 @@
 """
 Performs both Monte Carlo and sensitivity analyses to generate a joint report
-Mimicking this sheet: https://docs.google.com/spreadsheets/d/1RGAUbO2LiLtB-IFlArtjs-IMxZvwbJHXEvORBWgQNDE/
 """
 
 from . import log
@@ -275,6 +274,6 @@ if __name__ == '__main__':
     type=int,
     default=100,
   )
-  args = parser.parse_args()
+  args = handle_cli_arguments(parser)
   scenario_sensitivity_analysis(report_file_path=args.output_file, report_dir_path=args.output_dir)
 
