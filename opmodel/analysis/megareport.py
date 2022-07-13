@@ -7,9 +7,9 @@ from .sensitivity_analysis import write_sensitivity_analysis_report
 from .timelines_analysis import write_timelines_analysis_report
 from .mc_analysis import write_mc_analysis_report
 
-def joint_analysis(report_file_path=None, report_dir_path=None, quick_test_mode=False, report=None):
+def megareport(report_file_path=None, report_dir_path=None, quick_test_mode=False, report=None):
   if report_file_path is None:
-    report_file_path = 'joint_report.html'
+    report_file_path = 'megareport.html'
 
   new_report = report is None
   if new_report:
@@ -57,4 +57,4 @@ if __name__ == '__main__':
   )
   args = parser.parse_args()
 
-  joint_analysis(report_file_path=args.output_file, report_dir_path=args.output_dir, quick_test_mode=args.quick_test_mode)
+  megareport(report_file_path=args.output_file, report_dir_path=args.output_dir, quick_test_mode=args.quick_test_mode)
