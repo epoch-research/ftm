@@ -3,6 +3,7 @@ Utilities.
 """
 
 import io
+import sys
 import math
 import numpy as np
 import pandas as pd
@@ -39,14 +40,25 @@ class Log:
     if self.indentation_level < 0: self.indentation_level = 0
 
   def info(self, *args, **kwargs):
-    if self.level < Log.INFO_LEVEL: return
-    print(' ' * self.indentation_level, end = '')
-    print(*args, **kwargs)
+    self.print(log.INFO_LEVEL, *args, **kwargs)
 
   def error(self, *args, **kwargs):
-    if self.level < Log.ERROR_LEVEL: return
-    print(' ' * self.indentation_level, end = '', file = sys.stderr)
-    print(*args, **kwargs, file = sys.stderr)
+    self.print(log.ERROR_LEVEL, *args, **kwargs)
+
+  def print(self, level, *args, **kwargs):
+    if self.level < level: return
+
+    string_buffer = io.StringIO()
+    print(*args, **kwargs, file = string_buffer)
+    string = string_buffer.getvalue()
+
+    ends_in_newline = len(string) >= 1 and string[-1] == '\n'
+    lines = string.splitlines()
+
+    out = sys.stderr if (level == Log.ERROR_LEVEL) else sys.stdout
+    for i, line in enumerate(lines):
+      end = '' if (i == len(lines) - 1 and not ends_in_newline) else '\n'
+      print((' ' * self.indentation_level) + line, file = out, end = end)
 
 log = Log(level=Log.INFO_LEVEL)
 
@@ -55,6 +67,9 @@ log = Log(level=Log.INFO_LEVEL)
 #--------------------------------------------------------------------------
 
 cached_omni_excel = None
+cached_param_table = None
+cached_rank_correlations = None
+cached_timelines_parameters = None
 
 def get_omni_excel():
   global cached_omni_excel
@@ -64,20 +79,26 @@ def get_omni_excel():
   return cached_omni_excel
 
 def get_parameter_table():
-  parameter_table = pd.read_excel(get_omni_excel(), sheet_name = 'Parameters')
-  parameter_table = parameter_table.set_index("Parameter")
-  parameter_table.fillna(np.nan, inplace = True)
-  return parameter_table
+  global cached_param_table
+  if cached_param_table is None:
+    cached_param_table = pd.read_excel(get_omni_excel(), sheet_name = 'Parameters')
+    cached_param_table = cached_param_table.set_index("Parameter")
+    cached_param_table.fillna(np.nan, inplace = True)
+  return cached_param_table.copy()
 
 def get_rank_correlations():
-  rank_correlations = pd.read_excel(get_omni_excel(), sheet_name = 'Rank correlations', skiprows = 2)
-  rank_correlations = rank_correlations.set_index(rank_correlations.columns[0])
-  return rank_correlations
+  global cached_rank_correlations
+  if cached_rank_correlations is None:
+    cached_rank_correlations = pd.read_excel(get_omni_excel(), sheet_name = 'Rank correlations', skiprows = 2)
+    cached_rank_correlations = cached_rank_correlations.set_index(cached_rank_correlations.columns[0])
+  return cached_rank_correlations.copy()
 
 def get_timelines_parameters():
-  timelines_parameters = pd.read_excel(get_omni_excel(), sheet_name = 'Guess FLOP gap & timelines')
-  timelines_parameters = timelines_parameters.set_index(timelines_parameters.columns[0])
-  return timelines_parameters
+  global cached_timelines_parameters
+  if cached_timelines_parameters is None:
+    cached_timelines_parameters = pd.read_excel(get_omni_excel(), sheet_name = 'Guess FLOP gap & timelines')
+    cached_timelines_parameters = cached_timelines_parameters.set_index(cached_timelines_parameters.columns[0])
+  return cached_timelines_parameters.copy()
 
 def get_parameters_meanings():
   param_table = get_parameter_table()
