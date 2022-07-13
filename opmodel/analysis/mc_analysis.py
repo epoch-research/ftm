@@ -5,6 +5,7 @@ Monte carlo analysis.
 from . import log
 from . import *
 
+import traceback
 from scipy.interpolate import interp1d
 from scipy.stats import rv_continuous
 from scipy.special import erfinv
@@ -17,6 +18,9 @@ rng = default_rng()
 
 class McAnalysisResults:
   pass
+
+class TooManyRetries(Exception):
+    pass
 
 def mc_analysis(n_trials = 100):
   scalar_metrics = ['rampup_start', 'agi_year']
@@ -32,17 +36,39 @@ def mc_analysis(n_trials = 100):
       state_metric : [] for state_metric in state_metrics
   }
 
-  samples, parameter_table, rank_correlations = sample_params(n_trials)
+  param_dist = ParamsDistribution()
+  samples = []
 
   log.info(f'Running simulations...')
+  log.indent()
   for trial in range(n_trials):
-    log.info(f'  Running simulation {trial+1}/{n_trials}...')
+    max_retries = 100
+    for i in range(max_retries):
+      # Try to run the simulation
+      try:
+        log.info(f'Running simulation {trial+1}/{n_trials}...')
+        sample = param_dist.rvs(1)
+        mc_params = {param: sample[param][0] for param in sample}
+        mc_model = SimulateTakeOff(**mc_params)
+        mc_model.run_simulation()
+      except Exception as e:
+        # This was a bad sample. We'll just discard it and try again.
+        log.indent()
+        log.info('The model threw an exception:')
+        log.indent()
+        log.info(e)
+        log.info(traceback.format_exc(), end = '')
+        log.deindent()
+        #log.info(f'Input parameters: {mc_params}')
+        log.info('Discarding the sample and rerunning the simulation')
+        log.deindent()
+        continue
 
-    mc_params = samples.iloc[trial].to_dict()
-
-    # Run simulation
-    mc_model = SimulateTakeOff(**mc_params)
-    mc_model.run_simulation()
+      # This was a good sample
+      samples.append(sample)
+      break
+    else:
+      raise TooManyRetries('MC sampling: Maximum number of retries reached')
 
     # Collect results
     for scalar_metric in scalar_metrics:
@@ -63,6 +89,8 @@ def mc_analysis(n_trials = 100):
       assert metric_value.shape == (mc_model.n_timesteps,)
       state_metrics[state_metric].append(metric_value)
 
+  log.deindent()
+
   # Summary of scalar metrics
   quantiles = [0.01, 0.1, 0.2, 0.5, 0.8, 0.9, 0.99]
   metrics_quantiles = []
@@ -71,7 +99,7 @@ def mc_analysis(n_trials = 100):
     for scalar_metric in scalar_metrics:
       row[scalar_metric] = np.quantile(scalar_metrics[scalar_metric], q)
     metrics_quantiles.append(row)
-  
+
   ## Add mean
   row = {"quantile" : "mean"}
   for scalar_metric in scalar_metrics:
@@ -84,60 +112,13 @@ def mc_analysis(n_trials = 100):
   results.state_metrics     = state_metrics
   results.n_trials          = n_trials
   results.timesteps         = mc_model.timesteps
-  results.param_samples     = samples
+  results.param_samples     = pd.concat(samples, ignore_index = True)
   results.ajeya_cdf         = AjeyaDistribution.cdf_pd
-  results.parameter_table   = parameter_table
-  results.rank_correlations = rank_correlations
+  results.parameter_table   = param_dist.parameter_table
+  results.rank_correlations = param_dist.rank_correlations
 
   return results
 
-def sample_params(param_count):
-  # Retrieve parameter table
-  log.info('Retrieving parameters...')
-  parameter_table = get_parameter_table()
-  parameter_table = parameter_table[['Conservative', 'Best guess', 'Aggressive', 'Type']]
-  rank_correlations = get_rank_correlations()
-
-  marginals = {}
-  for parameter, row in parameter_table.iterrows():
-    if not np.isnan(row['Conservative']) and not np.isnan(row['Aggressive']):
-      marginal = SkewedLogUniform(
-        row['Conservative'],
-        row['Best guess'],
-        row['Aggressive'],
-        kind = row['Type']
-      )
-    else: 
-      marginal = PointDistribution(row['Best guess'])
-
-    marginals[parameter] = marginal
-
-  marginals['full_automation_requirements_training'] = AjeyaDistribution()
-
-  pairwise_rank_corr = {}
-  for left in marginals:
-    for right in marginals:
-      r = rank_correlations[right][left]
-      if not np.isnan(r) and r != 0:
-        pairwise_rank_corr[(left, right)] = r
-
-  ###################################################################
-  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  # For testing purposes. Remove when the real correlations are fixed
-  for left in marginals:
-    for right in marginals:
-      if left != right:
-        pairwise_rank_corr[(left, right)] = 0.2
-  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  ###################################################################
-
-  log.info(f'Generating samples...')
-  joint = joint_distribution.JointDistribution(marginals, pairwise_rank_corr, rank_corr_method = "spearman")
-  samples = joint.rvs(param_count)
-
-  return samples, parameter_table, rank_correlations
-
-  
 def write_mc_analysis_report(n_trials=100, report_file_path=None, report_dir_path=None, report=None):
   if report_file_path is None:
     report_file_path = 'mc_analysis.html'
@@ -235,6 +216,61 @@ def plot_quantiles(ts, data, xlabel, ylabel, n_quantiles = 7, colormap = cm.Blue
 # Distributions
 # -----------------------------------------------------------------------------
 
+class ParamsDistribution():
+  """ Joint parameter distribution. """
+
+  def __init__(self):
+    # Retrieve parameter table
+    log.info('Retrieving parameters...')
+    parameter_table = get_parameter_table()
+    parameter_table = parameter_table[['Conservative', 'Best guess', 'Aggressive', 'Type']]
+    rank_correlations = get_rank_correlations()
+
+    marginals = {}
+    for parameter, row in parameter_table.iterrows():
+      if not np.isnan(row['Conservative']) and not np.isnan(row['Aggressive']):
+        marginal = SkewedLogUniform(
+          row['Conservative'],
+          row['Best guess'],
+          row['Aggressive'],
+          kind = row['Type']
+        )
+      else:
+        marginal = PointDistribution(row['Best guess'])
+      marginals[parameter] = marginal
+
+    marginals['full_automation_requirements_training'] = AjeyaDistribution()
+
+    pairwise_rank_corr = {}
+    for left in marginals:
+      for right in marginals:
+        if right not in rank_correlations or left not in rank_correlations:
+          continue
+        r = rank_correlations[right][left]
+        if not np.isnan(r) and r != 0:
+          pairwise_rank_corr[(left, right)] = r
+
+    ###################################################################
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    # For testing purposes. Remove when the real correlations are fixed
+    for left in marginals:
+      for right in marginals:
+        if left != right:
+          pairwise_rank_corr[(left, right)] = 0.2
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ###################################################################
+
+    self.parameter_table = parameter_table
+    self.rank_correlations = rank_correlations
+    self.joint_dist = joint_distribution.JointDistribution(marginals, pairwise_rank_corr, rank_corr_method = "spearman")
+
+  def rvs(self, count):
+    # statsmodels.distributions.copula.copulas throws an exception when
+    # we ask from it less than 2 samples
+    actual_count = max(count, 2)
+    samples = self.joint_dist.rvs(actual_count)[:count]
+    return samples
+
 class AjeyaDistribution(rv_continuous):
   cdf_pd = None
   cdf_np = None
@@ -313,12 +349,12 @@ class SkewedLogUniform(rv_continuous):
       y = -x
     else:
       y = x
-    
+
     # Apply log to transform to uniform
     y = np.log(y)
 
     s = self.integration_direction
-    
+
     if s*y < s*self.low:
       cd = 0
     elif s*y < s*self.med:
