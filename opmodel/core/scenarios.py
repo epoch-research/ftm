@@ -16,6 +16,7 @@ class ScenarioRunner:
     groups = []
 
     scenarios = self.simulate_scenario_group(parameter_table)
+    log.info('')
     groups.append(ScenarioGroup('normal', scenarios, parameter_table))
 
     for timeline in timelines_parameters:
