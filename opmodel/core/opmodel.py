@@ -556,18 +556,18 @@ class SimulateTakeOff():
 
     # Update compute to labour ratio of automatable tasks
     runtime_requirements_goods = \
-      self.automation_runtime_flops_goods   \
-      * (self.biggest_training_run[t_idx]   \
-      / self.automation_runtime_flops_goods)\
+      self.automation_runtime_flops_goods    \
+      * (self.automation_runtime_flops_goods \
+      /  self.biggest_training_run[t_idx])   \
       ** self.runtime_training_tradeoff
     self.task_compute_to_labour_ratio_goods[t_idx] = \
       1. / runtime_requirements_goods
     
     runtime_requirements_rnd = \
-      self.automation_runtime_flops_rnd   \
-      * (self.biggest_training_run[t_idx] \
-      / self.automation_runtime_flops_rnd)\
-      ** self.runtime_training_tradeoff 
+      self.automation_runtime_flops_rnd    \
+      * (self.automation_runtime_flops_rnd \
+      /  self.biggest_training_run[t_idx]) \
+      ** self.runtime_training_tradeoff
     self.task_compute_to_labour_ratio_rnd[t_idx] = \
       1. / runtime_requirements_rnd
       
