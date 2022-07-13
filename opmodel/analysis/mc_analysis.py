@@ -36,7 +36,7 @@ def mc_analysis(n_trials = 100):
       state_metric : [] for state_metric in state_metrics
   }
 
-  param_dist = ParamsDistribution()
+  params_dist = ParamsDistribution()
   samples = []
 
   log.info(f'Running simulations...')
@@ -47,7 +47,7 @@ def mc_analysis(n_trials = 100):
       # Try to run the simulation
       try:
         log.info(f'Running simulation {trial+1}/{n_trials}...')
-        sample = param_dist.rvs(1)
+        sample = params_dist.rvs(1)
         mc_params = {param: sample[param][0] for param in sample}
         mc_model = SimulateTakeOff(**mc_params)
         mc_model.run_simulation()
@@ -114,8 +114,8 @@ def mc_analysis(n_trials = 100):
   results.timesteps         = mc_model.timesteps
   results.param_samples     = pd.concat(samples, ignore_index = True)
   results.ajeya_cdf         = AjeyaDistribution.cdf_pd
-  results.parameter_table   = param_dist.parameter_table
-  results.rank_correlations = param_dist.rank_correlations
+  results.parameter_table   = params_dist.parameter_table
+  results.rank_correlations = params_dist.rank_correlations
 
   return results
 
@@ -242,10 +242,14 @@ class ParamsDistribution():
     marginals['full_automation_requirements_training'] = AjeyaDistribution()
 
     pairwise_rank_corr = {}
-    for left in marginals:
-      for right in marginals:
+    for left in marginals.keys():
+      for right in marginals.keys():
         if right not in rank_correlations or left not in rank_correlations:
           continue
+
+        if isinstance(marginals[right], PointDistribution) or isinstance(marginals[left], PointDistribution):
+          continue
+
         r = rank_correlations[right][left]
         if not np.isnan(r) and r != 0:
           pairwise_rank_corr[(left, right)] = r
@@ -267,6 +271,7 @@ class ParamsDistribution():
   def rvs(self, count):
     # statsmodels.distributions.copula.copulas throws an exception when
     # we ask from it less than 2 samples
+    # We could make this more efficient, but it's probably not worth it
     actual_count = max(count, 2)
     samples = self.joint_dist.rvs(actual_count)[:count]
     return samples
