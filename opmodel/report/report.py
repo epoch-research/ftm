@@ -40,11 +40,9 @@ class Report:
           font-size: 15px;
         }
 
-        /*
-        * {
-          color: #222;
+        .info-icon {
+          margin-left: 0.5em;
         }
-        */
 
         .tippy-content {
           text-align: left;
@@ -474,6 +472,7 @@ class Report:
       </style>
     '''))
 
+    self.head.append(et.fromstring('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.9.0/font/bootstrap-icons.css"></link>'))
     self.head.append(et.fromstring('<script defer="true" src="https://cdn.jsdelivr.net/npm/clipboard@2.0.10/dist/clipboard.min.js"></script>'))
     self.head.append(et.fromstring('<script defer="true" src="https://unpkg.com/micromodal/dist/micromodal.min.js"></script>'))
     self.head.append(et.fromstring('<script defer="true" src="https://unpkg.com/panzoom@9.4.0/dist/panzoom.min.js"></script>'))
@@ -577,27 +576,37 @@ class Report:
         let backgroundColors = ''' + json.dumps(get_parameters_colors()) + ''';
         let metricNotes = ''' + json.dumps(get_metrics_meanings()) + ''';
 
-        function reloadMeaningTooltips() {
+        function injectMeaningTooltips() {
           document.querySelectorAll('th').forEach(node => {
-            if (node._tippy) {
-              node._tippy.destroy();
-            }
+            if (node._meaningInjected) return;
 
             let name = node.innerText;
             let note = paramNotes[name] || metricNotes[name];
 
             if (note) {
-              tippy(node, {
+              let icon = document.createElement('i');
+              icon.classList.add('bi', 'bi-info-circle', 'info-icon');
+              node.append(icon);
+
+              tippy(icon, {
                 content: note,
                 allowHTML: true,
                 interactive: true,
-                placement: (node.parentElement.parentElement.tagName == 'THEAD') ? 'top' : 'left',
+                placement: (node.parentElement.parentElement.tagName == 'THEAD') ? 'top' : 'right',
               });
+
+              node._meaningInjected = true;
+            } else {
+              // TODO Temporary, remove later
+              if (node.parentElement.firstElementChild == node) {
+                // When the ths run vertically, add padding extra padding to account for the missing icon
+                node.style.paddingRight = '3em';
+              }
             }
           });
         }
 
-        function reloadParamBgColors() {
+        function injectParamBgColors() {
           document.querySelectorAll('th').forEach(node => {
             let name = node.innerText;
             let color = backgroundColors[name];
@@ -609,8 +618,8 @@ class Report:
         }
 
         window.addEventListener('load', () => {
-          reloadMeaningTooltips();
-          reloadParamBgColors();
+          injectMeaningTooltips();
+          injectParamBgColors();
         });
     '''
 
