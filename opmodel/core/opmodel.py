@@ -247,6 +247,14 @@ class SimulateTakeOff():
       SimulateTakeOff.process_quantiles(self.automation_runtime_flops_rnd, 
                                         self.n_labour_tasks_rnd)
   
+    # Check that no task is yet automatable
+    # if np.any(self.automation_training_flops_goods < self.initial_biggest_training_run) \
+    # or np.any(self.automation_training_flops_rnd < self.initial_biggest_training_run):
+    #   print(f"self.automation_training_flops_goods = {self.automation_training_flops_goods}")
+    #   print(f"self.automation_training_flops_rnd = {self.automation_training_flops_rnd}")
+    #   print(f"self.initial_biggest_training_run = {self.initial_biggest_training_run}")
+    #   raise ValueError("Assumption not met: some tasks are automatable from the beginning.")
+
     # The first task is always automatable
     self.automation_training_flops_goods = \
       np.insert(self.automation_training_flops_goods, 0, 1.0)
@@ -257,24 +265,12 @@ class SimulateTakeOff():
     self.automation_runtime_flops_rnd = \
       np.insert(self.automation_runtime_flops_rnd, 0, 1.0)
 
-    # Check that no task other than the first one is yet automatable
-    # if some_initial_automatable_task():
-    #   print(f"self.automation_training_flops_goods = {self.automation_training_flops_goods}")
-    #   print(f"self.automation_training_flops_rnd = {self.automation_training_flops_rnd}")
-    #   print(f"self.initial_biggest_training_run = {self.initial_biggest_training_run}")
-    #   raise ValueError("Assumption not met: some tasks are automatable from the beginning.")
-
     # Check that the automation costs are monotonic
     if np.any(np.diff(self.automation_training_flops_goods) < 0.) \
     or np.any(np.diff(self.automation_runtime_flops_goods) < 0.) \
     or np.any(np.diff(self.automation_training_flops_rnd) < 0.) \
     or np.any(np.diff(self.automation_runtime_flops_rnd) < 0.):
       raise ValueError("Assumption not met: the automation costs must be monotonically increasing.")
-
-  def some_initial_automatable_task(self):
-    # Ignore the first task (it's always automatable)
-    return np.any(self.automation_training_flops_goods[1:] < self.initial_biggest_training_run) \
-        or np.any(self.automation_training_flops_rnd[1:] < self.initial_biggest_training_run)
   
   ##############################################################################
 
@@ -586,12 +582,6 @@ class SimulateTakeOff():
        self.frac_automatable_tasks_rnd[t_idx] > \
        self.frac_automatable_tasks_rnd[t_idx-1]:
       self.automation_years_rnd.append(t_year)
-    
-    # Note down when AGI happens
-    if t_idx > 0 and \
-       self.frac_automatable_tasks[t_idx] >= 1. and \
-       self.frac_automatable_tasks[t_idx-1] < 1.:
-      self.agi_year = t_year
   
   ##############################################################################
 
@@ -945,15 +935,17 @@ class SimulateTakeOff():
     self.rampup[t_idx] = \
       self.frac_tasks_automated_goods[t_idx-1] >= self.rampup_trigger
     
+    t_year = self.index_to_time(t_idx) - self.t_step
     if self.rampup[t_idx] and not self.rampup[t_idx-1]:
-      t_year = self.index_to_time(t_idx)
-      self.rampup_start = t_year
+      self.rampup_start = t_year      
     
-    if self.rampup[t_idx] and \
-    self.frac_tasks_automated_goods[t_idx-1] >= 0.3 and \
+    if self.frac_tasks_automated_goods[t_idx-1] >= 0.3 and \
     not self.frac_tasks_automated_goods[t_idx-2] >= 0.3:
-      self.rampup_mid = self.index_to_time(t_idx)
-      
+      self.rampup_mid = t_year
+    
+    if self.frac_tasks_automated_goods[t_idx-1] >= 1. and \
+    not self.frac_tasks_automated_goods[t_idx-2] >= 1.:
+      self.agi_year = t_year
 
     def update_frac_input(current_frac, growth_rate, growth_rate_rampup, max_frac):
       frac = current_frac\
@@ -1334,6 +1326,29 @@ class SimulateTakeOff():
 
   ###########################################################################
   
+  def compute_metrics(self):
+    self.compute_takeoff_metrics()
+    self.compute_timeline_metrics()
+  
+  timeline_metrics = [
+    'automation_3%',
+    'automation_10%',
+    'automation_20%',
+    'automation_30%',
+    'automation_50%',
+    'automation_100%',
+    'billion_agis'
+  ]
+  
+  def compute_timeline_metrics(self):
+    self.timeline_metrics = {}
+    
+    for th in [0.03, 0.1, 0.2, 0.3, 0.5, 1.0]:
+      t_year = self.index_to_time(np.argmax(self.frac_automated_tasks >= th))
+      self.timeline_metrics[f'automation_{int(th*100)}%'] = t_year
+    print(self.frac_automated_tasks)
+    print(self.timeline_metrics)
+  
   def _length_between_thresholds(
         self,
         series1,
@@ -1357,7 +1372,7 @@ class SimulateTakeOff():
     'combined'
     ]
 
-  def compute_metrics(self):
+  def compute_takeoff_metrics(self):
     """ Computes indicator metrics measuring length of AI takeoff 
     """
     # Initialize takeoff metrics dict
@@ -1378,8 +1393,8 @@ class SimulateTakeOff():
     # we have enough compute to run 10 billion AGIs
     
     self.frac_automated_tasks = \
-      self.frac_tasks_automated_goods * self.n_labour_tasks_goods \
-    + self.frac_tasks_automated_rnd * self.n_labour_tasks_rnd \
+      (self.frac_tasks_automated_goods * self.n_labour_tasks_goods \
+    + self.frac_tasks_automated_rnd * self.n_labour_tasks_rnd) \
     / ( self.n_labour_tasks_goods + self.n_labour_tasks_rnd )
     
     ten_billion_agi_compute = \
