@@ -189,6 +189,10 @@ class SimulateTakeOff():
     
     # Hardware delay is adjusted by timestep
     self.hardware_delay_idx = round(self.hardware_delay / self.t_step)
+    
+    # 
+    if self.runtime_training_tradeoff <0:
+      self.runtime_training_tradeoff = None
 
   def process_automation_costs(self):
     """ Initialize the training and runtime flops for goods and rnd
@@ -528,13 +532,19 @@ class SimulateTakeOff():
     self.automatable_tasks_goods[t_idx] = \
       np.sum(
           self.automation_training_flops_goods < \
-          self.biggest_training_run[t_idx] * self.runtime_training_max_tradeoff
+          self.biggest_training_run[t_idx] \
+          * (self.runtime_training_max_tradeoff \
+          if self.runtime_training_max_tradeoff is not None \
+          else 1.)
       ) 
 
     self.automatable_tasks_rnd[t_idx] = \
       np.sum(
           self.automation_training_flops_rnd < \
-          self.biggest_training_run[t_idx] * self.runtime_training_max_tradeoff
+          self.biggest_training_run[t_idx] \
+          * (self.runtime_training_max_tradeoff \
+          if self.runtime_training_max_tradeoff is not None \
+          else 1.)
       ) 
     
     # Update fraction of automated tasks
@@ -554,18 +564,22 @@ class SimulateTakeOff():
 
     # Update compute to labour ratio of automatable tasks
     runtime_requirements_goods = \
-      self.automation_runtime_flops_goods    \
+      (self.automation_runtime_flops_goods    \
       * (self.automation_training_flops_goods \
       /  self.biggest_training_run[t_idx])   \
-      ** self.runtime_training_tradeoff
+      ** self.runtime_training_tradeoff)\
+      if self.runtime_training_tradeoff is not None else \
+      self.automation_runtime_flops_goods
     self.task_compute_to_labour_ratio_goods[t_idx] = \
       1. / runtime_requirements_goods
     
     runtime_requirements_rnd = \
-      self.automation_runtime_flops_rnd    \
+      (self.automation_runtime_flops_rnd    \
       * (self.automation_training_flops_rnd \
       /  self.biggest_training_run[t_idx]) \
-      ** self.runtime_training_tradeoff
+      ** self.runtime_training_tradeoff)\
+      if self.runtime_training_tradeoff is not None else \
+      self.automation_runtime_flops_rnd
     self.task_compute_to_labour_ratio_rnd[t_idx] = \
       1. / runtime_requirements_rnd
   
@@ -1332,7 +1346,6 @@ class SimulateTakeOff():
     for th in [0.03, 0.1, 0.2, 0.3, 0.5, 1.0]:
       t_year = self.index_to_time(np.argmax(self.frac_automated_tasks >= th))
       self.timeline_metrics[f'automation_{int(th*100)}%'] = t_year
-    print(self.frac_automated_tasks)
     print(self.timeline_metrics)
   
   def _length_between_thresholds(
