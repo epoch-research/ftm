@@ -30,6 +30,9 @@ class SimulateTakeOff():
       full_automation_requirements_runtime,
       flop_gap_runtime,
       goods_vs_rnd_requirements_runtime,
+      
+      runtime_training_tradeoff,
+      runtime_training_max_tradeoff,
 
       # Production
       labour_substitution_goods,
@@ -531,13 +534,13 @@ class SimulateTakeOff():
     self.automatable_tasks_goods[t_idx] = \
       np.sum(
           self.automation_training_flops_goods < \
-          self.biggest_training_run[t_idx]
+          self.biggest_training_run[t_idx] * self.runtime_training_max_tradeoff
       ) 
 
     self.automatable_tasks_rnd[t_idx] = \
       np.sum(
           self.automation_training_flops_rnd < \
-          self.biggest_training_run[t_idx]
+          self.biggest_training_run[t_idx] * self.runtime_training_max_tradeoff
       ) 
     
     # Update fraction of automated tasks
@@ -556,14 +559,24 @@ class SimulateTakeOff():
          + self.n_labour_tasks_rnd) # We dont count the initial compute task
 
     # Update compute to labour ratio of automatable tasks
+    runtime_requirements_goods = \
+      self.automation_runtime_flops_goods    \
+      * (self.automation_training_flops_goods \
+      /  self.biggest_training_run[t_idx])   \
+      ** self.runtime_training_tradeoff
     self.task_compute_to_labour_ratio_goods[t_idx] = \
-      1 / self.automation_runtime_flops_goods
+      1. / runtime_requirements_goods
+    
+    runtime_requirements_rnd = \
+      self.automation_runtime_flops_rnd    \
+      * (self.automation_training_flops_rnd \
+      /  self.biggest_training_run[t_idx]) \
+      ** self.runtime_training_tradeoff
     self.task_compute_to_labour_ratio_rnd[t_idx] = \
-      1 / self.automation_runtime_flops_rnd
-
-    t_year = self.index_to_time(t_idx)
-
+      1. / runtime_requirements_rnd
+      
     # Update list of automation years
+    t_year = self.index_to_time(t_idx)
     if t_idx > 0 and \
        self.frac_automatable_tasks_goods[t_idx] > \
        self.frac_automatable_tasks_goods[t_idx-1]:
