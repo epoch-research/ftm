@@ -52,8 +52,8 @@ def mc_analysis(n_trials = 100):
         mc_params = {param: sample[param][0] for param in sample}
 
         mc_model = SimulateTakeOff(**mc_params)
-        if mc_model.some_initial_automatable_task():
-          raise ValueError("Assumption not met: some tasks are automatable from the beginning.")
+        # if mc_model.some_initial_automatable_task():
+          # raise ValueError("Assumption not met: some tasks are automatable from the beginning.")
         mc_model.run_simulation()
       except Exception as e:
         # This was a bad sample. We'll just discard it and try again.
