@@ -346,8 +346,6 @@ class SimulateTakeOff():
       np.zeros((self.n_timesteps, self.n_labour_tasks_goods+1))
     self.task_compute_to_labour_ratio_rnd = \
       np.zeros((self.n_timesteps, self.n_labour_tasks_rnd+1))
-    self.automation_years_goods = []
-    self.automation_years_rnd = []
     self.agi_year = None
 
   def create_simulation_state_production(self):
@@ -570,18 +568,6 @@ class SimulateTakeOff():
       ** self.runtime_training_tradeoff
     self.task_compute_to_labour_ratio_rnd[t_idx] = \
       1. / runtime_requirements_rnd
-      
-    # Update list of automation years
-    t_year = self.index_to_time(t_idx)
-    if t_idx > 0 and \
-       self.frac_automatable_tasks_goods[t_idx] > \
-       self.frac_automatable_tasks_goods[t_idx-1]:
-      self.automation_years_goods.append(t_year)
-    
-    if t_idx > 0 and \
-       self.frac_automatable_tasks_rnd[t_idx] > \
-       self.frac_automatable_tasks_rnd[t_idx-1]:
-      self.automation_years_rnd.append(t_year)
   
   ##############################################################################
 
@@ -937,7 +923,7 @@ class SimulateTakeOff():
     
     t_year = self.index_to_time(t_idx) - self.t_step
     if self.rampup[t_idx] and not self.rampup[t_idx-1]:
-      self.rampup_start = t_year      
+      self.rampup_start = t_year
     
     if self.frac_tasks_automated_goods[t_idx-1] >= 0.3 and \
     not self.frac_tasks_automated_goods[t_idx-2] >= 0.3:
