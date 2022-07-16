@@ -18,7 +18,7 @@ from . import Report
 
 EPS = 1e-40 # frankly, just some arbitrary number that feels low enough
 REPO_WEB_URL = 'https://github.com/epoch-research/opmodel'
-REPO_URL = 'https://github.com/epoch-research/opmodel.git'
+REPO_URL = 'https://github.com/epoch-research/op.git'
 DIFF_COL = 'Diff (%)'
 
 class Model:
@@ -135,9 +135,10 @@ class Model:
   def simulate(self):
     log.info('Reading parameters...')
 
-    inputs = {}
-    if self.params_url:
-      inputs = {parameter : row['Best guess'] for parameter, row in self.get_parameters().iterrows()}
+    # Get the parameters and remove those that are not part of this version of the model
+    model_parameters = inspect.signature(self.model).parameters
+    inputs = {parameter : row['Best guess'] for parameter, row in self.get_parameters().iterrows() if parameter in model_parameters}
+
     self.inputs = inputs
 
     try:
