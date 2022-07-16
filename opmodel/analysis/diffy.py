@@ -40,6 +40,14 @@ class Model:
       module_name          = 'opmodel.core.opmodel',    # relative to the root of the project
     ):
 
+    # Clean the param url if it's a Google sheet
+    pattern = r'https://docs.google.com/spreadsheets/d/([a-zA-Z0-9-_]*)/.*\bgid\b=([0-9]*)?.*'
+    m = re.match(pattern, params_url)
+    if m:
+      workbook_id = m.group(1)
+      sheet_id = m.group(2)
+      params_url = f'https://docs.google.com/spreadsheets/d/{workbook_id}/export?format=csv&gid={sheet_id}'
+
     self.name = name
     self.params_url = params_url
     self.parameters = None
@@ -383,7 +391,6 @@ def diffy(
   current_section.append(diff_table_to_html(inputs_table))
 
   if model_a.exception or model_b.exception:
-
     #--------------------------------------------------------------------------
     # Errors!
     #--------------------------------------------------------------------------
