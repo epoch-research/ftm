@@ -314,6 +314,14 @@ def diffy(
         color: var(--warn-color) !important;
       }
 
+      tbody tr.different .tippy-content {
+        color: white !important;
+      }
+
+      tbody tr.different .tippy-arrow {
+        color: #333 !important;
+      }
+
       .filtered-out {
         display: none;
       }
@@ -612,10 +620,10 @@ def diff_table_to_html(diff_table, return_as_string = False):
 
       tr = et.Element('tr')
       tbody.append(tr)
-      tr.append(et.fromstring(f'<th><div class="inner-td">{var}</div></th>'))
+      tr.append(et.fromstring(f'<th>{var}</th>'))
 
       for col, e in zip(diff_table.columns, row):
-        td = et.fromstring(f'<td><div class="inner-td">{e if col == "lineno" else format(e)}</div></td>')
+        td = et.fromstring(f'<td>{e if col == "lineno" else format(e)}</td>')
         if isinstance(e, str) and e == '(missing)':
           some_missing = True
           td.set('class', 'missing')
