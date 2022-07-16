@@ -18,7 +18,7 @@ from . import Report
 
 EPS = 1e-40 # frankly, just some arbitrary number that feels low enough
 REPO_WEB_URL = 'https://github.com/epoch-research/opmodel'
-REPO_URL = 'https://github.com/epoch-research/op.git'
+REPO_URL = 'https://github.com/epoch-research/opmodel.git'
 DIFF_COL = 'Diff (%)'
 
 class Model:
