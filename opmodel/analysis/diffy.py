@@ -392,7 +392,7 @@ def diffy(
     for model in [model_a, model_b]:
       if model.exception:
         current_section.append(et.fromstring(f'<p>An exception happened while executing {model.name}</p>'))
-        current_section.append(et.fromstring(f'<pre>    {"    ".join(traceback.format_exception(model.exception))}</pre>'))
+        current_section.append(et.fromstring(f'<pre>    {Report.escape("    ".join(traceback.format_exception(model.exception)))}</pre>'))
 
     log.info('> Exception executing the models')
     report.add_banner_message('Exception executing the models', ['bg-ko'])
