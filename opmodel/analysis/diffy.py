@@ -40,6 +40,8 @@ class Model:
       module_name          = 'opmodel.core.opmodel',    # relative to the root of the project
     ):
 
+    self.original_params_url = params_url
+
     # Clean the param url if it's a Google sheet
     pattern = r'https://docs.google.com/spreadsheets/d/([a-zA-Z0-9-_]*)/.*\bgid\b=([0-9]*)?.*'
     m = re.match(pattern, params_url)
@@ -375,7 +377,7 @@ def diffy(
     pre_lines.append(f'    source: <a href="{model.source_href}">{model.project_ref}</a> ({timestamp_span})')
 
     if model.params_url:
-      pre_lines.append(f'    parameters: <a href="{Report.escape(model.params_url)}">{Report.escape(model.params_url)}</a>')
+      pre_lines.append(f'    parameters: <a href="{Report.escape(model.original_params_url)}">{Report.escape(model.original_params_url)}</a>')
     else:
       pre_lines.append('    parameters: internal')
 
