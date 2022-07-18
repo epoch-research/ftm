@@ -9,6 +9,7 @@ import importlib
 import numpy as np
 import pandas as pd
 from git import Repo
+from git.exc import InvalidGitRepositoryError
 from xml.etree import ElementTree as et
 
 import argparse
@@ -126,7 +127,16 @@ class Model:
     if not os.path.exists(path):
       os.makedirs(path, exist_ok=True)
       Repo.clone_from(REPO_URL, path)
-    repo = Repo(path)
+
+    try:
+      repo = Repo(path)
+    except InvalidGitRepositoryError as e:
+      # OK, maybe the repo is corrupted. Let's try again .
+      os.rmdir(path)
+      os.makedirs(path, exist_ok=True)
+      Repo.clone_from(REPO_URL, path)
+      repo = Repo(path)
+
     return repo
 
   ############################################
