@@ -261,24 +261,12 @@ class SimulateTakeOff():
     self.automation_runtime_flops_rnd = \
       np.insert(self.automation_runtime_flops_rnd, 0, 1.0)
 
-    # Check that no task other than the first one is yet automatable
-    #if self.some_initial_automatable_task():
-    #  print(f"self.automation_training_flops_goods = {self.automation_training_flops_goods}")
-    #  print(f"self.automation_training_flops_rnd = {self.automation_training_flops_rnd}")
-    #  print(f"self.initial_biggest_training_run = {self.initial_biggest_training_run}")
-    #  raise ValueError("Assumption not met: some tasks are automatable from the beginning.")
-
     # Check that the automation costs are monotonic
     if np.any(np.diff(self.automation_training_flops_goods) < 0.) \
     or np.any(np.diff(self.automation_runtime_flops_goods) < 0.) \
     or np.any(np.diff(self.automation_training_flops_rnd) < 0.) \
     or np.any(np.diff(self.automation_runtime_flops_rnd) < 0.):
       raise ValueError("Assumption not met: the automation costs must be monotonically increasing.")
-
-  def some_initial_automatable_task(self):
-    # Ignore the first task (it's always automatable)
-    return np.any(self.automation_training_flops_goods[1:] < self.initial_biggest_training_run) \
-        or np.any(self.automation_training_flops_rnd[1:] < self.initial_biggest_training_run)
   
   ##############################################################################
 
@@ -1350,7 +1338,6 @@ class SimulateTakeOff():
     for th in [0.03, 0.1, 0.2, 0.3, 0.5, 1.0]:
       t_year = self.index_to_time(np.argmax(self.frac_automated_tasks >= th))
       self.timeline_metrics[f'automation_{int(th*100)}%'] = t_year
-    print(self.timeline_metrics)
   
   def _length_between_thresholds(
         self,
