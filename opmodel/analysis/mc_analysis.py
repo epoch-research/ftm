@@ -52,7 +52,7 @@ def mc_analysis(n_trials = 100):
         mc_params = {param: sample[param][0] for param in sample}
 
         mc_model = SimulateTakeOff(**mc_params)
-        if mc_model.some_initial_automatable_task():
+        if mc_model.some_initial_task_is_automatable():
           raise ValueError("Assumption not met: some tasks are automatable from the beginning.")
         mc_model.run_simulation()
       except Exception as e:
@@ -262,7 +262,7 @@ class ParamsDistribution():
 
     ###################################################################
     # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    # For testing purposes. Remove when the real correlations are fixed
+    # TODO For testing purposes. Remove when the real correlations are fixed
     for left in marginals:
       for right in marginals:
         if left != right:
