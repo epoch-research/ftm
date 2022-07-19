@@ -224,7 +224,7 @@ class Model:
     for label, get_value in variables.items():
       try:
         main_variables[label] = get_value()
-      except e:
+      except Exception as e:
         pass
 
     return main_variables
@@ -809,7 +809,6 @@ def add_javascript_to_report(report):
 
         filter.addEventListener('input', () => {
           for (let table of tables) {
-            console.log(table);
             for (let tr of table.querySelectorAll('tbody tr')) {
               let div = tr.querySelector('th div');
               if (!div) continue;
@@ -850,8 +849,10 @@ def add_javascript_to_report(report):
         }
       }
 
-      let observer = new MutationObserver(onNodeChange);
-      observer.observe(document.body, { childList: true, subtree: true });
+      {
+        let observer = new MutationObserver(onNodeChange);
+        observer.observe(document.body, { childList: true, subtree: true });
+      }
     </script>
   '''))
 
