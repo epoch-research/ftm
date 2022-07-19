@@ -190,9 +190,10 @@ class SimulateTakeOff():
     # Hardware delay is adjusted by timestep
     self.hardware_delay_idx = round(self.hardware_delay / self.t_step)
     
-    # 
+    # Deactivate runtime training tradeoff
     if self.runtime_training_tradeoff < 0 or np.isnan(self.runtime_training_tradeoff):
       self.runtime_training_tradeoff = None
+      self.runtime_training_max_tradeoff = None
 
   def process_automation_costs(self):
     """ Initialize the training and runtime flops for goods and rnd
@@ -534,7 +535,7 @@ class SimulateTakeOff():
           self.automation_training_flops_goods < \
           self.biggest_training_run[t_idx] \
           * (self.runtime_training_max_tradeoff \
-          if self.runtime_training_max_tradeoff is not None \
+          if self.runtime_training_tradeoff is not None \
           else 1.)
       ) 
 
@@ -543,7 +544,7 @@ class SimulateTakeOff():
           self.automation_training_flops_rnd < \
           self.biggest_training_run[t_idx] \
           * (self.runtime_training_max_tradeoff \
-          if self.runtime_training_max_tradeoff is not None \
+          if self.runtime_training_tradeoff is not None \
           else 1.)
       ) 
     
