@@ -191,7 +191,7 @@ class SimulateTakeOff():
     self.hardware_delay_idx = round(self.hardware_delay / self.t_step)
     
     # 
-    if self.runtime_training_tradeoff <0:
+    if self.runtime_training_tradeoff < 0 or np.isnan(self.runtime_training_tradeoff):
       self.runtime_training_tradeoff = None
 
   def process_automation_costs(self):
