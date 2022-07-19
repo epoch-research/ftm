@@ -4,6 +4,8 @@ from . import *
 def add_scenario_group_to_report(scenario_group, report, exploration_target = 'compare'):
   results = []
 
+  report.add_paragraph(f"<span style='font-weight:bold'>Exploration target:</span> {exploration_target}")
+
   for scenario in scenario_group:
     row = {**{'type' : scenario_group.name, 'value' : scenario.name}, **scenario.model.takeoff_metrics}
     for metric in ['rampup_start', 'agi_year', 'doubling_times']:
@@ -25,7 +27,6 @@ def add_scenario_group_to_report(scenario_group, report, exploration_target = 'c
 
   # Write down the parameters
   report.add_header("Inputs", level = 3)
-  report.add_paragraph(f"<span style='font-weight:bold'>exploration_target:</span> {exploration_target}")
   input_parameters = pd.DataFrame(
     [scenario.params for scenario in scenario_group],
     index = [scenario.name for scenario in scenario_group]
@@ -125,6 +126,8 @@ def explore(exploration_target='compare', report_file_path=None, report_dir_path
   if new_report:
     report = Report(report_file_path=report_file_path, report_dir_path=report_dir_path)
 
+  report.add_paragraph(f"<span style='font-weight:bold'>Exploration target:</span> {exploration_target}")
+
   # Print table of metrics
   low_results = {**{'type' : 'Conservative', 'value' : low_value}, **low_model.takeoff_metrics}
   med_results = {**{'type' : 'Best guess', 'value' : med_value}, **med_model.takeoff_metrics}
@@ -176,7 +179,6 @@ def explore(exploration_target='compare', report_file_path=None, report_dir_path
 
   # Write down the parameters
   report.add_header("Inputs", level = 3)
-  report.add_paragraph(f"<span style='font-weight:bold'>exploration_target:</span> {exploration_target}")
   input_parameters = pd.DataFrame(
     [low_params, med_params, high_params],
     index = ['Conservative', 'Best guess', 'Aggressive']
