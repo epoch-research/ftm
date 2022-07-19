@@ -810,7 +810,7 @@ def add_javascript_to_report(report):
         filter.addEventListener('input', () => {
           for (let table of tables) {
             for (let tr of table.querySelectorAll('tbody tr')) {
-              let div = tr.querySelector('th div');
+              let div = tr.querySelector('th');
               if (!div) continue;
 
               let varName = div.innerText;
