@@ -571,6 +571,7 @@ class SimulateTakeOff():
       ** self.runtime_training_tradeoff)\
       if self.runtime_training_tradeoff is not None else \
       self.automation_runtime_flops_goods
+    runtime_requirements_goods = np.minimum(1.,runtime_requirements_goods)  # Requirements cannot fall below 1
     self.task_compute_to_labour_ratio_goods[t_idx] = \
       1. / runtime_requirements_goods
     
@@ -581,6 +582,7 @@ class SimulateTakeOff():
       ** self.runtime_training_tradeoff)\
       if self.runtime_training_tradeoff is not None else \
       self.automation_runtime_flops_rnd
+    runtime_requirements_goods = np.minimum(1.,runtime_requirements_rnd)  # Requirements cannot fall below 1
     self.task_compute_to_labour_ratio_rnd[t_idx] = \
       1. / runtime_requirements_rnd
   
