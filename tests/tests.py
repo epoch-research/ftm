@@ -1,6 +1,12 @@
 import unittest
  
 import numpy as np
+import pandas as pd
+from scipy import stats
+import opmodel.core.utils as utils
+from scipy.interpolate import interp1d
+from statsmodels.distributions.empirical_distribution import ECDF
+from opmodel.analysis.mc_analysis import ParamsDistribution, PointDistribution, AjeyaDistribution
 
 from opmodel.core.opmodel import *
 
@@ -426,3 +432,64 @@ class TestTaskWeights(unittest.TestCase):
         compute_to_labour_share_ratio,
         places=2
         )
+
+class TestParamsDistribution(unittest.TestCase):
+  """Extremely poor test of the joint parameter distribution"""
+
+  @classmethod
+  def setUpClass(self):
+    n_samples = 10000
+
+    TestParamsDistribution.params_dist = ParamsDistribution()
+    print("Sampling. This could take a while.")
+    TestParamsDistribution.samples = TestParamsDistribution.params_dist.rvs(n_samples)
+
+  def setUp(self):
+    self.samples = TestParamsDistribution.samples
+    self.marginals = TestParamsDistribution.params_dist.get_marginals()
+    self.rank_correlations = TestParamsDistribution.params_dist.get_rank_correlations()
+    self.parameters = list(self.marginals.keys())
+
+  def test_rank_correlations(self):
+    for i in range(len(self.parameters)):
+      for j in range(i + 1, len(self.parameters)):
+        left = self.parameters[i]
+        right = self.parameters[j]
+
+        if isinstance(self.marginals[left], PointDistribution) or isinstance(self.marginals[right], PointDistribution):
+          continue
+
+        expected_r = 0
+        if (left, right) in self.rank_correlations:
+          expected_r = self.rank_correlations[(left, right)]
+        elif (right, left) in self.rank_correlations:
+          expected_r = self.rank_correlations[(right, left)]
+
+        r = stats.spearmanr(self.samples[left], self.samples[right]).correlation
+
+        self.assertLess(np.abs(r - expected_r), 0.05)
+
+  def test_marginals(self):
+    for param, marginal in self.marginals.items():
+      param_samples = self.samples[param]
+
+      if isinstance(marginal, PointDistribution):
+        self.assertTrue(np.all(param_samples == marginal.get_value()))
+      elif isinstance(marginal, AjeyaDistribution):
+        # Ajeya's distribution doesn't have a CDF
+        p = np.linspace(0, 1, 100)
+        max_diff = np.max(np.abs((np.log10(self.eppf(param_samples)(p)) - np.log10(marginal._ppf(p)))/np.log10(marginal._ppf(p))))
+        self.assertLess(max_diff, 1)
+      else:
+        result = stats.kstest(param_samples, marginal.cdf)
+        self.assertGreater(result.pvalue, 0.02)
+
+  def ecdf(self, samples):
+    result = ECDF(samples)
+    result.x[0] = result.x[1] # get rid of -inf
+    result.y[0] = 0           # get rid of -inf
+    return [result.x, result.y]
+
+  def eppf(self, samples):
+    cdf = self.ecdf(samples)
+    return interp1d(cdf[1], cdf[0])

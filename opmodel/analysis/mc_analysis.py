@@ -260,6 +260,8 @@ class ParamsDistribution():
         if not np.isnan(r) and r != 0:
           pairwise_rank_corr[(left, right)] = r * directions[left]*directions[right]
 
+    self.marginals = marginals
+    self.pairwise_rank_corr = pairwise_rank_corr
     self.parameter_table = parameter_table
     self.rank_correlations = rank_correlations
     self.joint_dist = joint_distribution.JointDistribution(marginals, pairwise_rank_corr, rank_corr_method = "spearman")
@@ -271,6 +273,12 @@ class ParamsDistribution():
     actual_count = max(count, 2)
     samples = self.joint_dist.rvs(actual_count)[:count]
     return samples
+
+  def get_marginals(self):
+    return self.marginals
+
+  def get_rank_correlations(self):
+    return self.pairwise_rank_corr
 
 class AjeyaDistribution(rv_continuous):
   cdf_pd = None
@@ -291,7 +299,7 @@ class AjeyaDistribution(rv_continuous):
 
   def _ppf(self, q):
     # Ajeya's distribution stops at p ~= 0.9. We are completing it by placing the missing
-    # p = 0.1 over 10**100.
+    # p = 0.1 over compute = 10**100.
     return 10**interp1d(self.p, self.v, bounds_error = False, fill_value = 100)(q)
 
 class SkewedLogUniform(rv_continuous):
@@ -375,6 +383,8 @@ class PointDistribution(rv_continuous):
   def _ppf(self, q):
     return self.v
 
+  def get_value(self):
+    return self.v
 
 if __name__ == '__main__':
   parser = init_cli_arguments()
