@@ -1421,11 +1421,10 @@ class SimulateTakeOff():
 
     # Time from rampup to full automation
     self.takeoff_metrics["rampup_to_agi"] = \
-      self.agi_year - self.rampup_start \
-      if self.agi_year and self.rampup_start \
-      else self.t_end - self.t_start 
-    self.takeoff_metrics["rampup_to_agi"] = max(self.takeoff_metrics["rampup_to_agi"], 0.0)
-    ## BUG: IF RAMPUP AND AGI HAPPEN AT THE SAME TIME THEN THIS WOULD BE NEGATIVE!
+      self._length_between_thresholds(
+          self.frac_tasks_automated_goods > 0.03,
+          self.frac_tasks_automated_goods >= 1.,
+      )
     
     ## Combined metric
     self.takeoff_metrics["combined"] = \
