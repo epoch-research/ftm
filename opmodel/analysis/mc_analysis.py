@@ -260,16 +260,6 @@ class ParamsDistribution():
         if not np.isnan(r) and r != 0:
           pairwise_rank_corr[(left, right)] = r * directions[left]*directions[right]
 
-    ###################################################################
-    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    # TODO For testing purposes. Remove when the real correlations are fixed
-    for left in marginals:
-      for right in marginals:
-        if left != right:
-          pairwise_rank_corr[(left, right)] = 0.2
-    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ###################################################################
-
     self.parameter_table = parameter_table
     self.rank_correlations = rank_correlations
     self.joint_dist = joint_distribution.JointDistribution(marginals, pairwise_rank_corr, rank_corr_method = "spearman")
