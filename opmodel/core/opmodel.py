@@ -564,24 +564,28 @@ class SimulateTakeOff():
          + self.n_labour_tasks_rnd) # We dont count the initial compute task
 
     # Update compute to labour ratio of automatable tasks
-    runtime_requirements_goods = \
-      (self.automation_runtime_flops_goods    \
-      * (self.automation_training_flops_goods \
-      /  self.biggest_training_run[t_idx])   \
-      ** self.runtime_training_tradeoff)\
-      if self.runtime_training_tradeoff is not None else \
-      self.automation_runtime_flops_goods
+    with np.errstate(under = 'ignore'):
+      # Ignore underflows (we are taking care of them below)
+      runtime_requirements_goods = \
+        (self.automation_runtime_flops_goods    \
+        * (self.automation_training_flops_goods \
+        /  self.biggest_training_run[t_idx])   \
+        ** self.runtime_training_tradeoff)\
+        if self.runtime_training_tradeoff is not None else \
+        self.automation_runtime_flops_goods
     runtime_requirements_goods = np.maximum(1.,runtime_requirements_goods)  # Requirements cannot fall below 1
     self.task_compute_to_labour_ratio_goods[t_idx] = \
       1. / runtime_requirements_goods
     
-    runtime_requirements_rnd = \
-      (self.automation_runtime_flops_rnd    \
-      * (self.automation_training_flops_rnd \
-      /  self.biggest_training_run[t_idx]) \
-      ** self.runtime_training_tradeoff)\
-      if self.runtime_training_tradeoff is not None else \
-      self.automation_runtime_flops_rnd
+    with np.errstate(under = 'ignore'):
+      # Ignore underflows (we are taking care of them below)
+      runtime_requirements_rnd = \
+        (self.automation_runtime_flops_rnd    \
+        * (self.automation_training_flops_rnd \
+        /  self.biggest_training_run[t_idx]) \
+        ** self.runtime_training_tradeoff)\
+        if self.runtime_training_tradeoff is not None else \
+        self.automation_runtime_flops_rnd
     runtime_requirements_rnd = np.maximum(1.,runtime_requirements_rnd)  # Requirements cannot fall below 1
     self.task_compute_to_labour_ratio_rnd[t_idx] = \
       1. / runtime_requirements_rnd
