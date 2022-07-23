@@ -205,9 +205,16 @@ def plot_quantiles(ts, data, xlabel, ylabel, n_quantiles = 7, colormap = cm.Blue
   # Plot
   half = int((n_quantiles-1)/2)
   fig, (ax1) = plt.subplots(nrows=1, ncols=1, sharex=True, figsize=(8,4))
-  ax1.plot(ts, marks[:,half],color='k')
   for i in range(half):
-    ax1.fill_between(ts, marks[:,i],marks[:,-(i+1)],color=colormap(i/half))
+    credence = percentiles[(n_quantiles-1)-i] - percentiles[i]
+    label = f'{round(credence)}% credence interval'
+    ax1.fill_between(ts, marks[:,i],marks[:,-(i+1)],color=colormap(i/half), label=label)
+  ax1.plot(ts, marks[:,half],color='k', label="median")
+
+  # Sort the legend
+  legend_handles, legend_labels = ax1.get_legend_handles_labels()
+  legend_handles.reverse()
+  legend_labels.reverse()
 
   ax1.set_title("Takeoff simulation", fontsize=15)
   ax1.set_yscale("log")
@@ -215,6 +222,7 @@ def plot_quantiles(ts, data, xlabel, ylabel, n_quantiles = 7, colormap = cm.Blue
   ax1.set_xlabel(xlabel, fontsize=14)
   ax1.set_ylabel(ylabel, fontsize=14)
   fig.tight_layout()
+  plt.legend(legend_handles, legend_labels, bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0)
 
 # -----------------------------------------------------------------------------
 # Distributions
