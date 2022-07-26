@@ -14,13 +14,12 @@ from xml.etree import ElementTree as et
 
 import argparse
 
-from . import log, Report, CACHE_DIR
+from . import log, Report, get_option, init_cli_arguments, handle_cli_arguments
 from . import Report
 
 EPS = 1e-40 # frankly, just some arbitrary number that feels low enough
-REPO_WEB_URL = 'https://github.com/epoch-research/opmodel'
-REPO_URL = 'https://github.com/epoch-research/opmodel.git'
 DIFF_COL = 'Diff (%)'
+CACHE_DIR = os.path.join(get_option('cache_dir'), 'diffy')
 
 class Model:
   """
@@ -68,7 +67,7 @@ class Model:
 
     if self.ref_type == 'git':
       self.git_ref = self.get_git_ref(self.project_ref)
-      self.source_href = f'{REPO_WEB_URL}/tree/{self.git_ref}'
+      self.source_href = f'{get_option("repo_web_url")}/tree/{self.git_ref}'
     else:
       self.source_href = project_ref
 
@@ -126,7 +125,7 @@ class Model:
     path = os.path.join(CACHE_DIR, 'repos', f'repo_{self.model_index}')
     if not os.path.exists(path):
       os.makedirs(path, exist_ok=True)
-      Repo.clone_from(REPO_URL, path)
+      Repo.clone_from(get_option('repo_url'), path)
 
     try:
       repo = Repo(path)
@@ -134,7 +133,7 @@ class Model:
       # OK, maybe the repo is corrupted. Let's try again .
       os.rmdir(path)
       os.makedirs(path, exist_ok=True)
-      Repo.clone_from(REPO_URL, path)
+      Repo.clone_from(get_option('repo_url'), path)
       repo = Repo(path)
 
     return repo
@@ -858,7 +857,7 @@ def add_javascript_to_report(report):
 
 
 if __name__ == '__main__':
-  parser = argparse.ArgumentParser()
+  parser = init_cli_arguments()
 
   parser.add_argument(
     "-a",
@@ -901,7 +900,7 @@ if __name__ == '__main__':
     help="Outputs to the report at most this number of steps",
   )
 
-  args = parser.parse_args()
+  args = handle_cli_arguments(parser)
 
   diff_args = {}
 

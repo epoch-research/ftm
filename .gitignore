@@ -140,3 +140,4 @@ dmypy.json
 _ignore*
 _output_/
 _cache_/
+local_config.yml

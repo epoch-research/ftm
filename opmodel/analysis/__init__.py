@@ -1,5 +1,6 @@
 import os
 import sys
+import inspect
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -7,16 +8,25 @@ import argparse
 
 from ..core.opmodel import SimulateTakeOff
 from ..core.utils import display, log, draw_oom_lines
-from ..core.utils import get_parameter_table, get_ajeya_dist, get_rank_correlations, set_omni_excel_url
+from ..core.utils import get_parameter_table, get_ajeya_dist, get_rank_correlations, set_input_workbook, get_option, PROJECT_DIR
 from ..report.report import Report
 
-# Some constants
-CACHE_DIR = '_cache_/diffy'
-MODULE_DIR = os.path.dirname(os.path.realpath(__file__))
-CACHE_DIR = os.path.abspath(os.path.join(MODULE_DIR, '..', '..', CACHE_DIR))
+class ArgumentParserWrapper(argparse.ArgumentParser):
+  def __init__(self):
+    self.abbrev_to_full_name = {}
+    super().__init__()
 
+  def add_argument(self, *args, **kwargs):
+    if len(args) >= 2:
+      abbr = args[0][1:] # get rid of '-'
+      full_name = args[1][2:] # get rid of '--'
+      self.abbrev_to_full_name[abbr] = full_name
+
+    super().add_argument(*args, **kwargs)
+
+# Some constants
 def init_cli_arguments():
-  parser = argparse.ArgumentParser()
+  parser = ArgumentParserWrapper()
 
   parser.add_argument(
     "-o",
@@ -42,10 +52,23 @@ def init_cli_arguments():
   return parser
 
 def handle_cli_arguments(parser):
+  # Load arguments from config files (if any)
+  caller = inspect.stack()[1]
+  module_name = inspect.getmodulename(caller.filename)
+  options = get_option(module_name)
+  if options:
+    clean_options = {}
+    for k, v in options.items():
+      if k in parser.abbrev_to_full_name:
+        k = parser.abbrev_to_full_name[k]
+      k = k.replace('-', '_')
+      clean_options[k] = v
+    parser.set_defaults(**clean_options)
+
   args = parser.parse_args()
 
   if args.workbook_url is not None:
-    set_omni_excel_url(args.workbook_url)
+    set_input_workbook(args.workbook_url)
   del args.workbook_url
 
   return args

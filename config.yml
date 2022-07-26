@@ -1,0 +1,19 @@
+# Note: If you want to locally override some parameter, create a
+# 'local_config.yml' file in this directory (it will be ignored by Git).
+
+input_workbook: 'https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/'
+
+repo_web_url: 'https://github.com/epoch-research/opmodel'
+repo_url: '${repo_web_url}.git'
+
+cache_dir: '${project_dir}/_cache_'
+report_dir: '${project_dir}/_output_'
+
+#------------------------------------------------------------------------------
+# Analysis arguments
+#------------------------------------------------------------------------------
+
+# You can set the default arguments of the analysis scripts in this way:
+diffy:
+  max-steps: 200 # number of iterations available in the report
+# (Maybe this isn't that useful, though):
