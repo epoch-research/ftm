@@ -8,6 +8,7 @@ import re
 import sys
 import math
 import yaml
+import numbers
 import numpy as np
 import pandas as pd
 import urllib.request
@@ -37,8 +38,8 @@ def get_options():
   global config
   return config
 
-def get_option(name):
-  return get_options().get(name)
+def get_option(name, default = None):
+  return get_options().get(name, default)
 
 def set_option(name, value):
   global config_loaded
@@ -76,7 +77,8 @@ def merge_dicts(dicts):
     dicts_with_key = [d for d in dicts if k in d]
 
     for d in dicts_with_key:
-      if type(d[k]) != type(dicts_with_key[0][k]):
+      if type(d[k]) != type(dicts_with_key[0][k]) \
+          and not (isinstance(d[k], numbers.Number) and isinstance(dicts_with_key[0][k], numbers.Number)):
         raise Exception(f'Conflict merging dictionaries (key {k})')
 
     if isinstance(dicts_with_key[0][k], dict):

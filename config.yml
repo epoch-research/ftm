@@ -9,6 +9,11 @@ repo_url: '${repo_web_url}.git'
 cache_dir: '${project_dir}/_cache_'
 report_dir: '${project_dir}/_output_'
 
+# Simulation resolution
+t_start: 2022
+t_end:   2100
+t_step:   0.1
+
 #------------------------------------------------------------------------------
 # Analysis arguments
 #------------------------------------------------------------------------------

@@ -150,6 +150,10 @@ class Model:
 
     self.inputs = inputs
 
+    self.inputs['t_start'] = get_option('t_start', 2022)
+    self.inputs['t_end']   = get_option('t_end',   2100)
+    self.inputs['t_step']  = get_option('t_step',   0.1)
+
     try:
       log.info('Running the model...')
       self.sim = self.model(**inputs)

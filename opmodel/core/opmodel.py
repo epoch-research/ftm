@@ -6,7 +6,7 @@ import math
 import traceback
 
 from . import utils
-from .utils import display
+from .utils import display, get_option
 
 class SimulateTakeOff():
   """ Class to run a simulation of how automation and the economy 
@@ -107,12 +107,16 @@ class SimulateTakeOff():
       compute_depreciation,
 
       # Simulation resolution
-      t_start = 2022,
-      t_end = 2100,
-      t_step = 0.1, # Time between steps in years
+      t_start = None,
+      t_end = None,
+      t_step = None, # Time between steps in years
 
       n_labour_tasks = 100,
       ):
+
+    if t_start is None: t_start = get_option('t_start', 2022)
+    if t_end   is None: t_end   = get_option('t_end',   2100)
+    if t_step  is None: t_step  = get_option('t_step',   0.1)
     
     # Add all inputs to model parameters
     for item in inspect.signature(SimulateTakeOff).parameters:
