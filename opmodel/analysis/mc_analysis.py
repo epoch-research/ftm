@@ -22,7 +22,7 @@ class McAnalysisResults:
 class TooManyRetries(Exception):
   pass
 
-def mc_analysis(n_trials = 100):
+def mc_analysis(n_trials = 100, total_mass_on_bioanchors = None):
   scalar_metrics = ['rampup_start', 'agi_year']
   state_metrics = ['gwp', 'biggest_training_run', 'compute']
 
@@ -36,7 +36,7 @@ def mc_analysis(n_trials = 100):
       state_metric : [] for state_metric in state_metrics
   }
 
-  params_dist = ParamsDistribution()
+  params_dist = ParamsDistribution(total_mass_on_bioanchors = total_mass_on_bioanchors)
   samples = []
 
   log.info(f'Running simulations...')
@@ -123,11 +123,11 @@ def mc_analysis(n_trials = 100):
 
   return results
 
-def write_mc_analysis_report(n_trials=100, report_file_path=None, report_dir_path=None, report=None):
+def write_mc_analysis_report(n_trials=100, total_mass_on_bioanchors=None, report_file_path=None, report_dir_path=None, report=None):
   if report_file_path is None:
     report_file_path = 'mc_analysis.html'
 
-  results = mc_analysis(n_trials)
+  results = mc_analysis(n_trials, total_mass_on_bioanchors)
 
   log.info('Writing report...')
   new_report = report is None
@@ -231,7 +231,7 @@ def plot_quantiles(ts, data, xlabel, ylabel, n_quantiles = 7, colormap = cm.Blue
 class ParamsDistribution():
   """ Joint parameter distribution. """
 
-  def __init__(self):
+  def __init__(self, total_mass_on_bioanchors = None):
     # Retrieve parameter table
     log.info('Retrieving parameters...')
     parameter_table = get_parameter_table()
@@ -253,7 +253,7 @@ class ParamsDistribution():
         marginal = PointDistribution(row['Best guess'])
       marginals[parameter] = marginal
 
-    marginals['full_automation_requirements_training'] = AjeyaDistribution()
+    marginals['full_automation_requirements_training'] = AjeyaDistribution(total_mass_on_bioanchors = total_mass_on_bioanchors)
 
     pairwise_rank_corr = {}
     for left in marginals.keys():
@@ -292,9 +292,9 @@ class AjeyaDistribution(rv_continuous):
   cdf_pd = None
   cdf_np = None
 
-  def __init__(self):
+  def __init__(self, total_mass_on_bioanchors = None):
     if AjeyaDistribution.cdf_np is None:
-      AjeyaDistribution.cdf_pd = get_ajeya_dist()
+      AjeyaDistribution.cdf_pd = get_ajeya_dist(total_mass_on_bioanchors)
       AjeyaDistribution.cdf_np = AjeyaDistribution.cdf_pd.to_numpy()
 
     ajeya_cdf_log10 = AjeyaDistribution.cdf_np
@@ -306,8 +306,7 @@ class AjeyaDistribution(rv_continuous):
     super().__init__(a = 10**np.min(self.v), b = 10**np.max(self.v))
 
   def _ppf(self, q):
-    # Ajeya's distribution stops at p ~= 0.9. We are completing it by placing the missing
-    # p = 0.1 over compute = 10**100.
+    # We are completing Ajeya's distribution by placing the missing probability over compute = 10**100.
     return 10**interp1d(self.p, self.v, bounds_error = False, fill_value = 100)(q)
 
 class SkewedLogUniform(rv_continuous):
@@ -396,12 +395,26 @@ class PointDistribution(rv_continuous):
 
 if __name__ == '__main__':
   parser = init_cli_arguments()
+
   parser.add_argument(
     "-n",
     "--n-trials",
     type=int,
     default=100,
   )
+
+  parser.add_argument(
+    "--total-mass-on-bioanchors",
+    type=float,
+    default=None,
+  )
+
   args = handle_cli_arguments(parser)
-  write_mc_analysis_report(n_trials=args.n_trials, report_file_path=args.output_file, report_dir_path=args.output_dir)
+
+  write_mc_analysis_report(
+    n_trials=args.n_trials,
+    total_mass_on_bioanchors=args.total_mass_on_bioanchors,
+    report_file_path=args.output_file,
+    report_dir_path=args.output_dir
+  )
 

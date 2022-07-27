@@ -172,12 +172,18 @@ def get_parameter_table():
     cached_param_table.fillna(np.nan, inplace = True)
   return cached_param_table.copy()
 
-def get_ajeya_dist():
+def get_ajeya_dist(total_mass_on_bioanchors = None):
   global cached_ajeya_dist
   if cached_ajeya_dist is None:
     # The sheet name is limited to 31 characters
     cached_ajeya_dist = pd.read_excel(get_input_workbook(), sheet_name = 'Ajeya distribution of automation FLOP'[:31])
-  return cached_ajeya_dist.copy()
+  ajeya_dist = cached_ajeya_dist.copy()
+
+  if total_mass_on_bioanchors is not None:
+    # Col 1 is probability
+    ajeya_dist.iloc[:, 1] *= total_mass_on_bioanchors/max(ajeya_dist.iloc[:, 1])
+
+  return ajeya_dist
 
 def get_rank_correlations():
   global cached_rank_correlations
