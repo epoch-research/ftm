@@ -52,7 +52,7 @@ def mc_analysis(n_trials = 100, total_mass_on_bioanchors = None):
         mc_params = {param: sample[param][0] for param in sample}
 
         mc_model = SimulateTakeOff(**mc_params)
-        if mc_model.some_initial_task_is_automatable():
+        if mc_model.some_initial_goods_task_is_automatable():
           raise ValueError("Assumption not met: some tasks are automatable from the beginning.")
         mc_model.run_simulation()
       except Exception as e:
@@ -172,7 +172,7 @@ def write_mc_analysis_report(n_trials=100, total_mass_on_bioanchors=None, report
   tbody.insert(0, et.fromstring('''
     <tr>
       <th>full_automation_requirements_training</th>
-      <td colspan="4" style="text-align: center">sampled from Cotra's distribution <span data-modal-trigger="ajeya-modal">(<i>click here to view</i>)</span></td>
+      <td colspan="4" style="text-align: center">sampled from a clipped Cotra's distribution <span data-modal-trigger="ajeya-modal">(<i>click here to view</i>)</span></td>
     </tr>
   '''))
 
@@ -231,7 +231,12 @@ def plot_quantiles(ts, data, xlabel, ylabel, n_quantiles = 7, colormap = cm.Blue
 class ParamsDistribution():
   """ Joint parameter distribution. """
 
-  def __init__(self, total_mass_on_bioanchors = None):
+  def __init__(self, total_mass_on_bioanchors = None, ensure_no_automatable_goods_tasks = True):
+    """
+      If ensure_no_automatable_goods_tasks is True, wel'll make sure none of the samples
+      represent an scenario in which there is some "goods" task initially automatable.
+    """
+
     # Retrieve parameter table
     log.info('Retrieving parameters...')
     parameter_table = get_parameter_table()
@@ -253,7 +258,13 @@ class ParamsDistribution():
         marginal = PointDistribution(row['Best guess'])
       marginals[parameter] = marginal
 
-    marginals['full_automation_requirements_training'] = AjeyaDistribution(total_mass_on_bioanchors = total_mass_on_bioanchors)
+    # TODO check
+    lower_ajeya_bound = \
+        (marginals['initial_biggest_training_run'].b * marginals['runtime_training_max_tradeoff'].b) \
+        * marginals['flop_gap_training'].b**(10.5/7)
+
+    marginals['full_automation_requirements_training'] = \
+        AjeyaDistribution(total_mass_on_bioanchors = total_mass_on_bioanchors, lower_bound = lower_ajeya_bound)
 
     pairwise_rank_corr = {}
     for left in marginals.keys():
@@ -273,6 +284,7 @@ class ParamsDistribution():
     self.parameter_table = parameter_table
     self.rank_correlations = rank_correlations
     self.joint_dist = joint_distribution.JointDistribution(marginals, pairwise_rank_corr, rank_corr_method = "spearman")
+    self.ensure_no_automatable_goods_tasks = ensure_no_automatable_goods_tasks
 
   def rvs(self, count):
     # statsmodels.distributions.copula.copulas throws an exception when
@@ -280,6 +292,16 @@ class ParamsDistribution():
     # We could make this more efficient, but it's probably not worth it
     actual_count = max(count, 2)
     samples = self.joint_dist.rvs(actual_count)[:count]
+
+    if self.ensure_no_automatable_goods_tasks:
+      # Generate a gap samples conditional on no tasks being automatable from the beginning
+      gap_marginal = self.marginals['flop_gap_training']
+      for i, row in samples.iterrows():
+        max_gap = (row['full_automation_requirements_training']/(row['initial_biggest_training_run'] * row['runtime_training_max_tradeoff']))**(7/10.5)
+        gap_marginal.set_upper_bound(max_gap)
+        samples.at[i, 'flop_gap_training'] = gap_marginal.rvs()
+      gap_marginal.set_upper_bound(None)
+
     return samples
 
   def get_marginals(self):
@@ -292,9 +314,9 @@ class AjeyaDistribution(rv_continuous):
   cdf_pd = None
   cdf_np = None
 
-  def __init__(self, total_mass_on_bioanchors = None):
+  def __init__(self, total_mass_on_bioanchors = None, lower_bound = None):
     if AjeyaDistribution.cdf_np is None:
-      AjeyaDistribution.cdf_pd = get_ajeya_dist(total_mass_on_bioanchors)
+      AjeyaDistribution.cdf_pd = get_ajeya_dist(total_mass_on_bioanchors, lower_bound)
       AjeyaDistribution.cdf_np = AjeyaDistribution.cdf_pd.to_numpy()
 
     ajeya_cdf_log10 = AjeyaDistribution.cdf_np
@@ -315,6 +337,9 @@ class SkewedLogUniform(rv_continuous):
       low, high = high, low
 
     super().__init__(a = low, b = high)
+
+    self.upper_bound = high
+    self.initial_upper_bound = high
 
     # Transform to loguniform
     if kind == "frac":
@@ -352,6 +377,17 @@ class SkewedLogUniform(rv_continuous):
     self.integration_direction = +1 if (low < high) else -1
 
     self._cdf = np.vectorize(self._cdf)
+
+  def set_upper_bound(self, bound):
+    if bound is None: bound = self.initial_upper_bound
+    bound = min(bound, self.initial_upper_bound)
+    self.upper_bound = bound
+    self.b = bound
+
+  def _ppf(self, q):
+    upper_q = self._cdf(self.upper_bound)
+    q = q * upper_q
+    return super()._ppf(q)
 
   def _cdf(self, x):
     # Transform to loguniform
