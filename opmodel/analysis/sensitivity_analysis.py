@@ -62,18 +62,18 @@ def sensitivity_analysis(quick_test_mode=False):
         "Aggressive value" : high_params[parameter],
     }
     for takeoff_metric in low_model.takeoff_metrics:
-      result[f"{takeoff_metric}"] = f"[{low_model.takeoff_metrics[takeoff_metric]:0.2f}, {high_model.takeoff_metrics[takeoff_metric]:0.2f}]"
+      result[f"{takeoff_metric}"] = f"[{low_model.takeoff_metrics[takeoff_metric]:0.2f}, {med_model.takeoff_metrics[takeoff_metric]:0.2f}, {high_model.takeoff_metrics[takeoff_metric]:0.2f}]"
 
     result["delta"] = \
         np.abs(high_model.takeoff_metrics["combined"] - med_model.takeoff_metrics["combined"]) \
       - np.abs(med_model.takeoff_metrics["combined"] - low_model.takeoff_metrics["combined"])
     
     # Add timelines metrics
-    result["rampup_start"] = f"[{low_model.rampup_start:0.2f}, {high_model.rampup_start:0.2f}]"
-    result["agi_date"] = f"[{low_model.agi_year:0.2f}, {high_model.agi_year:0.2f}]"
+    result["rampup_start"] = f"[{low_model.rampup_start:0.2f}, {med_model.rampup_start:0.2f}, {high_model.rampup_start:0.2f}]"
+    result["agi_date"] = f"[{low_model.agi_year:0.2f}, {med_model.agi_year:0.2f}, {high_model.agi_year:0.2f}]"
 
     # Add GWP doubling times
-    result["GWP doubling times"] = f"[{low_model.doubling_times[:4]}, {high_model.doubling_times[:4]}]"
+    result["GWP doubling times"] = f"[{low_model.doubling_times[:4]}, {med_model.doubling_times[:4]}, {high_model.doubling_times[:4]}]"
     result["doubling times"] = result["GWP doubling times"] # alias
 
     table.append(result)

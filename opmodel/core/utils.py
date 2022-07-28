@@ -175,8 +175,13 @@ def get_parameter_table():
 def get_ajeya_dist(total_mass_on_bioanchors = None, lower_bound = None):
   global cached_ajeya_dist
   if cached_ajeya_dist is None:
-    sheet_name = 'Ajeya distribution of automation FLOP'[:31] # The sheet name is limited to 31 characters
-    cached_ajeya_dist = pd.read_excel(get_input_workbook(), sheet_name = sheet_name)
+    url = get_option('ajeya_dist_url')
+    if url:
+      cached_ajeya_dist = pd.read_csv(get_csv_export_from_sheet_url(url))
+    else:
+      # By default we read the distibution from the omni workbook
+      cached_ajeya_dist = pd.read_excel(get_input_workbook(), sheet_name = 'Ajeya distribution of automation FLOP'[:31])
+
   ajeya_dist = cached_ajeya_dist.copy()
 
   # col 1 is probability
@@ -197,6 +202,11 @@ def get_ajeya_dist(total_mass_on_bioanchors = None, lower_bound = None):
     ajeya_dist.iloc[:, 1] *= total_mass_on_bioanchors/ajeya_dist.iloc[-1, 1]
 
   return ajeya_dist
+
+def set_ajeya_dist_url(url):
+  global cached_ajeya_dist
+  set_option('ajeya_dist_url', url)
+  cached_ajeya_dist = None
 
 def get_rank_correlations():
   global cached_rank_correlations
@@ -237,6 +247,15 @@ def get_metrics_meanings():
 #--------------------------------------------------------------------------
 # Misc
 #--------------------------------------------------------------------------
+
+def get_csv_export_from_sheet_url(url):
+  pattern = r'https://docs.google.com/spreadsheets/d/([a-zA-Z0-9-_]*)/.*\bgid\b=([0-9]*)?.*'
+  m = re.match(pattern, url)
+  if m:
+    workbook_id = m.group(1)
+    sheet_id = m.group(2)
+    url = f'https://docs.google.com/spreadsheets/d/{workbook_id}/export?format=csv&gid={sheet_id}'
+  return url
 
 def draw_oom_lines():
   low, high = plt.gca().get_ylim()
