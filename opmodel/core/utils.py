@@ -184,22 +184,25 @@ def get_ajeya_dist(total_mass_on_bioanchors = None, lower_bound = None):
 
   ajeya_dist = cached_ajeya_dist.copy()
 
-  # col 1 is probability
-
-  if lower_bound is not None:
-    # TODO check
-    lower_bound = np.log10(lower_bound)
-    i = np.argmax(ajeya_dist.iloc[:, 0] >= lower_bound)
-
-    total_mass = ajeya_dist.iloc[-1, 1]
-
-    clip_p = ajeya_dist.iloc[i, 1]
-    ajeya_dist.iloc[i:, 1] -= clip_p
-    ajeya_dist.iloc[:i, 1] = 0
-    ajeya_dist.iloc[i:, 1] *= total_mass/ajeya_dist.iloc[-1, 1]
+  # (col 1 is probability)
 
   if total_mass_on_bioanchors is not None:
     ajeya_dist.iloc[:, 1] *= total_mass_on_bioanchors/ajeya_dist.iloc[-1, 1]
+
+  if lower_bound is not None:
+    lower_bound = np.log10(lower_bound)
+    i = np.argmax(ajeya_dist.iloc[:, 0] >= lower_bound)
+    clip_p = ajeya_dist.iloc[i, 1]
+
+    bioanchors_mass = ajeya_dist.iloc[-1, 1]
+    bioanchors_mass_after_clip = (bioanchors_mass - clip_p)/(1 - clip_p)
+
+    # Clip...
+    ajeya_dist.iloc[i:, 1] -= clip_p
+    ajeya_dist.iloc[:i, 1] = 0
+
+    # ... and normalize
+    ajeya_dist.iloc[i:, 1] *= bioanchors_mass_after_clip/ajeya_dist.iloc[-1, 1]
 
   return ajeya_dist
 

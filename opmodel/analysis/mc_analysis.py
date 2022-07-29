@@ -270,7 +270,7 @@ class ParamsDistribution():
 
     lower_ajeya_bound = \
         (marginals['initial_biggest_training_run'].b * marginals['runtime_training_max_tradeoff'].b) \
-        * marginals['flop_gap_training'].b**(10.5/7)
+        * marginals['flop_gap_training'].a**(10.5/7)
 
     marginals['full_automation_requirements_training'] = \
         AjeyaDistribution(total_mass_on_bioanchors = total_mass_on_bioanchors, lower_bound = lower_ajeya_bound)
@@ -296,14 +296,13 @@ class ParamsDistribution():
     self.ensure_no_automatable_goods_tasks = ensure_no_automatable_goods_tasks
 
   def rvs(self, count):
-    # statsmodels.distributions.copula.copulas throws an exception when
-    # we ask from it less than 2 samples
-    # We could make this more efficient, but it's probably not worth it
+    # statsmodels.distributions.copula.copulas throws an exception when we ask less than 2 samples from it.
+    # We could make this more efficient, but it's probably not worth it.
     actual_count = max(count, 2)
     samples = self.joint_dist.rvs(actual_count)[:count]
 
     if self.ensure_no_automatable_goods_tasks:
-      # Generate a gap samples conditional on no tasks being automatable from the beginning
+      # Resample the training gap to ensure no tasks is automatable from the beginning
       gap_marginal = self.marginals['flop_gap_training']
       for i, row in samples.iterrows():
         max_gap = (row['full_automation_requirements_training']/(row['initial_biggest_training_run'] * row['runtime_training_max_tradeoff']))**(7/10.5)
