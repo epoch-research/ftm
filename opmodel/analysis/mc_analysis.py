@@ -22,7 +22,7 @@ class McAnalysisResults:
 class TooManyRetries(Exception):
   pass
 
-def mc_analysis(n_trials = 100, total_mass_on_bioanchors = None):
+def mc_analysis(n_trials = 100, max_retries = 100, total_mass_on_bioanchors = None):
   scalar_metrics = ['rampup_start', 'agi_year']
   state_metrics = ['gwp', 'biggest_training_run', 'compute']
 
@@ -42,7 +42,6 @@ def mc_analysis(n_trials = 100, total_mass_on_bioanchors = None):
   log.info(f'Running simulations...')
   log.indent()
   for trial in range(n_trials):
-    max_retries = 100
     for i in range(max_retries):
       # Try to run the simulation
       try:
@@ -52,8 +51,11 @@ def mc_analysis(n_trials = 100, total_mass_on_bioanchors = None):
         mc_params = {param: sample[param][0] for param in sample}
 
         mc_model = SimulateTakeOff(**mc_params)
-        if mc_model.some_initial_goods_task_is_automatable():
-          raise ValueError("Assumption not met: some tasks are automatable from the beginning.")
+
+        # Check that no goods task is automatable from the beginning (except for the first one)
+        runtime_training_max_tradeoff = mc_model.runtime_training_max_tradeoff if mc_model.runtime_training_tradeoff is not None else 1.
+        assert(not np.any(mc_model.automation_training_flops_goods[1:] < mc_model.initial_biggest_training_run * runtime_training_max_tradeoff))
+
         mc_model.run_simulation()
       except Exception as e:
         # This was a bad sample. We'll just discard it and try again.
@@ -63,7 +65,6 @@ def mc_analysis(n_trials = 100, total_mass_on_bioanchors = None):
         log.info(e)
         log.info(traceback.format_exc(), end = '')
         log.deindent()
-        #log.info(f'Input parameters: {mc_params}')
         log.info('Discarding the sample and rerunning the simulation')
         log.deindent()
         continue
@@ -123,11 +124,11 @@ def mc_analysis(n_trials = 100, total_mass_on_bioanchors = None):
 
   return results
 
-def write_mc_analysis_report(n_trials=100, total_mass_on_bioanchors=None, report_file_path=None, report_dir_path=None, report=None):
+def write_mc_analysis_report(n_trials=100, max_retries = 100, include_sample_table = False, total_mass_on_bioanchors=None, report_file_path=None, report_dir_path=None, report=None):
   if report_file_path is None:
     report_file_path = 'mc_analysis.html'
 
-  results = mc_analysis(n_trials, total_mass_on_bioanchors)
+  results = mc_analysis(n_trials, max_retries, total_mass_on_bioanchors)
 
   log.info('Writing report...')
   new_report = report is None
@@ -179,6 +180,11 @@ def write_mc_analysis_report(n_trials=100, total_mass_on_bioanchors=None, report
   # Write down the rank correlations
   report.add_header("Rank correlations", level = 3)
   report.add_data_frame(results.rank_correlations.fillna(''))
+
+  # Write down the rank correlations
+  if include_sample_table:
+    report.add_header("Parameter samples", level = 3)
+    report.add_data_frame(results.param_samples)
 
   if new_report:
     report_path = report.write()
@@ -258,7 +264,10 @@ class ParamsDistribution():
         marginal = PointDistribution(row['Best guess'])
       marginals[parameter] = marginal
 
-    # TODO check
+    if parameter_table['Best guess']['runtime_training_tradeoff'] < 0 or np.isnan(parameter_table['Best guess']['runtime_training_tradeoff']):
+      marginals['runtime_training_tradeoff']     = PointDistribution(0)
+      marginals['runtime_training_max_tradeoff'] = PointDistribution(1)
+
     lower_ajeya_bound = \
         (marginals['initial_biggest_training_run'].b * marginals['runtime_training_max_tradeoff'].b) \
         * marginals['flop_gap_training'].b**(10.5/7)
@@ -381,6 +390,7 @@ class SkewedLogUniform(rv_continuous):
   def set_upper_bound(self, bound):
     if bound is None: bound = self.initial_upper_bound
     bound = min(bound, self.initial_upper_bound)
+    bound = max(bound, self.a)
     self.upper_bound = bound
     self.b = bound
 
@@ -445,10 +455,24 @@ if __name__ == '__main__':
     default=None,
   )
 
+  parser.add_argument(
+    "-r",
+    "--max-retries",
+    type=int,
+    default=100,
+  )
+
+  parser.add_argument(
+    "--include-sample-table",
+    action='store_true',
+  )
+
   args = handle_cli_arguments(parser)
 
   write_mc_analysis_report(
     n_trials=args.n_trials,
+    max_retries=args.max_retries,
+    include_sample_table=args.include_sample_table,
     total_mass_on_bioanchors=args.total_mass_on_bioanchors,
     report_file_path=args.output_file,
     report_dir_path=args.output_dir
