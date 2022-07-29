@@ -64,7 +64,9 @@ def sensitivity_analysis(quick_test_mode=False):
     for takeoff_metric in low_model.takeoff_metrics:
       result[f"{takeoff_metric}"] = f"[{low_model.takeoff_metrics[takeoff_metric]:0.2f}, {med_model.takeoff_metrics[takeoff_metric]:0.2f}, {high_model.takeoff_metrics[takeoff_metric]:0.2f}]"
 
-    result["delta"] = \
+    result["delta"] = np.abs(high_model.takeoff_metrics["combined"] - low_model.takeoff_metrics["combined"])
+
+    result["skew"] = \
         np.abs(high_model.takeoff_metrics["combined"] - med_model.takeoff_metrics["combined"]) \
       - np.abs(med_model.takeoff_metrics["combined"] - low_model.takeoff_metrics["combined"])
     
