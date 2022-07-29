@@ -239,7 +239,7 @@ class ParamsDistribution():
 
   def __init__(self, total_mass_on_bioanchors = None, ensure_no_automatable_goods_tasks = True):
     """
-      If ensure_no_automatable_goods_tasks is True, wel'll make sure none of the samples
+      If ensure_no_automatable_goods_tasks is True, we'll make sure none of the samples
       represent an scenario in which there is some "goods" task initially automatable.
     """
 
