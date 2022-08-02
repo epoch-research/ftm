@@ -1503,13 +1503,13 @@ class SimulateTakeOff():
       plt.axvline(self.rampup_start, 
                 linestyle='dotted',
                 color=line_color,
-                label='Start of ramp-up');
+                label='Wake up');
                 
     if self.rampup_mid:
       plt.axvline(self.rampup_mid, 
                 linestyle='-.',
                 color=line_color,
-                label='Middle of ramp-up');
+                label='30% automation');
                 
     if self.agi_year:
       plt.axvline(self.agi_year, 
