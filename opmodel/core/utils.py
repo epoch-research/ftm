@@ -172,7 +172,7 @@ def get_parameter_table():
     cached_param_table.fillna(np.nan, inplace = True)
   return cached_param_table.copy()
 
-def get_ajeya_dist(total_mass_on_bioanchors = None, lower_bound = None):
+def get_ajeya_dist():
   global cached_ajeya_dist
   if cached_ajeya_dist is None:
     url = get_option('ajeya_dist_url')
@@ -182,27 +182,21 @@ def get_ajeya_dist(total_mass_on_bioanchors = None, lower_bound = None):
       # By default we read the distibution from the omni workbook
       cached_ajeya_dist = pd.read_excel(get_input_workbook(), sheet_name = 'Ajeya distribution of automation FLOP'[:31])
 
-  ajeya_dist = cached_ajeya_dist.copy()
+  return cached_ajeya_dist.copy()
 
-  # (col 1 is probability)
+def get_clipped_ajeya_dist(lower_bound):
+  ajeya_dist = get_ajeya_dist()
 
-  if total_mass_on_bioanchors is not None:
-    ajeya_dist.iloc[:, 1] *= total_mass_on_bioanchors/ajeya_dist.iloc[-1, 1]
+  lower_bound = np.log10(lower_bound)
+  i = np.argmax(ajeya_dist.iloc[:, 0] >= lower_bound)
+  clip_p = ajeya_dist.iloc[i, 1]
 
-  if lower_bound is not None:
-    lower_bound = np.log10(lower_bound)
-    i = np.argmax(ajeya_dist.iloc[:, 0] >= lower_bound)
-    clip_p = ajeya_dist.iloc[i, 1]
+  # Clip...
+  ajeya_dist.iloc[i:, 1] -= clip_p
+  ajeya_dist.iloc[:i, 1] = 0
 
-    bioanchors_mass = ajeya_dist.iloc[-1, 1]
-    bioanchors_mass_after_clip = (bioanchors_mass - clip_p)/(1 - clip_p)
-
-    # Clip...
-    ajeya_dist.iloc[i:, 1] -= clip_p
-    ajeya_dist.iloc[:i, 1] = 0
-
-    # ... and normalize
-    ajeya_dist.iloc[i:, 1] *= bioanchors_mass_after_clip/ajeya_dist.iloc[-1, 1]
+  # ... and renormalize
+  ajeya_dist.iloc[i:, 1] /= ajeya_dist.iloc[-1, 1]
 
   return ajeya_dist
 

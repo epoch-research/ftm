@@ -13,6 +13,7 @@ from numpy.random import default_rng
 from matplotlib import cm
 from xml.etree import ElementTree as et
 from copula_wrapper import joint_distribution
+from ..core.utils import get_clipped_ajeya_dist
 
 rng = default_rng()
 
@@ -22,7 +23,7 @@ class McAnalysisResults:
 class TooManyRetries(Exception):
   pass
 
-def mc_analysis(n_trials = 100, max_retries = 100, total_mass_on_bioanchors = None):
+def mc_analysis(n_trials = 100, max_retries = 100):
   scalar_metrics = ['rampup_start', 'agi_year']
   state_metrics = ['gwp', 'biggest_training_run', 'compute']
 
@@ -36,7 +37,7 @@ def mc_analysis(n_trials = 100, max_retries = 100, total_mass_on_bioanchors = No
       state_metric : [] for state_metric in state_metrics
   }
 
-  params_dist = ParamsDistribution(total_mass_on_bioanchors = total_mass_on_bioanchors)
+  params_dist = ParamsDistribution()
   samples = []
 
   log.info(f'Running simulations...')
@@ -118,17 +119,17 @@ def mc_analysis(n_trials = 100, max_retries = 100, total_mass_on_bioanchors = No
   results.n_trials          = n_trials
   results.timesteps         = mc_model.timesteps
   results.param_samples     = pd.concat(samples, ignore_index = True)
-  results.ajeya_cdf         = AjeyaDistribution.cdf_pd
+  results.ajeya_cdf         = params_dist.marginals['full_automation_requirements_training'].cdf_pd
   results.parameter_table   = params_dist.parameter_table
   results.rank_correlations = params_dist.rank_correlations
 
   return results
 
-def write_mc_analysis_report(n_trials=100, max_retries = 100, include_sample_table = False, total_mass_on_bioanchors=None, report_file_path=None, report_dir_path=None, report=None):
+def write_mc_analysis_report(n_trials=100, max_retries = 100, include_sample_table = False, report_file_path=None, report_dir_path=None, report=None):
   if report_file_path is None:
     report_file_path = 'mc_analysis.html'
 
-  results = mc_analysis(n_trials, max_retries, total_mass_on_bioanchors)
+  results = mc_analysis(n_trials, max_retries)
 
   log.info('Writing report...')
   new_report = report is None
@@ -237,7 +238,7 @@ def plot_quantiles(ts, data, xlabel, ylabel, n_quantiles = 7, colormap = cm.Blue
 class ParamsDistribution():
   """ Joint parameter distribution. """
 
-  def __init__(self, total_mass_on_bioanchors = None, ensure_no_automatable_goods_tasks = True):
+  def __init__(self, ensure_no_automatable_goods_tasks = True):
     """
       If ensure_no_automatable_goods_tasks is True, we'll make sure none of the samples
       represent an scenario in which there is some "goods" task initially automatable.
@@ -247,6 +248,16 @@ class ParamsDistribution():
     log.info('Retrieving parameters...')
     parameter_table = get_parameter_table()
     parameter_table = parameter_table[['Conservative', 'Best guess', 'Aggressive', 'Type']]
+
+    # Disable the runtime-training tradeoff for the MC analysis
+    parameter_table.at['runtime_training_tradeoff', 'Conservative'] = None
+    parameter_table.at['runtime_training_tradeoff', 'Best guess']   = 0
+    parameter_table.at['runtime_training_tradeoff', 'Aggressive']   = None
+
+    parameter_table.at['runtime_training_max_tradeoff', 'Conservative'] = None
+    parameter_table.at['runtime_training_max_tradeoff', 'Best guess']   = 1
+    parameter_table.at['runtime_training_max_tradeoff', 'Aggressive']   = None
+
     rank_correlations = get_rank_correlations()
 
     marginals = {}
@@ -264,16 +275,12 @@ class ParamsDistribution():
         marginal = PointDistribution(row['Best guess'])
       marginals[parameter] = marginal
 
-    if parameter_table['Best guess']['runtime_training_tradeoff'] < 0 or np.isnan(parameter_table['Best guess']['runtime_training_tradeoff']):
-      marginals['runtime_training_tradeoff']     = PointDistribution(0)
-      marginals['runtime_training_max_tradeoff'] = PointDistribution(1)
-
     lower_ajeya_bound = \
         (marginals['initial_biggest_training_run'].b * marginals['runtime_training_max_tradeoff'].b) \
         * marginals['flop_gap_training'].a**(10.5/7)
 
     marginals['full_automation_requirements_training'] = \
-        AjeyaDistribution(total_mass_on_bioanchors = total_mass_on_bioanchors, lower_bound = lower_ajeya_bound)
+        AjeyaDistribution(lower_bound = lower_ajeya_bound)
 
     pairwise_rank_corr = {}
     for left in marginals.keys():
@@ -319,25 +326,22 @@ class ParamsDistribution():
     return self.pairwise_rank_corr
 
 class AjeyaDistribution(rv_continuous):
-  cdf_pd = None
-  cdf_np = None
+  def __init__(self, lower_bound = None):
+    self.cdf_pd = get_clipped_ajeya_dist(lower_bound)
 
-  def __init__(self, total_mass_on_bioanchors = None, lower_bound = None):
-    if AjeyaDistribution.cdf_np is None:
-      AjeyaDistribution.cdf_pd = get_ajeya_dist(total_mass_on_bioanchors, lower_bound)
-      AjeyaDistribution.cdf_np = AjeyaDistribution.cdf_pd.to_numpy()
-
-    ajeya_cdf_log10 = AjeyaDistribution.cdf_np
-
-    self.ajeya_cdf_log10 = ajeya_cdf_log10
-    self.v = ajeya_cdf_log10[:, 0]
-    self.p = ajeya_cdf_log10[:, 1]
+    cdf = self.cdf_pd.to_numpy()
+    self.v = cdf[:, 0]
+    self.p = cdf[:, 1]
 
     super().__init__(a = 10**np.min(self.v), b = 10**np.max(self.v))
 
-  def _ppf(self, q):
-    # We are completing Ajeya's distribution by placing the missing probability over compute = 10**100.
-    return 10**interp1d(self.p, self.v, bounds_error = False, fill_value = 100)(q)
+  def _cdf(self, v):
+    p = interp1d(self.v, self.p)(np.log10(v))
+    return p
+
+  def _ppf(self, p):
+    # SciPy has a hard time computing the PPF from the CDF, so we are doing it ourselves
+    return 10**interp1d(self.p, self.v)(p)
 
 class SkewedLogUniform(rv_continuous):
   def __init__(self, low, med, high, kind = 'pos'):
@@ -449,12 +453,6 @@ if __name__ == '__main__':
   )
 
   parser.add_argument(
-    "--total-mass-on-bioanchors",
-    type=float,
-    default=None,
-  )
-
-  parser.add_argument(
     "-r",
     "--max-retries",
     type=int,
@@ -472,7 +470,6 @@ if __name__ == '__main__':
     n_trials=args.n_trials,
     max_retries=args.max_retries,
     include_sample_table=args.include_sample_table,
-    total_mass_on_bioanchors=args.total_mass_on_bioanchors,
     report_file_path=args.output_file,
     report_dir_path=args.output_dir
   )

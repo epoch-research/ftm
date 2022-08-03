@@ -8,7 +8,7 @@ import argparse
 
 from ..core.opmodel import SimulateTakeOff
 from ..core.utils import display, log, draw_oom_lines
-from ..core.utils import get_parameter_table, get_ajeya_dist, set_ajeya_dist_url, get_rank_correlations, set_input_workbook, get_option, set_option, PROJECT_DIR
+from ..core.utils import get_parameter_table, set_ajeya_dist_url, get_rank_correlations, set_input_workbook, get_option, set_option, PROJECT_DIR
 from ..report.report import Report
 
 class ArgumentParserWrapper(argparse.ArgumentParser):
