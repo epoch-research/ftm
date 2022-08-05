@@ -2,7 +2,7 @@
 
 Instructions to execute the model
 - Clone the github repo 
-- Create a copy of the (Task_based_model_inputs)[https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI] and set the parameters as you want
+- Create a copy of the [Task_based_model_inputs](https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI) and set the parameters as you want
 - Run `python -m opmodel.core.opmodel -w YOUR_SHEET_URL` to run the model with best_guess parameters
 - Run `python -m opmodel.analysis.exploration_analysis -w YOUR_SHEET_URL` to run a comparison of the model with aggressive, best_guess and conservative parameter choices
     - You can run python -m opmodel.analysis.exploration_analysis -w YOUR_SHEET_URL -t PARAMETER_NAME instead to produce a detailed comparison of what happens when you set said parameter at aggressive, best_guess and conservative, with all other parameters held at best_guess value
