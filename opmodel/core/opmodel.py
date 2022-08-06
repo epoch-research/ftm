@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import math
 import traceback
-from collections import OrderedDict
 
 from . import utils
 from .utils import display, get_option
@@ -1378,7 +1377,7 @@ class SimulateTakeOff():
     """ Computes indicator metrics measuring length of AI takeoff 
     """
     # Initialize takeoff metrics dict
-    self.takeoff_metrics = OrderedDict()
+    self.takeoff_metrics = {}
 
     # GWP doubling times
     self.compute_doubling_times()
