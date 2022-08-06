@@ -181,7 +181,24 @@ def get_ajeya_dist():
     else:
       # By default we read the distibution from the omni workbook
       cached_ajeya_dist = pd.read_excel(get_input_workbook(), sheet_name = 'Ajeya distribution of automation FLOP'[:31])
+
   return cached_ajeya_dist.copy()
+
+def get_clipped_ajeya_dist(lower_bound):
+  ajeya_dist = get_ajeya_dist()
+
+  lower_bound = np.log10(lower_bound)
+  i = np.argmax(ajeya_dist.iloc[:, 0] >= lower_bound)
+  clip_p = ajeya_dist.iloc[i, 1]
+
+  # Clip...
+  ajeya_dist.iloc[i:, 1] -= clip_p
+  ajeya_dist.iloc[:i, 1] = 0
+
+  # ... and renormalize
+  ajeya_dist.iloc[i:, 1] /= ajeya_dist.iloc[-1, 1]
+
+  return ajeya_dist
 
 def set_ajeya_dist_url(url):
   global cached_ajeya_dist

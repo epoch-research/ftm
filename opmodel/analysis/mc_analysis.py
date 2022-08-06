@@ -13,6 +13,7 @@ from numpy.random import default_rng
 from matplotlib import cm
 from xml.etree import ElementTree as et
 from copula_wrapper import joint_distribution
+from ..core.utils import get_clipped_ajeya_dist
 
 rng = default_rng()
 
@@ -22,7 +23,7 @@ class McAnalysisResults:
 class TooManyRetries(Exception):
   pass
 
-def mc_analysis(n_trials = 100):
+def mc_analysis(n_trials = 100, max_retries = 100):
   scalar_metrics = ['rampup_start', 'agi_year']
   state_metrics = ['gwp', 'biggest_training_run', 'compute']
 
@@ -42,7 +43,6 @@ def mc_analysis(n_trials = 100):
   log.info(f'Running simulations...')
   log.indent()
   for trial in range(n_trials):
-    max_retries = 100
     for i in range(max_retries):
       # Try to run the simulation
       try:
@@ -52,8 +52,11 @@ def mc_analysis(n_trials = 100):
         mc_params = {param: sample[param][0] for param in sample}
 
         mc_model = SimulateTakeOff(**mc_params)
-        if mc_model.some_initial_task_is_automatable():
-          raise ValueError("Assumption not met: some tasks are automatable from the beginning.")
+
+        # Check that no goods task is automatable from the beginning (except for the first one)
+        runtime_training_max_tradeoff = mc_model.runtime_training_max_tradeoff if mc_model.runtime_training_tradeoff is not None else 1.
+        assert(not np.any(mc_model.automation_training_flops_goods[1:] < mc_model.initial_biggest_training_run * runtime_training_max_tradeoff))
+
         mc_model.run_simulation()
       except Exception as e:
         # This was a bad sample. We'll just discard it and try again.
@@ -63,7 +66,6 @@ def mc_analysis(n_trials = 100):
         log.info(e)
         log.info(traceback.format_exc(), end = '')
         log.deindent()
-        #log.info(f'Input parameters: {mc_params}')
         log.info('Discarding the sample and rerunning the simulation')
         log.deindent()
         continue
@@ -117,17 +119,17 @@ def mc_analysis(n_trials = 100):
   results.n_trials          = n_trials
   results.timesteps         = mc_model.timesteps
   results.param_samples     = pd.concat(samples, ignore_index = True)
-  results.ajeya_cdf         = AjeyaDistribution.cdf_pd
+  results.ajeya_cdf         = params_dist.marginals['full_automation_requirements_training'].cdf_pd
   results.parameter_table   = params_dist.parameter_table
   results.rank_correlations = params_dist.rank_correlations
 
   return results
 
-def write_mc_analysis_report(n_trials=100, report_file_path=None, report_dir_path=None, report=None):
+def write_mc_analysis_report(n_trials=100, max_retries = 100, include_sample_table = False, report_file_path=None, report_dir_path=None, report=None):
   if report_file_path is None:
     report_file_path = 'mc_analysis.html'
 
-  results = mc_analysis(n_trials)
+  results = mc_analysis(n_trials, max_retries)
 
   log.info('Writing report...')
   new_report = report is None
@@ -172,13 +174,18 @@ def write_mc_analysis_report(n_trials=100, report_file_path=None, report_dir_pat
   tbody.insert(0, et.fromstring('''
     <tr>
       <th>full_automation_requirements_training</th>
-      <td colspan="4" style="text-align: center">sampled from Cotra's distribution <span data-modal-trigger="ajeya-modal">(<i>click here to view</i>)</span></td>
+      <td colspan="4" style="text-align: center">sampled from a clipped Cotra's distribution <span data-modal-trigger="ajeya-modal">(<i>click here to view</i>)</span></td>
     </tr>
   '''))
 
   # Write down the rank correlations
   report.add_header("Rank correlations", level = 3)
   report.add_data_frame(results.rank_correlations.fillna(''))
+
+  # Write down the rank correlations
+  if include_sample_table:
+    report.add_header("Parameter samples", level = 3)
+    report.add_data_frame(results.param_samples)
 
   if new_report:
     report_path = report.write()
@@ -231,11 +238,26 @@ def plot_quantiles(ts, data, xlabel, ylabel, n_quantiles = 7, colormap = cm.Blue
 class ParamsDistribution():
   """ Joint parameter distribution. """
 
-  def __init__(self):
+  def __init__(self, ensure_no_automatable_goods_tasks = True):
+    """
+      If ensure_no_automatable_goods_tasks is True, we'll make sure none of the samples
+      represent an scenario in which there is some "goods" task initially automatable.
+    """
+
     # Retrieve parameter table
     log.info('Retrieving parameters...')
     parameter_table = get_parameter_table()
     parameter_table = parameter_table[['Conservative', 'Best guess', 'Aggressive', 'Type']]
+
+    # Disable the runtime-training tradeoff for the MC analysis
+    parameter_table.at['runtime_training_tradeoff', 'Conservative'] = None
+    parameter_table.at['runtime_training_tradeoff', 'Best guess']   = 0
+    parameter_table.at['runtime_training_tradeoff', 'Aggressive']   = None
+
+    parameter_table.at['runtime_training_max_tradeoff', 'Conservative'] = None
+    parameter_table.at['runtime_training_max_tradeoff', 'Best guess']   = 1
+    parameter_table.at['runtime_training_max_tradeoff', 'Aggressive']   = None
+
     rank_correlations = get_rank_correlations()
 
     marginals = {}
@@ -253,7 +275,12 @@ class ParamsDistribution():
         marginal = PointDistribution(row['Best guess'])
       marginals[parameter] = marginal
 
-    marginals['full_automation_requirements_training'] = AjeyaDistribution()
+    lower_ajeya_bound = \
+        (marginals['initial_biggest_training_run'].b * marginals['runtime_training_max_tradeoff'].b) \
+        * marginals['flop_gap_training'].a**(10.5/7)
+
+    marginals['full_automation_requirements_training'] = \
+        AjeyaDistribution(lower_bound = lower_ajeya_bound)
 
     pairwise_rank_corr = {}
     for left in marginals.keys():
@@ -273,13 +300,23 @@ class ParamsDistribution():
     self.parameter_table = parameter_table
     self.rank_correlations = rank_correlations
     self.joint_dist = joint_distribution.JointDistribution(marginals, pairwise_rank_corr, rank_corr_method = "spearman")
+    self.ensure_no_automatable_goods_tasks = ensure_no_automatable_goods_tasks
 
   def rvs(self, count):
-    # statsmodels.distributions.copula.copulas throws an exception when
-    # we ask from it less than 2 samples
-    # We could make this more efficient, but it's probably not worth it
+    # statsmodels.distributions.copula.copulas throws an exception when we ask less than 2 samples from it.
+    # We could make this more efficient, but it's probably not worth it.
     actual_count = max(count, 2)
     samples = self.joint_dist.rvs(actual_count)[:count]
+
+    if self.ensure_no_automatable_goods_tasks:
+      # Resample the training gap to ensure no tasks is automatable from the beginning
+      gap_marginal = self.marginals['flop_gap_training']
+      for i, row in samples.iterrows():
+        max_gap = (row['full_automation_requirements_training']/(row['initial_biggest_training_run'] * row['runtime_training_max_tradeoff']))**(7/10.5)
+        gap_marginal.set_upper_bound(max_gap)
+        samples.at[i, 'flop_gap_training'] = gap_marginal.rvs()
+      gap_marginal.set_upper_bound(None)
+
     return samples
 
   def get_marginals(self):
@@ -289,26 +326,22 @@ class ParamsDistribution():
     return self.pairwise_rank_corr
 
 class AjeyaDistribution(rv_continuous):
-  cdf_pd = None
-  cdf_np = None
+  def __init__(self, lower_bound = None):
+    self.cdf_pd = get_clipped_ajeya_dist(lower_bound)
 
-  def __init__(self):
-    if AjeyaDistribution.cdf_np is None:
-      AjeyaDistribution.cdf_pd = get_ajeya_dist()
-      AjeyaDistribution.cdf_np = AjeyaDistribution.cdf_pd.to_numpy()
-
-    ajeya_cdf_log10 = AjeyaDistribution.cdf_np
-
-    self.ajeya_cdf_log10 = ajeya_cdf_log10
-    self.v = ajeya_cdf_log10[:, 0]
-    self.p = ajeya_cdf_log10[:, 1]
+    cdf = self.cdf_pd.to_numpy()
+    self.v = cdf[:, 0]
+    self.p = cdf[:, 1]
 
     super().__init__(a = 10**np.min(self.v), b = 10**np.max(self.v))
 
-  def _ppf(self, q):
-    # Ajeya's distribution stops at p ~= 0.9. We are completing it by placing the missing
-    # p = 0.1 over compute = 10**100.
-    return 10**interp1d(self.p, self.v, bounds_error = False, fill_value = 100)(q)
+  def _cdf(self, v):
+    p = interp1d(self.v, self.p)(np.log10(v))
+    return p
+
+  def _ppf(self, p):
+    # SciPy has a hard time computing the PPF from the CDF, so we are doing it ourselves
+    return 10**interp1d(self.p, self.v)(p)
 
 class SkewedLogUniform(rv_continuous):
   def __init__(self, low, med, high, kind = 'pos'):
@@ -316,6 +349,9 @@ class SkewedLogUniform(rv_continuous):
       low, high = high, low
 
     super().__init__(a = low, b = high)
+
+    self.upper_bound = high
+    self.initial_upper_bound = high
 
     # Transform to loguniform
     if kind == "frac":
@@ -353,6 +389,18 @@ class SkewedLogUniform(rv_continuous):
     self.integration_direction = +1 if (low < high) else -1
 
     self._cdf = np.vectorize(self._cdf)
+
+  def set_upper_bound(self, bound):
+    if bound is None: bound = self.initial_upper_bound
+    bound = min(bound, self.initial_upper_bound)
+    bound = max(bound, self.a)
+    self.upper_bound = bound
+    self.b = bound
+
+  def _ppf(self, q):
+    upper_q = self._cdf(self.upper_bound)
+    q = q * upper_q
+    return super()._ppf(q)
 
   def _cdf(self, x):
     # Transform to loguniform
@@ -396,12 +444,33 @@ class PointDistribution(rv_continuous):
 
 if __name__ == '__main__':
   parser = init_cli_arguments()
+
   parser.add_argument(
     "-n",
     "--n-trials",
     type=int,
     default=100,
   )
+
+  parser.add_argument(
+    "-r",
+    "--max-retries",
+    type=int,
+    default=100,
+  )
+
+  parser.add_argument(
+    "--include-sample-table",
+    action='store_true',
+  )
+
   args = handle_cli_arguments(parser)
-  write_mc_analysis_report(n_trials=args.n_trials, report_file_path=args.output_file, report_dir_path=args.output_dir)
+
+  write_mc_analysis_report(
+    n_trials=args.n_trials,
+    max_retries=args.max_retries,
+    include_sample_table=args.include_sample_table,
+    report_file_path=args.output_file,
+    report_dir_path=args.output_dir
+  )
 

@@ -15,14 +15,13 @@ t_end:   2100
 t_step:   0.1
 
 # Full automation training requirements distribution
-ajeya_dist_url: 'https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/edit#gid=1177136586'
+#ajeya_dist_url: 'https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/edit#gid=1177136586'
 #ajeya_dist_url: 'https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/edit#gid=701812055' # Aggressive dist
 
 #------------------------------------------------------------------------------
 # Analysis arguments
 #------------------------------------------------------------------------------
+# You can set here the default arguments of the analysis scripts
 
-# You can set the default arguments of the analysis scripts in this way:
 diffy:
   max-steps: 200 # number of iterations available in the report
-# (Maybe this isn't that useful, though):

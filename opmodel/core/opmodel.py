@@ -272,14 +272,6 @@ class SimulateTakeOff():
     or np.any(np.diff(self.automation_training_flops_rnd) < 0.) \
     or np.any(np.diff(self.automation_runtime_flops_rnd) < 0.):
       raise ValueError("Assumption not met: the automation costs must be monotonically increasing.")
-
-  def some_initial_task_is_automatable(self):
-    # This function is here to let external code perform the check
-    # without having to worry about internal details
-
-    # Ignore the first task (it's always automatable)
-    return np.any(self.automation_training_flops_goods[1:] < self.initial_biggest_training_run) \
-        or np.any(self.automation_training_flops_rnd[1:] < self.initial_biggest_training_run)
   
   ##############################################################################
 
