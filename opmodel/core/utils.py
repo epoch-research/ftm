@@ -176,11 +176,12 @@ def get_ajeya_dist():
   global cached_ajeya_dist
   if cached_ajeya_dist is None:
     url = get_option('ajeya_dist_url')
+    cols = [0, 1]
     if url:
-      cached_ajeya_dist = pd.read_csv(get_csv_export_from_sheet_url(url))
+      cached_ajeya_dist = pd.read_csv(get_csv_export_from_sheet_url(url), usecols = cols)
     else:
       # By default we read the distibution from the omni workbook
-      cached_ajeya_dist = pd.read_excel(get_input_workbook(), sheet_name = 'Ajeya distribution of automation FLOP'[:31])
+      cached_ajeya_dist = pd.read_excel(get_input_workbook(), sheet_name = 'Ajeya distribution of automation FLOP'[:31], usecols = cols)
 
   return cached_ajeya_dist.copy()
 
