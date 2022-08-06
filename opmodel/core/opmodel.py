@@ -1369,8 +1369,8 @@ class SimulateTakeOff():
     'billion_agis', 
     'full_automation', 
     'rampup_to_agi',
+    'combined',
     'gwp_growth',
-    'combined'
     ]
 
   def compute_takeoff_metrics(self):
