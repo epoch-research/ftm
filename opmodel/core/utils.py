@@ -162,7 +162,7 @@ def get_input_workbook():
     # Check it's a valid Excel file
     try:
       load_workbook(io.BytesIO(cached_input_workbook))
-    except Exception as e:
+    except Exception:
       raise InvalidExcelError("Error reading the Excel file (you might want to check it's publicly accessible)")
 
   return cached_input_workbook
@@ -172,7 +172,7 @@ def get_parameter_table():
   if cached_param_table is None:
     url = get_option('param_table_url')
     if url:
-      cached_param_table = pd.read_csv(get_csv_export_from_sheet_url(url))
+      cached_param_table = get_csv_from_sheet_url(url)
     else:
       # By default we read the table from the omni workbook
       cached_param_table = pd.read_excel(get_input_workbook(), sheet_name = 'Parameters')
@@ -191,7 +191,7 @@ def get_ajeya_dist():
     url = get_option('ajeya_dist_url')
     cols = [0, 1]
     if url:
-      cached_ajeya_dist = pd.read_csv(get_csv_export_from_sheet_url(url), usecols = cols)
+      cached_ajeya_dist = get_csv_from_sheet_url(url, usecols = cols)
     else:
       # By default we read the distibution from the omni workbook
       cached_ajeya_dist = pd.read_excel(get_input_workbook(), sheet_name = 'Ajeya distribution of automation FLOP'[:31], usecols = cols)
@@ -262,14 +262,23 @@ def get_metrics_meanings():
 class InvalidExcelError(Exception):
   pass
 
-def get_csv_export_from_sheet_url(url):
+class InvalidCsvError(Exception):
+  pass
+
+def get_csv_from_sheet_url(url, usecols = None):
   pattern = r'https://docs.google.com/spreadsheets/d/([a-zA-Z0-9-_]*)/.*\bgid\b=([0-9]*)?.*'
   m = re.match(pattern, url)
   if m:
     workbook_id = m.group(1)
     sheet_id = m.group(2)
     url = f'https://docs.google.com/spreadsheets/d/{workbook_id}/export?format=csv&gid={sheet_id}'
-  return url
+
+  try:
+    csv = pd.read_csv(url, usecols = usecols)
+  except Exception:
+    raise InvalidCsvError("Error reading the sheet (you might want to check it's publicly accessible)")
+
+  return csv
 
 def draw_oom_lines():
   low, high = plt.gca().get_ylim()
