@@ -158,16 +158,19 @@ def get_input_workbook():
     else:
       with open(path, 'rb') as f:
         cached_input_workbook = f.read()
+
+    # Check it's a valid Excel file
+    try:
+      load_workbook(io.BytesIO(cached_input_workbook))
+    except Exception as e:
+      raise Exception("Error reading the Excel file (you might want to check it's publicly accessible)")
+
   return cached_input_workbook
 
 def get_parameter_table():
   global cached_param_table
   if cached_param_table is None:
-    try:
-      cached_param_table = pd.read_excel(get_input_workbook(), sheet_name = 'Parameters')
-    except ValueError as e:
-      print("Error reading the Excel file (you might want to check it's publicly accessible)", file=sys.stderr)
-      raise e
+    cached_param_table = pd.read_excel(get_input_workbook(), sheet_name = 'Parameters')
     cached_param_table = cached_param_table.set_index("Parameter")
     cached_param_table.fillna(np.nan, inplace = True)
   return cached_param_table.copy()
