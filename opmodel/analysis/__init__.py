@@ -8,7 +8,7 @@ import argparse
 
 from ..core.opmodel import SimulateTakeOff
 from ..core.utils import display, log, draw_oom_lines
-from ..core.utils import get_parameter_table, set_ajeya_dist_url, get_rank_correlations, set_input_workbook, get_option, set_option, PROJECT_DIR
+from ..core.utils import *
 from ..report.report import Report
 
 class ArgumentParserWrapper(argparse.ArgumentParser):
@@ -68,6 +68,12 @@ def init_cli_arguments():
   )
 
   parser.add_argument(
+    "-p",
+    "--param-table-url",
+    default=None,
+  )
+
+  parser.add_argument(
     "--ajeya-dist-url",
     default=None,
   )
@@ -92,6 +98,9 @@ def handle_cli_arguments(parser):
 
   if args.workbook_url is not None:
     set_input_workbook(args.workbook_url)
+
+  if args.param_table_url is not None:
+    set_parameter_table_url(args.param_table_url)
 
   if args.ajeya_dist_url is not None:
     set_ajeya_dist_url(args.ajeya_dist_url)

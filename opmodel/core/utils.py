@@ -170,10 +170,20 @@ def get_input_workbook():
 def get_parameter_table():
   global cached_param_table
   if cached_param_table is None:
-    cached_param_table = pd.read_excel(get_input_workbook(), sheet_name = 'Parameters')
+    url = get_option('param_table_url')
+    if url:
+      cached_param_table = pd.read_csv(get_csv_export_from_sheet_url(url))
+    else:
+      # By default we read the table from the omni workbook
+      cached_param_table = pd.read_excel(get_input_workbook(), sheet_name = 'Parameters')
     cached_param_table = cached_param_table.set_index("Parameter")
     cached_param_table.fillna(np.nan, inplace = True)
   return cached_param_table.copy()
+
+def set_parameter_table_url(url):
+  global cached_param_table
+  set_option('param_table_url', url)
+  cached_param_table = None
 
 def get_ajeya_dist():
   global cached_ajeya_dist
