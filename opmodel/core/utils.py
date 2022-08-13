@@ -163,7 +163,7 @@ def get_input_workbook():
     try:
       load_workbook(io.BytesIO(cached_input_workbook))
     except Exception as e:
-      raise Exception("Error reading the Excel file (you might want to check it's publicly accessible)")
+      raise InvalidExcelError("Error reading the Excel file (you might want to check it's publicly accessible)")
 
   return cached_input_workbook
 
@@ -248,6 +248,9 @@ def get_metrics_meanings():
 #--------------------------------------------------------------------------
 # Misc
 #--------------------------------------------------------------------------
+
+class InvalidExcelError(Exception):
+  pass
 
 def get_csv_export_from_sheet_url(url):
   pattern = r'https://docs.google.com/spreadsheets/d/([a-zA-Z0-9-_]*)/.*\bgid\b=([0-9]*)?.*'
