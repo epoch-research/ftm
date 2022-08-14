@@ -254,10 +254,10 @@ class Model:
 
 def diffy(
     project_ref_a = '942630321a2a8780ee1b9eaac5102309a7f4653c',
-    params_url_a = 'https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/export?format=csv&gid=0',
+    params_url_a = None,
 
     project_ref_b = 'b:main',
-    params_url_b = 'https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/export?format=csv&gid=0',
+    params_url_b = None,
 
     max_steps = 10,
 
@@ -268,6 +268,12 @@ def diffy(
   #--------------------------------------------------------------------------
   # Initialization
   #--------------------------------------------------------------------------
+
+  if params_url_a is None:
+    params_url_a = get_option('param_table_url', 'https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/export?format=csv&gid=0')
+
+  if params_url_b is None:
+    params_url_b = get_option('param_table_url', 'https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/export?format=csv&gid=0')
 
   if report_file_path is None:
     report_file_path = 'diffy.html'
@@ -878,13 +884,6 @@ if __name__ == '__main__':
   )
 
   parser.add_argument(
-    "-p",
-    "--params",
-    default=None,
-    help="Parameters URL or local path",
-  )
-
-  parser.add_argument(
     "--params-a",
     default=None,
     help="Parameters URL or local path for model a",
@@ -910,10 +909,6 @@ if __name__ == '__main__':
 
   if args.ref_a: diff_args['project_ref_a'] = args.ref_a
   if args.ref_b: diff_args['project_ref_b'] = args.ref_b
-
-  if args.params:
-    diff_args['params_url_a'] = args.params
-    diff_args['params_url_b'] = args.params
 
   if args.params_a: diff_args['params_url_a'] = args.params_a
   if args.params_b: diff_args['params_url_b'] = args.params_b
