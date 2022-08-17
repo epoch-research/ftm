@@ -100,6 +100,10 @@ class Report:
           background-color: #ddd;
         }
 
+        table.dataframe tfoot {
+          background-color: #ddd;
+        }
+
         table.dataframe td, table.dataframe th {
           text-align: right;
           padding: 0.2em 1.5em;

@@ -2,6 +2,8 @@
 Sensitivity analysis.
 """
 
+from xml.etree import ElementTree as et
+
 from . import log
 from . import *
 
@@ -54,6 +56,11 @@ def sensitivity_analysis(quick_test_mode=False):
 
     log.info('  Collecting results...')
 
+    def skew(high, med, low):
+      result = np.abs(high - med) - np.abs(med - low)
+      if abs(result) < 1e-12: result = 0
+      return result
+
     # Get results
     result = {
         'Parameter' : parameter,
@@ -64,15 +71,25 @@ def sensitivity_analysis(quick_test_mode=False):
     for takeoff_metric in low_model.takeoff_metrics:
       result[f"{takeoff_metric}"] = f"[{low_model.takeoff_metrics[takeoff_metric]:0.2f}, {med_model.takeoff_metrics[takeoff_metric]:0.2f}, {high_model.takeoff_metrics[takeoff_metric]:0.2f}]"
 
+      if takeoff_metric == 'billion_agis':
+        result["billion_agis skew"] = skew(
+          high_model.takeoff_metrics["billion_agis"],
+          med_model.takeoff_metrics["billion_agis"],
+          low_model.takeoff_metrics["billion_agis"]
+        )
+
+
     result["delta"] = np.abs(high_model.takeoff_metrics["combined"] - low_model.takeoff_metrics["combined"])
 
-    result["skew"] = \
-        np.abs(high_model.takeoff_metrics["combined"] - med_model.takeoff_metrics["combined"]) \
-      - np.abs(med_model.takeoff_metrics["combined"] - low_model.takeoff_metrics["combined"])
-    
     # Add timelines metrics
     result["rampup_start"] = f"[{low_model.rampup_start:0.2f}, {med_model.rampup_start:0.2f}, {high_model.rampup_start:0.2f}]"
     result["agi_date"] = f"[{low_model.agi_year:0.2f}, {med_model.agi_year:0.2f}, {high_model.agi_year:0.2f}]"
+
+    result["agi_date skew"] = skew(
+      high_model.agi_year,
+      med_model.agi_year,
+      low_model.agi_year
+    )
 
     # Add GWP doubling times
     result["GWP doubling times"] = f"[{low_model.doubling_times[:4]}, {med_model.doubling_times[:4]}, {high_model.doubling_times[:4]}]"
@@ -106,7 +123,25 @@ def write_sensitivity_analysis_report(quick_test_mode=False, report_file_path=No
   if new_report:
     report = Report(report_file_path=report_file_path, report_dir_path=report_dir_path)
 
-  report.add_data_frame(results.table)
+  table_container = report.add_data_frame(results.table)
+
+  # Add "totals" table footer
+
+  table = next(table_container.iter('table'))
+  tfoot = et.fromstring('<tfoot><tr></tr></tfoot>')
+  table.append(tfoot)
+
+  columns = list(results.table.columns)
+  skews = [c for c in columns if c.endswith(' skew')]
+
+  tfoot.append(et.fromstring(f'<th>Totals</th>'))
+  current_col = 0
+  for skew in skews:
+    skew_col = columns.index(skew)
+    tfoot.append(et.fromstring(f'<th colspan="{skew_col - current_col}">Sum of {skew}s:</th>'))
+    tfoot.append(et.fromstring(f'<th>{results.table[skew].sum():.2}</th>'))
+    current_col = skew_col + 1
+  tfoot.append(et.fromstring(f'<th colspan="{len(columns) - current_col}"></th>'))
 
   report.add_header("Inputs", level = 3)
   report.add_data_frame(results.parameter_table)
@@ -119,6 +154,11 @@ def write_sensitivity_analysis_report(quick_test_mode=False, report_file_path=No
 
 if __name__ == '__main__':
   parser = init_cli_arguments()
+  parser.add_argument(
+    "-q",
+    "--quick-test-mode",
+    action='store_true',
+  )
   args = handle_cli_arguments(parser)
-  write_sensitivity_analysis_report(report_file_path=args.output_file, report_dir_path=args.output_dir)
+  write_sensitivity_analysis_report(report_file_path=args.output_file, report_dir_path=args.output_dir, quick_test_mode=args.quick_test_mode)
 
