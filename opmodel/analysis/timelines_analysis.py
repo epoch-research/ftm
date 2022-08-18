@@ -3,7 +3,7 @@ from xml.etree import ElementTree as et
 
 from . import log
 from . import *
-from .exploration_analysis import add_scenario_group_to_report, plot_compute_increase
+from .exploration_analysis import plot_compute_increase
 from ..core.scenarios import ScenarioRunner
 
 class TimelinesAnalysisResults:

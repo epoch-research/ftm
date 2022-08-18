@@ -1,46 +1,7 @@
 from . import log
 from . import *
 
-def add_scenario_group_to_report(scenario_group, report, exploration_target = 'compare'):
-  results = []
-
-  report.add_paragraph(f"<span style='font-weight:bold'>Exploration target:</span> {exploration_target}")
-
-  for scenario in scenario_group:
-    row = {**{'type' : scenario_group.name, 'value' : scenario.name}, **scenario.model.takeoff_metrics}
-    for metric in ['rampup_start', 'agi_year', 'doubling_times']:
-      row[metric] = getattr(scenario.model, metric)
-    results.append(row)
-
-  results = pd.DataFrame(results)
-  report.add_data_frame(results)
-
-  plot_compute_increase()
-  report.add_figure()
-
-  # Plot doubling times
-  report.add_header("Model summaries", level = 3)
-
-  for scenario in scenario_group:
-    report.add_header(scenario.name, level = 4)
-    report.add_data_frame(scenario.model.get_summary_table())
-
-  # Write down the parameters
-  report.add_header("Inputs", level = 3)
-  input_parameters = pd.DataFrame(
-    [scenario.params for scenario in scenario_group],
-    index = [scenario.name for scenario in scenario_group]
-  ).transpose()
-  report.add_data_frame(input_parameters)
-
 def plot_compute_increase(scenario_group, title = "Compute increase over time", show_legend = True):
-  # Plot results
-  metrics = ['gwp'] #, 'compute', 'hardware_performance', 'software', 'frac_gwp_compute', 'frac_training_compute']
-  colors = ['red', 'orange', 'green']
-  for metric in metrics:
-    for i, scenario in enumerate(scenario_group):
-      scenario.model.plot(metric, new_figure = (i > 0), line_color=colors[i % len(colors)])
-
   # Plot compute decomposition
   plt.figure(figsize=(14 if show_legend else 12, 8), dpi=80)
 
