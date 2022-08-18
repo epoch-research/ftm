@@ -57,7 +57,7 @@ def sensitivity_analysis(quick_test_mode=False):
     log.info('  Collecting results...')
 
     def skew(high, med, low):
-      result = np.abs(high - med) - np.abs(med - low)
+      result = np.abs(med - low) - np.abs(high - med)
       if abs(result) < 1e-12: result = 0
       return result
 
