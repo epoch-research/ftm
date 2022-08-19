@@ -6,7 +6,7 @@ import math
 import traceback
 
 from . import utils
-from .utils import display, get_option
+from .utils import display, get_option, get_parameter_table
 
 class SimulateTakeOff():
   """ Class to run a simulation of how automation and the economy 
@@ -151,6 +151,9 @@ class SimulateTakeOff():
 
     # Process training and runtime flops
     self.process_automation_costs()
+
+    # Define rampup triggers
+    self.rampup_trigger = self.rampup_trigger
 
     # Define initial quantities
     self.initial_software = 1
@@ -1649,8 +1652,7 @@ class SimulateTakeOff():
     
 if __name__ == "__main__":
   # Retrieve parameter estimates from spreadsheet
-  parameter_table = pd.read_csv('https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/export?format=csv#gid=0')
-  parameter_table = parameter_table.set_index("Parameter")
+  parameter_table = get_parameter_table()
   best_guess_parameters = {parameter : row['Best guess'] for parameter, row in parameter_table.iterrows()}
 
   # Run model
