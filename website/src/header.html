@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+
+
+<style>
+  :root {
+    --border-radius: 7px;
+  }
+
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    font-size: 15px;
+    background-color: #666;
+  }
+
+  .site-nav {
+    text-align: right;
+    font-weight: bold;
+  }
+
+  .site-header {
+    border-radius: var(--border-radius);
+    padding: 12px;
+    background-color: white;
+    margin: 1em;
+  }
+
+  .site-nav .page-link {
+    color: black;
+    font-size: 1.0rem;
+    padding: 8px;
+    text-decoration: none;
+  }
+
+  .site-nav .page-link:hover {
+    background-color: #6D9AA6;
+    color: white;
+    border-radius: var(--border-radius);
+  }
+</style>
+
+<header class="site-header" role="banner">
+  <div class="header-wrapper">
+    <nav class="site-nav">
+        <a class="page-link" href="playground.html">Playground</a>
+        <a class="page-link" href="megareport.html">MEGAREPORT</a>
+    </nav>
+  </div>
+</header>

@@ -2,6 +2,7 @@ import os
 import re
 import sys
 import ast
+import json
 import time
 import inspect
 import traceback
@@ -21,132 +22,90 @@ EPS = 1e-40 # frankly, just some arbitrary number that feels low enough
 DIFF_COL = 'Diff (%)'
 CACHE_DIR = os.path.join(get_option('cache_dir'), 'diffy')
 
+# This doesn't seem like a nice structure
+
 class Model:
-  """
-  Wrapper to get the parameters, the model, simulate it, extract its variables...
-  """
-
-  params_cache = {} # memory cache for the model parameters (url --> dataframe)
-  active_models = []
-
   def __init__(
-      self,
+      self, 
 
-      name                 = None,
-      project_ref          = None, # commit, branch (e.g, 'b:main') or path
-      params_url           = None,
-
-      relative_module_path = 'opmodel/core/opmodel.py', # relative to the root of the project
-      module_name          = 'opmodel.core.opmodel',    # relative to the root of the project
+      model               = None,
+      parameters          = None,
+      module              = None,
+      timestamp           = None,
+      name                = None,
+      source_href         = None,
+      project_ref         = None,
+      params_url          = None,
+      original_params_url = None,
     ):
 
-    self.original_params_url = params_url
-
-    # Clean the param url if it's a Google sheet
-    pattern = r'https://docs.google.com/spreadsheets/d/([a-zA-Z0-9-_]*)/.*\bgid\b=([0-9]*)?.*'
-    m = re.match(pattern, params_url)
-    if m:
-      workbook_id = m.group(1)
-      sheet_id = m.group(2)
-      params_url = f'https://docs.google.com/spreadsheets/d/{workbook_id}/export?format=csv&gid={sheet_id}'
-
-    self.name = name
-    self.params_url = params_url
-    self.parameters = None
-
-    self.module_name = module_name
-    self.relative_module_path = relative_module_path
-
-    self.model_index = 0
-    while self.model_index in Model.active_models:
-      self.model_index += 1
-    Model.active_models.append(self.model_index)
-
-    self.project_ref = project_ref
-    self.ref_type = self.get_ref_type(self.project_ref)
-
-    if self.ref_type == 'git':
-      self.git_ref = self.get_git_ref(self.project_ref)
-      self.source_href = f'{get_option("repo_web_url")}/tree/{self.git_ref}'
-    else:
-      self.source_href = project_ref
-
-    self.module = self.load_sim_module()
-    self.model = self.module.SimulateTakeOff
-
+    self.model               = model
+    self.parameters          = parameters
+    self.module              = module
+    self.timestamp           = timestamp
+    self.name                = name
+    self.source_href         = source_href
+    self.project_ref         = project_ref
+    self.params_url          = params_url
+    self.original_params_url = original_params_url
     self.exception = None
 
-  ############################################
-  # Load the module from path/commit/branch
+  def get_var_to_lineno(self): return {}
+  def get_takeoff_metrics(self): return {}
+  def get_static_variables(self): return {}
+  def get_main_dynamic_variables(self, step_index): return {}
+  def get_internal_dynamic_variables(self, step_index): return {}
+  def get_step_count(self): return 0
 
-  def get_ref_type(self, ref):
-    if ref.startswith('g:'):
-      return 'git'
-    return 'local-path'
+class JSModel(Model):
+  def __init__(self, **kwargs):
+    super().__init__(**kwargs)
 
-  def get_git_ref(self, ref):
-    return ref[len('g:'):]
+  def simulate(self):
+    inputs = {parameter : row['Best guess'] for parameter, row in self.parameters.iterrows()}
+    if not 't_start' in inputs: inputs['t_start'] = 2022
+    if not 't_end'   in inputs: inputs['t_end']   = 2100
+    if not 't_step'  in inputs: inputs['t_step']  = 0.1
+    self.inputs = inputs
+    self.module.eval('''
+      log = [];
+      console = {log: function() {
+        log.push(Array.from(arguments).map(x => JSON.stringify(x)).join(', '));
+      }};
+    ''')
+    self.module.eval(f'simulation_result = run_model(transform_python_to_js_params({json.dumps(self.inputs)}))')
+    print(self.module.execute("log.join('\\n')"))
 
-  def load_sim_module(self):
-    if self.ref_type == 'git':
-      project_path = self.load_source_from_git_ref(self.git_ref)
-    else:
-      project_path = self.project_ref
-      self.timestamp = time.time()
+  def get_var_to_lineno(self): return {}
 
-    file_path = os.path.join(project_path, self.relative_module_path)
+  def get_static_variables(self): return {}
 
-    sys.path.append(project_path)
+  def get_takeoff_metrics(self):
+    variables = self.module.execute(f'get_takeoff_metrics(simulation_result)')
+    return variables
 
-    spec = importlib.util.spec_from_file_location(self.module_name, file_path)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[self.module_name] = module
-    spec.loader.exec_module(module)
+  def get_main_dynamic_variables(self, step_index):
+    variables = self.module.execute(f'get_external_variables(simulation_result, {step_index})')
+    return variables
 
-    sys.path.remove(project_path)
+  def get_internal_dynamic_variables(self, step_index):
+    variables = self.module.execute(f'get_internal_variables(simulation_result, {step_index})')
+    return variables
 
-    return module
+  def get_step_count(self):
+    count = self.module.execute('simulation_result.states.length')
+    return count
 
-  def load_source_from_git_ref(self, ref):
-    repo = self.get_local_repo()
-
-    # Hack
-    # We are moving to main to avoid errors if the branch we were in disappears.
-    repo.git.checkout('main')
-
-    repo.git.reset('--hard')
-    repo.git.pull()
-    repo.git.checkout(ref)
-
-    self.timestamp = repo.head.commit.committed_date
-    return repo.working_tree_dir
-
-  def get_local_repo(self):
-    path = os.path.join(CACHE_DIR, 'repos', f'repo_{self.model_index}')
-    if not os.path.exists(path):
-      os.makedirs(path, exist_ok=True)
-      Repo.clone_from(get_option('repo_url'), path)
-
-    try:
-      repo = Repo(path)
-    except InvalidGitRepositoryError as e:
-      # OK, maybe the repo is corrupted. Let's try again .
-      os.rmdir(path)
-      os.makedirs(path, exist_ok=True)
-      Repo.clone_from(get_option('repo_url'), path)
-      repo = Repo(path)
-
-    return repo
-
-  ############################################
-  # Simulation
+class PythonModel(Model):
+  def __init__(self, **kwargs):
+    super().__init__(**kwargs)
 
   def simulate(self):
     log.info('Reading parameters...')
 
     # Get the parameters and remove those that are not part of this version of the model
     model_parameters = inspect.signature(self.model).parameters
-    inputs = {parameter : row['Best guess'] for parameter, row in self.get_parameters().iterrows() if parameter in model_parameters}
+    inputs = {parameter : row['Best guess'] for parameter, row in self.parameters.iterrows() if parameter in model_parameters}
 
     self.inputs = inputs
 
@@ -167,18 +126,11 @@ class Model:
       log.deindent()
       self.exception = e
 
-  ############################################
-  # Inputs and variables
+  def get_step_count(self):
+    return self.n_steps
 
-  def get_parameters(self):
-    if self.parameters is None:
-      if self.params_url not in Model.params_cache:
-        parameters = pd.read_csv(self.params_url)
-        parameters = parameters.set_index("Parameter")
-        Model.params_cache[self.params_url] = parameters
-      self.parameters = Model.params_cache[self.params_url].copy()
-
-    return self.parameters
+  def get_takeoff_metrics(self):
+    return self.sim.takeoff_metrics
 
   def get_static_variables(self):
     variables = {}
@@ -245,21 +197,211 @@ class Model:
   def is_dynamic_variable(self, value):
     return isinstance(value, (list, tuple, np.ndarray)) and len(value) == self.n_steps
 
-  ############################################
-  # Wrapup
+  def get_var_to_lineno(self):
+    var_to_lineno = {}
 
-  def close(self):
-    Model.active_models.remove(self.model_index)
+    ass_nodes = []
 
+    class Instrumentor(ast.NodeVisitor):
+      def visit_Assign(self, node):
+        ass_nodes.append(node)
+        self.traverse_nodes(node.targets)
+        self.generic_visit(node)
+
+      def traverse_nodes(self, nodes):
+        if not isinstance(nodes, (list, tuple)):
+          nodes = [nodes]
+
+        for node in nodes:
+          if isinstance(node, ast.Attribute):
+            var_to_lineno[node.attr] = node.lineno
+          elif isinstance(node, ast.Subscript):
+            self.traverse_nodes(node.value)
+          elif isinstance(node, ast.Tuple):
+            for x in node.elts:
+              self.traverse_nodes(x)
+
+    source = inspect.getsource(self.module)
+    tree = ast.parse(source)
+    instrumentor = Instrumentor()
+    instrumentor.visit(tree)
+
+    return var_to_lineno
+
+class ModelManager:
+  params_cache = {} # memory cache for the model parameters (url --> dataframe)
+  model_to_index = {}
+
+  @staticmethod
+  def load_model(
+      name                 = None,
+      project_ref          = None, # commit, branch (e.g, 'b:main') or path
+      params_url           = None,
+
+      relative_python_module_path = 'opmodel/core/opmodel.py', # relative to the root of the project
+    ):
+
+    original_params_url = params_url
+
+    # Clean the param url if it's a Google sheet
+    pattern = r'https://docs.google.com/spreadsheets/d/([a-zA-Z0-9-_]*)/.*\bgid\b=([0-9]*)?.*'
+    m = re.match(pattern, params_url)
+    if m:
+      workbook_id = m.group(1)
+      sheet_id = m.group(2)
+      params_url = f'https://docs.google.com/spreadsheets/d/{workbook_id}/export?format=csv&gid={sheet_id}'
+
+    parameters = ModelManager.get_parameters(params_url)
+
+    # Keep track of the active models 
+    model_index = 0
+    while model_index in ModelManager.model_to_index.values():
+      model_index += 1
+
+    ref_type = ModelManager.get_ref_type(project_ref)
+
+    if ref_type == 'git':
+      git_ref = ModelManager.get_git_ref(project_ref)
+      project_path, timestamp = ModelManager.load_source_from_git_ref(model_index, git_ref)
+      source_href = f'{get_option("repo_web_url")}/tree/{git_ref}'
+    else:
+      project_path = project_ref
+      timestamp = time.time()
+      source_href = project_ref
+
+    # Load the model
+    if os.path.exists(os.path.join(project_path, relative_python_module_path)):
+      # This is a Python model
+      module = ModelManager.load_python_module(project_path, relative_python_module_path)
+      model = PythonModel(
+        model               = module.SimulateTakeOff,
+        parameters          = parameters,
+        module              = module,
+        timestamp           = timestamp,
+        name                = name,
+        source_href         = source_href,
+        project_ref         = project_ref,
+        params_url          = params_url,
+        original_params_url = original_params_url,
+      )
+    else:
+      # This must be a JavaScript model
+      module = ModelManager.load_js_module(project_path)
+      model = JSModel(
+        parameters          = parameters,
+        module              = module,
+        timestamp           = timestamp,
+        name                = name,
+        source_href         = source_href,
+        project_ref         = project_ref,
+        params_url          = params_url,
+        original_params_url = original_params_url,
+      )
+
+    ModelManager.model_to_index[model] = model_index
+
+    return model
+
+  @staticmethod
+  def unload_model(model):
+    del ModelManager.model_to_index[model]
+
+  @staticmethod
+  def get_ref_type(ref):
+    if ref.startswith('g:'):
+      return 'git'
+    return 'local-path'
+
+  @staticmethod
+  def get_git_ref(ref):
+    return ref[len('g:'):]
+
+  @staticmethod
+  def load_source_from_git_ref(model_index, ref):
+    repo = ModelManager.get_local_repo(model_index)
+
+    # Hack
+    # We are moving to main to avoid errors if the branch we were in disappears.
+    repo.git.checkout('main')
+
+    repo.git.reset('--hard')
+    repo.git.pull()
+    repo.git.checkout(ref)
+
+    timestamp = repo.head.commit.committed_date
+    return [repo.working_tree_dir, timestamp]
+
+  @staticmethod
+  def get_local_repo(model_index):
+    path = os.path.join(CACHE_DIR, 'repos', f'repo_{model_index}')
+    if not os.path.exists(path):
+      os.makedirs(path, exist_ok=True)
+      Repo.clone_from(get_option('repo_url'), path)
+
+    try:
+      repo = Repo(path)
+    except InvalidGitRepositoryError as e:
+      # OK, maybe the repo is corrupted. Let's try again .
+      os.rmdir(path)
+      os.makedirs(path, exist_ok=True)
+      Repo.clone_from(get_option('repo_url'), path)
+      repo = Repo(path)
+
+    return repo
+
+  @staticmethod
+  def load_python_module(project_path, relative_module_path):
+    module_name = '.'.join(relative_module_path[:-len('.py')].split('/'))
+
+    file_path = os.path.join(project_path, relative_module_path)
+
+    sys.path.append(project_path)
+
+    spec = importlib.util.spec_from_file_location(module_name, file_path)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
+    spec.loader.exec_module(module)
+
+    sys.path.remove(project_path)
+
+    return module
+
+  @staticmethod
+  def load_js_module(project_path):
+    from py_mini_racer import MiniRacer
+
+    main_path = os.path.join(project_path, 'op.js')
+    bridge_path = os.path.join(project_path, 'bridge.js')
+
+    ctx = MiniRacer()
+    with open(main_path, 'r') as f:
+      script = f.read()
+      ctx.eval(script)
+    with open(bridge_path, 'r') as f:
+      script = f.read()
+      ctx.eval(script)
+    return ctx
+
+  @staticmethod
+  def get_parameters(params_url):
+    if params_url not in ModelManager.params_cache:
+      parameters = pd.read_csv(params_url)
+      parameters = parameters.set_index("Parameter")
+      ModelManager.params_cache[params_url] = parameters
+    parameters = ModelManager.params_cache[params_url].copy()
+
+    return parameters
 
 def diffy(
-    project_ref_a = '942630321a2a8780ee1b9eaac5102309a7f4653c',
+    project_ref_a = 'g:main',
     params_url_a = None,
 
-    project_ref_b = 'b:main',
+    project_ref_b = '.',
     params_url_b = None,
 
     max_steps = 10,
+
+    ignore_missings = False,
 
     report_file_path = None,
     report_dir_path = None,
@@ -278,13 +420,13 @@ def diffy(
   if report_file_path is None:
     report_file_path = 'diffy.html'
 
-  model_a = Model(
+  model_a = ModelManager.load_model(
     name = 'Model a',
     project_ref = project_ref_a,
     params_url = params_url_a,
   )
 
-  model_b = Model(
+  model_b = ModelManager.load_model(
     name = 'Model b',
     project_ref = project_ref_b,
     params_url = params_url_b,
@@ -299,7 +441,9 @@ def diffy(
 
     log.info()
 
-  var_to_lineno = collect_var_info(model_b.module)
+  var_to_lineno = model_b.get_var_to_lineno()
+  if not var_to_lineno:
+    var_to_lineno = model_a.get_var_to_lineno()
 
   report = Report(report_file_path = report_file_path, report_dir_path = report_dir_path)
 
@@ -417,7 +561,7 @@ def diffy(
   #--------------------------------------------------------------------------
   current_section = add_section(content, 'Parameters')
 
-  inputs_table = compare_dicts(model_a.inputs, model_b.inputs, var_to_lineno, add_line_numbers = False)
+  inputs_table = compare_dicts(model_a.inputs, model_b.inputs, var_to_lineno, add_line_numbers = False, ignore_missings = ignore_missings)
   current_section.append(diff_table_to_html(inputs_table))
 
   if model_a.exception or model_b.exception:
@@ -441,15 +585,15 @@ def diffy(
     #--------------------------------------------------------------------------
     current_section = add_section(content, 'Takeoff metrics')
 
-    metrics_table = compare_dicts(model_a.sim.takeoff_metrics, model_b.sim.takeoff_metrics, var_to_lineno, add_line_numbers = False)
-    current_section.append(diff_table_to_html(metrics_table))
+    metrics_table = compare_dicts(model_a.get_takeoff_metrics(), model_b.get_takeoff_metrics(), var_to_lineno, add_line_numbers = False, ignore_missings = ignore_missings)
+    current_section.append(diff_table_to_html(metrics_table,))
 
     #--------------------------------------------------------------------------
     # Static values comparison
     #--------------------------------------------------------------------------
     current_section = add_section(content, 'Static variables')
 
-    static_table = compare_dicts(model_a.get_static_variables(), model_b.get_static_variables(), var_to_lineno)
+    static_table = compare_dicts(model_a.get_static_variables(), model_b.get_static_variables(), var_to_lineno, ignore_missings = ignore_missings)
     current_section.append(diff_table_to_html(static_table))
 
     #--------------------------------------------------------------------------
@@ -458,7 +602,7 @@ def diffy(
     current_section = add_section(content, 'Step by step comparison')
 
     # Step number selector
-    step_count = min(model_a.n_steps, model_b.n_steps)
+    step_count = min(model_a.get_step_count(), model_b.get_step_count())
 
     step_selector_container = et.fromstring('<p>Step </p>')
     current_section.append(step_selector_container)
@@ -480,8 +624,8 @@ def diffy(
     current_section.append(steps_data)
 
     for step_index in range(step_count):
-      external_table = compare_dicts(model_a.get_main_dynamic_variables(step_index), model_b.get_main_dynamic_variables(step_index), var_to_lineno)
-      internal_table = compare_dicts(model_a.get_internal_dynamic_variables(step_index), model_b.get_internal_dynamic_variables(step_index), var_to_lineno)
+      external_table = compare_dicts(model_a.get_main_dynamic_variables(step_index), model_b.get_main_dynamic_variables(step_index), var_to_lineno, ignore_missings = ignore_missings)
+      internal_table = compare_dicts(model_a.get_internal_dynamic_variables(step_index), model_b.get_internal_dynamic_variables(step_index), var_to_lineno, ignore_missings = ignore_missings)
 
       external_tables.append(external_table)
       internal_tables.append(internal_table)
@@ -549,47 +693,11 @@ def diffy(
 
   log.info(f'Details in the full report: {report_path}')
 
-  model_a.close()
-  model_b.close()
-
-
-def collect_var_info(module):
-  """
-  Collects the line number of the last assignment of all the variables in a module
-  """
-
-  var_to_lineno = {}
-
-  ass_nodes = []
-
-  class Instrumentor(ast.NodeVisitor):
-    def visit_Assign(self, node):
-      ass_nodes.append(node)
-      self.traverse_nodes(node.targets)
-      self.generic_visit(node)
-
-    def traverse_nodes(self, nodes):
-      if not isinstance(nodes, (list, tuple)):
-        nodes = [nodes]
-
-      for node in nodes:
-        if isinstance(node, ast.Attribute):
-          var_to_lineno[node.attr] = node.lineno
-        elif isinstance(node, ast.Subscript):
-          self.traverse_nodes(node.value)
-        elif isinstance(node, ast.Tuple):
-          for x in node.elts:
-            self.traverse_nodes(x)
-
-  source = inspect.getsource(module)
-  tree = ast.parse(source)
-  instrumentor = Instrumentor()
-  instrumentor.visit(tree)
-
-  return var_to_lineno
+  ModelManager.unload_model(model_a)
+  ModelManager.unload_model(model_b)
 
 def get_max_change(diff_table):
-  max_change = max([100 if isinstance(x, str) else abs(x) for x in diff_table[DIFF_COL]])
+  max_change = max([100 if isinstance(x, str) else abs(x) for x in diff_table[DIFF_COL]], default = 0)
   return max_change
 
 def diff_table_to_html(diff_table, return_as_string = False):
@@ -638,7 +746,6 @@ def diff_table_to_html(diff_table, return_as_string = False):
       some_missing = False
 
       tr = et.Element('tr')
-      tbody.append(tr)
       tr.append(et.fromstring(f'<th>{var}</th>'))
 
       for col, e in zip(diff_table.columns, row):
@@ -647,6 +754,8 @@ def diff_table_to_html(diff_table, return_as_string = False):
           some_missing = True
           td.set('class', 'missing')
         tr.append(td)
+
+      tbody.append(tr)
 
       classes = []
       diff = row[DIFF_COL]
@@ -692,12 +801,14 @@ def diff_table_to_html(diff_table, return_as_string = False):
   else:
     return table
 
-def compare_dicts(dict_a, dict_b, var_to_lineno, name_a = 'Model a', name_b = 'Model b', add_line_numbers = True):
+def compare_dicts(dict_a, dict_b, var_to_lineno, name_a = 'Model a', name_b = 'Model b', add_line_numbers = True, ignore_missings = False):
   def get_diff(a, b):
     """
     Returns the maximum relative difference (or a string)
     """
 
+    if isinstance(a, bool): a = 1 if a else 0
+    if isinstance(b, bool): b = 1 if b else 0
     if isinstance(a, (list, tuple)): a = np.array(a)
     if isinstance(b, (list, tuple)): b = np.array(b)
     if isinstance(a, (float, int)): a = np.array([a])
@@ -723,7 +834,10 @@ def compare_dicts(dict_a, dict_b, var_to_lineno, name_a = 'Model a', name_b = 'M
   keys = [k for k in dict_a.keys()] + [k for k in dict_b.keys() if k not in dict_a.keys()]
   keys = sorted(keys, key = lambda v: var_to_lineno[v] if v in var_to_lineno else -1)
 
+  filtered_keys = []
   for k in keys:
+    if ignore_missings and k not in dict_a or k not in dict_b:
+      continue
     row = {}
     row[name_a] = dict_a[k] if k in dict_a else '(missing)'
     row[name_b] = dict_b[k] if k in dict_b else '(missing)'
@@ -731,8 +845,12 @@ def compare_dicts(dict_a, dict_b, var_to_lineno, name_a = 'Model a', name_b = 'M
     if add_line_numbers:
       row['lineno'] = var_to_lineno[k] if k in var_to_lineno else ''
     table.append(row)
+    filtered_keys.append(k)
 
-  return pd.DataFrame(table, index = keys)
+  columns = [name_a, name_b, DIFF_COL]
+  if add_line_numbers:
+    columns.append('lineno')
+  return pd.DataFrame(table, index = filtered_keys, columns = columns)
 
 def add_section(parent_element, title, add_filters = True):
   section = et.Element('section', {'class': 'only-show-differences'})
@@ -896,11 +1014,22 @@ if __name__ == '__main__':
   )
 
   parser.add_argument(
+    "--params",
+    default=None,
+    help="Parameters URL or local path for both models",
+  )
+
+  parser.add_argument(
     "-s",
     "--max-steps",
     type=int,
     default=10,
     help="Outputs to the report at most this number of steps",
+  )
+
+  parser.add_argument(
+    "--ignore-missings",
+    action='store_true',
   )
 
   args = handle_cli_arguments(parser)
@@ -910,9 +1039,13 @@ if __name__ == '__main__':
   if args.ref_a: diff_args['project_ref_a'] = args.ref_a
   if args.ref_b: diff_args['project_ref_b'] = args.ref_b
 
+  if args.params:
+    diff_args['params_url_a'] = args.params
+    diff_args['params_url_b'] = args.params
   if args.params_a: diff_args['params_url_a'] = args.params_a
   if args.params_b: diff_args['params_url_b'] = args.params_b
 
   diff_args['max_steps'] = args.max_steps
+  diff_args['ignore_missings'] = args.ignore_missings
 
   diffy(**diff_args)

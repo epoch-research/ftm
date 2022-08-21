@@ -1,0 +1,1127 @@
+<!--
+See https://d3-graph-gallery.com/
+See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom-events-to-a-D3-js-streamgraph-in-SAS/ta-p/513331
+-->
+
+<style>
+  :root {
+    --sidebar-width: 310px;
+  }
+
+  .playground {
+    position: relative;
+  }
+
+  .sidebar-wrapper {
+    position: absolute;
+    top: 0;
+    height: 100%;
+  }
+
+  .sidebar {
+    position: sticky;
+    height: 100vh;
+    left: 0;
+    top: 1em;
+    padding: 1em;
+    padding-top: 0;
+    width: var(--sidebar-width);
+    box-sizing: border-box;
+    overflow-y: auto;
+    border-left: 1px solid #999;
+  }
+
+  .sidebar-content-wrapper {
+    border: 2px solid #333;
+    padding: 15px;
+    padding-bottom: 0;
+    padding-top: 0;
+    border-radius: var(--border-radius);
+    background-color: white;
+    height: 80%;
+    position: relative;
+  }
+
+  .sidebar-header {
+    //border: 2px solid #333;
+    padding: 7px;
+    border-radius: var(--border-radius);
+    //background-color: white;
+    position: relative;
+
+    padding: 0;
+    margin-bottom: 7px;
+    margin-top: 2px;
+  }
+
+  #simulate-button-container {
+    text-align: center;
+    width: 100%;
+  }
+
+  #simulate-button {
+    border: none;
+    font: inherit;
+    cursor: pointer;
+    outline: inherit;
+
+    border-radius: var(--border-radius);
+    padding: 11px;
+    background-color: #35639d;
+    /*background-color: #5f84b3;*/
+    color: white;
+    font-weight: bold;
+
+    font-size: 1.1em;
+
+    width: 100%;
+    border: 2px solid #333;
+  }
+
+  #simulate-button:hover {
+    text-decoration: none;
+    box-shadow: 0px 0px 3px 3px rgb(0 0 0 / 20%);
+  }
+
+  /* Hide scrollbars */
+
+  .sidebar-content-wrapper {
+    overflow-y: scroll;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .sidebar-content-wrapper::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+
+  .content {
+    padding: 2em;
+    border-radius: var(--border-radius);
+    border: 2px solid #333;
+    margin: 1em;
+    /*width: calc(100% - var(--sidebar-width))*/;
+    margin-left: var(--sidebar-width);
+    //overflow-y: auto;
+    //height: 100%;
+    box-sizing: border-box;
+    background-color: white;
+    overflow-x: auto;
+    min-height: 100%;
+  }
+
+  .parameter-section {
+    font-size: 1.2em;
+    margin-top: 1em;
+    margin-bottom: 0.6em;
+  }
+
+  .input-parameter {
+    display: flex;
+    margin-bottom: 0.3em;
+  }
+
+  .input-parameter.disabled, .input-parameter.disabled input {
+    color: grey;
+  }
+
+  .input-parameter input {
+    width: 5em;
+    margin-left: auto;
+  }
+
+  .input-parameter input[type="checkbox"] {
+    height: 14px;
+    margin-bottom: 7px;
+  }
+
+  #viz-container {
+    place-content: center;
+    align-items: center;
+    text-align: center;
+  }
+</style>
+
+<style>
+  table, td, tr, th {
+    border: none;
+  }
+
+  table.dataframe {
+    border-collapse: collapse;
+    white-space: nowrap;
+  }
+
+  table.dataframe thead {
+    border-bottom: 1px solid #aaa;
+    vertical-align: bottom;
+    background-color: #ddd;
+  }
+
+  table.dataframe td, table.dataframe th {
+    text-align: right;
+    padding: 0.2em 1.5em;
+  }
+
+  table.dataframe tbody tr:nth-child(odd) {
+    background-color: #eee;
+  }
+
+  table.dataframe tbody tr:hover {
+    background-color: #ddd;
+  }
+
+  #table-container {
+  }
+
+  .table-wrapper {
+    overflow-x: auto;
+  }
+
+  .parameter-group {
+    margin-top: 1em;
+    margin-bottom: 1.5em;
+  }
+
+  .parameter-group-label {
+    font-size: 0.8em;
+    position: relative;
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+    text-transform: uppercase;
+    font-weight: bold;
+    //text-align: center;
+  }
+</style>
+
+<div class="playground">
+
+<div class="sidebar-wrapper">
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div id="simulate-button-container">
+        <!-- <button id="simulate-button">Simulate</button> -->
+        <button id="simulate-button">Run simulation</button>
+      </div>
+    </div>
+    <div class="sidebar-content-wrapper">
+      <div class="sidebar-content">
+        <div class="parameter-group">
+          <div class="parameter-group-label">Time parameters</div>
+          <div class="input-parameter"><label for="t_step">Step duration</label> <input id="t_step" value="1"></div>
+          <div class="input-parameter"><label for="t_end">End year</label> <input id="t_end" value="2100"></div>
+        </div>
+
+        <div class="parameter-group">
+          <div class="parameter-group-label">Full automation</div>
+          <div class="input-parameter"><label for="full_automation_requirements_training">Training compute</label> <input id="full_automation_requirements_training" value="1e+36"></div>
+          <div class="input-parameter"><label for="flop_gap_training">Training gap</label> <input id="flop_gap_training" value="100000.0"></div>
+          <div class="input-parameter"><label for="goods_vs_rnd_requirements_training">Training goods vs. R&D</label> <input id="goods_vs_rnd_requirements_training" value="3.0"></div>
+          <div class="input-parameter"><label for="full_automation_requirements_runtime">Runtime compute</label> <input id="full_automation_requirements_runtime" value="1.66667e+16"></div>
+          <div class="input-parameter"><label for="flop_gap_runtime">Runtime gap</label> <input id="flop_gap_runtime" value="100.0"></div>
+          <div class="input-parameter"><label for="goods_vs_rnd_requirements_runtime">Runtime goods vs. R&D</label> <input id="goods_vs_rnd_requirements_runtime" value="10.0"></div>
+        </div>
+
+        <div class="parameter-group">
+          <div class="parameter-group-label">Runtime-training tradeoff</div>
+          <div class="input-parameter"><label for="runtime_training_tradeoff_enabled">Enable</label> <input id="runtime_training_tradeoff_enabled" type="checkbox"></div>
+          <div class="input-parameter disabled"><label for="runtime_training_tradeoff">Tradeoff</label> <input id="runtime_training_tradeoff" value="10"></div>
+          <div class="input-parameter disabled"><label for="runtime_training_max_tradeoff">Max tradeoff</label> <input id="runtime_training_max_tradeoff" value="100.0"></div>
+        </div>
+
+        <div class="parameter-group">
+          <div class="parameter-group-label">Misc</div>
+          <div class="input-parameter"><label for="labour_substitution_goods">labour_substit</label> <input id="labour_substitution_goods" value="-0.5"></div>
+          <div class="input-parameter"><label for="labour_substitution_rnd">labour_substit</label> <input id="labour_substitution_rnd" value="-0.5"></div>
+          <div class="input-parameter"><label for="capital_substitution_goods">capital_substi</label> <input id="capital_substitution_goods" value="-0.4"></div>
+          <div class="input-parameter"><label for="capital_substitution_rnd">capital_substi</label> <input id="capital_substitution_rnd" value="-0.25"></div>
+          <div class="input-parameter"><label for="hardware_returns">hardware_retur</label> <input id="hardware_returns" value="5.1"></div>
+          <div class="input-parameter"><label for="software_returns">software_retur</label> <input id="software_returns" value="1.25"></div>
+          <div class="input-parameter"><label for="hardware_performance_ceiling">hardware_perfo</label> <input id="hardware_performance_ceiling" value="1e+30"></div>
+          <div class="input-parameter"><label for="software_ceiling">software_ceili</label> <input id="software_ceiling" value="10000000.0"></div>
+          <div class="input-parameter"><label for="rnd_parallelization_penalty">rnd_paralleliz</label> <input id="rnd_parallelization_penalty" value="0.7"></div>
+          <div class="input-parameter"><label for="hardware_delay">hardware_delay</label> <input id="hardware_delay" value="1.0"></div>
+          <div class="input-parameter"><label for="frac_capital_hardware_rnd_growth">frac_capital_h</label> <input id="frac_capital_hardware_rnd_growth" value="0.01"></div>
+          <div class="input-parameter"><label for="frac_labour_hardware_rnd_growth">frac_labour_ha</label> <input id="frac_labour_hardware_rnd_growth" value="0.01"></div>
+          <div class="input-parameter"><label for="frac_compute_hardware_rnd_growth">frac_compute_h</label> <input id="frac_compute_hardware_rnd_growth" value="0.01"></div>
+          <div class="input-parameter"><label for="frac_labour_software_rnd_growth">frac_labour_so</label> <input id="frac_labour_software_rnd_growth" value="0.18"></div>
+          <div class="input-parameter"><label for="frac_compute_software_rnd_growth">frac_compute_s</label> <input id="frac_compute_software_rnd_growth" value="0.18"></div>
+          <div class="input-parameter"><label for="frac_gwp_compute_growth">frac_gwp_compu</label> <input id="frac_gwp_compute_growth" value="0.19"></div>
+          <div class="input-parameter"><label for="frac_compute_training_growth">frac_compute_t</label> <input id="frac_compute_training_growth" value="0.547528364331348"></div>
+          <div class="input-parameter"><label for="frac_capital_hardware_rnd_growth_rampup">frac_capital_h</label> <input id="frac_capital_hardware_rnd_growth_rampup" value="0.14"></div>
+          <div class="input-parameter"><label for="frac_labour_hardware_rnd_growth_rampup">frac_labour_ha</label> <input id="frac_labour_hardware_rnd_growth_rampup" value="0.14"></div>
+          <div class="input-parameter"><label for="frac_compute_hardware_rnd_growth_rampup">frac_compute_h</label> <input id="frac_compute_hardware_rnd_growth_rampup" value="0.67"></div>
+          <div class="input-parameter"><label for="frac_labour_software_rnd_growth_rampup">frac_labour_so</label> <input id="frac_labour_software_rnd_growth_rampup" value="0.22"></div>
+          <div class="input-parameter"><label for="frac_compute_software_rnd_growth_rampup">frac_compute_s</label> <input id="frac_compute_software_rnd_growth_rampup" value="0.67"></div>
+          <div class="input-parameter"><label for="frac_gwp_compute_growth_rampup">frac_gwp_compu</label> <input id="frac_gwp_compute_growth_rampup" value="0.19"></div>
+          <div class="input-parameter"><label for="frac_compute_training_growth_rampup">frac_compute_t</label> <input id="frac_compute_training_growth_rampup" value="1.1"></div>
+          <div class="input-parameter"><label for="frac_capital_hardware_rnd_ceiling">frac_capital_h</label> <input id="frac_capital_hardware_rnd_ceiling" value="0.03"></div>
+          <div class="input-parameter"><label for="frac_labour_hardware_rnd_ceiling">frac_labour_ha</label> <input id="frac_labour_hardware_rnd_ceiling" value="0.03"></div>
+          <div class="input-parameter"><label for="frac_compute_hardware_rnd_ceiling">frac_compute_h</label> <input id="frac_compute_hardware_rnd_ceiling" value="0.2"></div>
+          <div class="input-parameter"><label for="frac_labour_software_rnd_ceiling">frac_labour_so</label> <input id="frac_labour_software_rnd_ceiling" value="0.03"></div>
+          <div class="input-parameter"><label for="frac_compute_software_rnd_ceiling">frac_compute_s</label> <input id="frac_compute_software_rnd_ceiling" value="0.2"></div>
+          <div class="input-parameter"><label for="frac_gwp_compute_ceiling">frac_gwp_compu</label> <input id="frac_gwp_compute_ceiling" value="0.3"></div>
+          <div class="input-parameter"><label for="frac_compute_training_ceiling">frac_compute_t</label> <input id="frac_compute_training_ceiling" value="0.1"></div>
+          <div class="input-parameter"><label for="initial_frac_capital_hardware_rnd">initial_frac_c</label> <input id="initial_frac_capital_hardware_rnd" value="0.002"></div>
+          <div class="input-parameter"><label for="initial_frac_labour_hardware_rnd">initial_frac_l</label> <input id="initial_frac_labour_hardware_rnd" value="0.002"></div>
+          <div class="input-parameter"><label for="initial_frac_compute_hardware_rnd">initial_frac_c</label> <input id="initial_frac_compute_hardware_rnd" value="0.002"></div>
+          <div class="input-parameter"><label for="initial_frac_labour_software_rnd">initial_frac_l</label> <input id="initial_frac_labour_software_rnd" value="0.0002"></div>
+          <div class="input-parameter"><label for="initial_frac_compute_software_rnd">initial_frac_c</label> <input id="initial_frac_compute_software_rnd" value="0.0002"></div>
+          <div class="input-parameter"><label for="initial_biggest_training_run">initial_bigges</label> <input id="initial_biggest_training_run" value="3e+24"></div>
+          <div class="input-parameter"><label for="ratio_initial_to_cumulative_input_hardware_rnd">ratio_initial_</label> <input id="ratio_initial_to_cumulative_input_hardware_rnd" value="0.047"></div>
+          <div class="input-parameter"><label for="ratio_initial_to_cumulative_input_software_rnd">ratio_initial_</label> <input id="ratio_initial_to_cumulative_input_software_rnd" value="0.2"></div>
+          <div class="input-parameter"><label for="initial_hardware_production">initial_hardwa</label> <input id="initial_hardware_production" value="1e+28"></div>
+          <div class="input-parameter"><label for="ratio_hardware_to_initial_hardware_production">ratio_hardware</label> <input id="ratio_hardware_to_initial_hardware_production" value="2.0"></div>
+          <div class="input-parameter"><label for="initial_hardware_performance">initial_hardwa</label> <input id="initial_hardware_performance" value="1.5e+17"></div>
+          <div class="input-parameter"><label for="initial_gwp">initial_gwp</label> <input id="initial_gwp" value="85000000000000.0"></div>
+          <div class="input-parameter"><label for="initial_cognitive_share_goods">initial_cognit</label> <input id="initial_cognitive_share_goods" value="0.5"></div>
+          <div class="input-parameter"><label for="initial_cognitive_share_rnd">initial_cognit</label> <input id="initial_cognitive_share_rnd" value="0.7"></div>
+          <div class="input-parameter"><label for="initial_compute_share_goods">initial_comput</label> <input id="initial_compute_share_goods" value="0.01"></div>
+          <div class="input-parameter"><label for="initial_compute_share_rnd">initial_comput</label> <input id="initial_compute_share_rnd" value="0.01"></div>
+          <div class="input-parameter"><label for="rampup_trigger">rampup_trigger</label> <input id="rampup_trigger" value="0.03"></div>
+          <div class="input-parameter"><label for="initial_capital_growth">Initial capital growth</label> <input id="initial_capital_growth" value="0.0275"></div>
+          <div class="input-parameter"><label for="labour_growth">Labour growth</label> <input id="labour_growth" value="0.01"></div>
+          <div class="input-parameter"><label for="tfp_growth">TFP growth</label> <input id="tfp_growth" value="0.01"></div>
+          <div class="input-parameter"><label for="compute_depreciation">compute_deprec</label> <input id="compute_depreciation" value="0.2"></div>
+        </div>
+        <!--
+        -->
+      </div>
+    </div>
+  </div>
+</div> <!-- sidebar-wrapper -->
+
+<div class="content">
+  <div class="wrapper">
+    <h1 style="text-align: center; margin-bottom: 1em; margin-top: -0.7em">Playground</h1>
+    <p>Work in progress!</p>
+  </div>
+  <div class="inner-content">
+    <div id="textbox"></div>
+    <div id="viz-container">
+    </div>
+    <div id="table-container"></div>
+  </div>
+</div>
+
+</div> <!-- Playground -->
+
+<script src="op.js"></script>
+<script src="bridge.js"></script>
+
+<script src="https://d3js.org/d3.v4.js"></script>
+
+<script src="https://bossanova.uk/jspreadsheet/v4/jexcel.js"></script>
+<script src="https://jsuites.net/v4/jsuites.js"></script>
+<link rel="stylesheet" href="https://jsuites.net/v4/jsuites.css" />
+<link rel="stylesheet" href="https://unpkg.com/tippy.js@6/themes/light-border.css" />
+<link rel="stylesheet" href="https://bossanova.uk/jspreadsheet/v4/jexcel.css" />
+<script src="https://unpkg.com/@popperjs/core@2"></script>
+<script src="https://unpkg.com/tippy.js@6"></script>
+
+<script>
+  let parameter_meanings = 
+  {
+    "full_automation_requirements_training":"FLOP needed to train an AI capable of performing the most hard-to-train cognitive task.",
+    "flop_gap_training":"Ratio between the FLOP needed to train the most demanding AI task and the 20% most demanding task.",
+    "goods_vs_rnd_requirements_training":"Ratio between the FLOP needed to train the most demanding cognitive task for goods and services production, versus for R&D. The higher this is, the easier it is to automate R&D with respect to goods and services production.",
+    "full_automation_requirements_runtime":"FLOP\/year needed to substitute the output of one human worker in the most demanding AI task.",
+    "flop_gap_runtime":"Ratio between the FLOP\/year needed to automate the most demanding AI task and the 20% most demanding AI task.",
+    "goods_vs_rnd_requirements_runtime":"Ratio between the FLOP\/year needed to automate the most demanding cognitive task for goods production and for R&D. The higher this is, the easier it is to automate R&D with respect to goods and services production.",
+    "runtime_training_tradeoff":"How efficiently you can substitute training for higher runtime compute requirements.",
+    "runtime_training_max_tradeoff":null,
+    "labour_substitution_goods":null,
+    "labour_substitution_rnd":null,
+    "capital_substitution_goods":null,
+    "capital_substitution_rnd":null,
+    "hardware_returns":"How cumulative inputs to hardware R&D translate to better performance improvements. Doubling the cumulative input of harware R&D results in 2^hardware_returns improvement of hardware_efficiency (not accounting for the damping effect of the ceiling)",
+    "software_returns":"How cumulative inputs to software R&D translate to better performance improvements. Doubling the cumulative input of software R&D results in 2^software_returns improvement of hardware_efficiency (not accounting for the damping effect of the ceiling)",
+    "hardware_performance_ceiling":"Maximum FLOP\/year\/$ achiveable. Performance improvements get increasingly penalized as they approach this quantitiy.",
+    "software_ceiling":"Maximum Effective FLOP \/ physical FLOP achievable. Performance improvements get increasingly penalized as they approach this quantitiy.",
+    "rnd_parallelization_penalty":"Penalization to concurrent R&D efforts. The ouputs of the hardware and software production function R&D get raised to this penalty before being aggregated to the cumulative total.",
+    "hardware_delay":"Years between a chip design and its commercial release.",
+    "frac_capital_hardware_rnd_growth":null,
+    "frac_labour_hardware_rnd_growth":null,
+    "frac_compute_hardware_rnd_growth":null,
+    "frac_labour_software_rnd_growth":null,
+    "frac_compute_software_rnd_growth":null,
+    "frac_gwp_compute_growth":null,
+    "frac_compute_training_growth":null,
+    "frac_capital_hardware_rnd_growth_rampup":null,
+    "frac_labour_hardware_rnd_growth_rampup":null,
+    "frac_compute_hardware_rnd_growth_rampup":null,
+    "frac_labour_software_rnd_growth_rampup":null,
+    "frac_compute_software_rnd_growth_rampup":null,
+    "frac_gwp_compute_growth_rampup":null,
+    "frac_compute_training_growth_rampup":null,
+    "frac_capital_hardware_rnd_ceiling":null,
+    "frac_labour_hardware_rnd_ceiling":null,
+    "frac_compute_hardware_rnd_ceiling":null,
+    "frac_labour_software_rnd_ceiling":null,
+    "frac_compute_software_rnd_ceiling":null,
+    "frac_gwp_compute_ceiling":null,
+    "frac_compute_training_ceiling":null,
+    "initial_frac_capital_hardware_rnd":null,
+    "initial_frac_labour_hardware_rnd":null,
+    "initial_frac_compute_hardware_rnd":null,
+    "initial_frac_labour_software_rnd":null,
+    "initial_frac_compute_software_rnd":null,
+    "initial_biggest_training_run":null,
+    "ratio_initial_to_cumulative_input_hardware_rnd":null,
+    "ratio_initial_to_cumulative_input_software_rnd":null,
+    "initial_hardware_production":null,
+    "ratio_hardware_to_initial_hardware_production":null,
+    "initial_hardware_performance":"FLOP\/year of the most cost efficient chip. Measured in FLOP\/year\/$",
+    "initial_gwp":"Initial real global world product. Measured in 2020 USD.",
+    "initial_cognitive_share_goods":"Initial fraction of the GWP captured by labour and compute owners vs capital owners",
+    "initial_cognitive_share_rnd":"Initial fraction of the R&D captured by labour and compute owners vs capital owners",
+    "initial_compute_share_goods":"Initial fraction of cognitive output done by computers for goods production",
+    "initial_compute_share_rnd":"Initial fraction of cognitive output done by computers for R&D",
+    "rampup_trigger":"Threshold of task automation in the production of goods and services that triggers massive investment growth.",
+    "initial_capital_growth":null,
+    "labour_growth":"Population yearly growth rate. Controls the growth of labour.",
+    "tfp_growth":"Yearly rate of growth of the total factor productivity. Each year the production gets passively better by a factor TFP that grows at this rate.",
+    "compute_depreciation":"Yearly rate of depreciation of hardware. Each year this portion of the accumulated compute is depreciated."
+  };
+
+  parameter_meanings['t_step'] = 'Duration of each simulation step (in years)';
+  parameter_meanings['t_end'] = 'When to stop the simulation';
+
+  let tippy_instances = [];
+  for (let input of document.querySelectorAll('.input-parameter')) {
+    let id = input.querySelector('input').id;
+    let meaning = parameter_meanings[id];
+
+    let tooltip = `<span style="font-weight: bold">key</span>: ${id}`
+    if (meaning) {
+      tooltip = meaning + '<br>' + tooltip;
+    }
+
+    tippy_instances.push(
+      tippy(input, {
+        content: tooltip,
+        allowHTML: true,
+        interactive: true,
+        placement: 'right',
+        appendTo: document.body,
+        //arrow: false,
+        hideOnClick: false,
+        theme: 'light-border',
+      })
+    );
+  }
+
+  document.querySelector('.sidebar-content-wrapper').addEventListener('scroll', () => {
+    for (let instance of tippy_instances) {
+      let duration = instance.props.duration;
+      instance.setProps({duration: [null, 0]});
+      instance.hide();
+      instance.setProps({duration: duration});
+    }
+  });
+</script>
+
+<script>
+  function run_simulation(immediate) {
+    let params = get_parameters();
+    if (params) {
+      cancelBackgroundProcesses();
+      dispatchBackgroundProcess(() => {
+        let js_params = transform_python_to_js_params(params);
+        let sim = run_model(js_params);
+        let takeoff_metrics = sim.get_takeoff_metrics();
+
+        let t = sim.get_thread('t_year');
+        let indices = sim.get_thread('t_idx');
+        //let b = sim.get_thread('biggest_training_run');
+        let b = sim.get_thread('compute');
+
+        let table_container = document.querySelector('#table-container');
+
+        clear_tables(table_container);
+
+        let metrics_table = {
+          ...sim.takeoff_metrics,
+          'rampup_start': sim.rampup_start,
+          'agi_year': sim.agi_year,
+        };
+
+        {
+          let h = document.createElement('h2');
+          h.innerHTML = 'Takeoff metrics';
+          table_container.appendChild(h);
+        }
+
+        add_table(table_container, metrics_table);
+
+        {
+          let h = document.createElement('h2');
+          h.innerHTML = 'Summary';
+          table_container.appendChild(h);
+        }
+
+        add_table(table_container, sim.get_summary_table());
+
+        let detailed_table = {
+          'Year':                 t,
+          'Rampup':               sim.get_thread('rampup'),
+          'Hardware performance': sim.get_thread('hardware_performance.v'),
+          'Compute investment':   sim.get_thread('frac_gwp.compute.v'),
+          'Hardware':             sim.get_thread('hardware'),
+          'Software':             sim.get_thread('software.v'),
+          'Compute':              sim.get_thread('compute'),
+          'Labour':               sim.get_thread('labour'),
+          'Capital':              sim.get_thread('capital'),
+          'GWP':                  sim.get_thread('gwp'),
+          'Biggest training run': sim.get_thread('biggest_training_run'),
+        };
+
+        let yearly_table = {};
+
+        for (let i of indices) {
+          if (t[i] == Math.floor(t[i])) {
+            for (let v in detailed_table) {
+              if (!(v in yearly_table)) yearly_table[v] = [];
+              yearly_table[v].push(detailed_table[v][i]);
+            }
+          }
+        }
+
+        {
+          let h = document.createElement('h2');
+          h.innerHTML = 'Detailed table for debugging';
+          table_container.appendChild(h);
+        }
+
+        add_table(table_container, yearly_table);
+
+        injectMeaningTooltips();
+
+        plt.clear_all();
+
+        plt.set_defaults({
+          yscale: 'log',
+        });
+
+        plot_variable(sim, 'gwp', 'GWP over time');
+
+        plot_variable(sim, 'gwp', 'GWP growth over time', {plot_growth: true});
+
+        plot_compute_decomposition(sim);
+        plt.show();
+      }, immediate ? 1 : 500);
+    }
+  }
+
+  function plot_variable(sim, var_name, title, {plot_growth = false, crop_after_agi = true} = {}) {
+    let x;
+    let y;
+
+    if (plot_growth) {
+      let r = sim.get_growth(var_name);
+      x = r.t;
+      y = r.growth;
+    } else {
+      x = sim.timesteps;
+      y = sim.get_thread(var_name);
+    }
+
+
+    if (crop_after_agi) {
+      let end_idx = (crop_after_agi && sim.agi_year != null) ? Math.min(sim.time_to_index(sim.agi_year + 5), sim.states.length) : sim.states.length;
+      x = x.slice(0, end_idx);
+      y = y.slice(0, end_idx);
+    }
+      
+    plt.plot(x, y);
+    plot_vlines(sim);
+    plt.title(title);
+    plt.show();
+  }
+
+  function update_disabled() {
+    let checkbox = document.getElementById('runtime_training_tradeoff_enabled');
+    for (let input of checkbox.parentElement.parentElement.querySelectorAll('.input-parameter')) {
+      if (input == checkbox.parentElement) continue;
+      if (checkbox.checked) {
+        input.classList.remove('disabled');
+      } else {
+        input.classList.add('disabled');
+      }
+    }
+  }
+
+  document.getElementById('runtime_training_tradeoff_enabled').addEventListener('change', () => {
+    update_disabled();
+    run_simulation(true);
+  });
+
+  update_disabled();
+
+  document.getElementById('simulate-button').addEventListener('click', () => run_simulation(true));
+  for (let input of document.querySelectorAll('.input-parameter input')) {
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        run_simulation(true);
+      }
+    });
+  }
+
+  function get_parameters() {
+    let params = {};
+    for (let input of document.querySelectorAll('.input-parameter input')) {
+      let v = (input.type == 'checkbox') ? input.checked : +input.value;
+      if (Number.isNaN(v)) {
+        // Invalid input
+        return null;
+      }
+      params[input.id] = v;
+    }
+
+    if (!params['runtime_training_tradeoff_enabled']) {
+      params['runtime_training_tradeoff'] = 0;
+    }
+    delete params['runtime_training_tradeoff_enabled'];
+
+    return params;
+  }
+
+  function plot_oom_lines({line_style = 'dotted', color = 'grey'} = {}) {
+    let dataset = plt.get_dataset();
+    let high = -Infinity;
+    let low = +Infinity;
+
+    for (let data of dataset) {
+      low = Math.min(np.min(data.y), low);
+      high = Math.max(np.max(data.y), high);
+    }
+
+    low = Math.floor(Math.log10(low));
+    high = Math.ceil(Math.log10(high));
+
+    for (let oom = low; oom < high; oom++) {
+      plt.axhline(10**oom, {
+        linestyle: line_style,
+        color: color,
+      });
+    }
+  }
+
+  function plot_vlines(sim, line_color = 'black') {
+    if (sim.rampup_start) {
+      plt.axvline(sim.rampup_start, {
+        linestyle: 'dotted',
+        color: line_color,
+        label: 'Wake up'
+      });
+    }
+                
+    if (sim.rampup_mid) {
+      plt.axvline(sim.rampup_mid, {
+        linestyle: '-.',
+        color: line_color,
+        label: '30% automation'
+      });
+    }
+                
+    if (sim.agi_year) {
+      plt.axvline(sim.agi_year, {
+        linestyle: 'dashed',
+        color: line_color,
+        label: 'Full automation'
+      });
+    }
+  }
+
+  ///////////////////////////////////////////////////////////////////////////////
+  // Plotting stuff
+  //////////////////////////////////////////////////////////////////////////////
+
+  class Plotter {
+    colors = [
+      "steelblue", "orange", "pink",
+    ];
+
+    constructor (container) {
+      this.container = nodify(container);
+      this.defaults = {
+        xscale: 'linear',
+        yscale: 'linear',
+        axline_color: 'grey',
+        axline_linestyle: 'dashed',
+      };
+      this.reset();
+    }
+
+    reset() {
+      this.dataset = [];
+      this.current_color = 0;
+      this.xAxis = {scale: this.defaults.xscale};
+      this.yAxis = {scale: this.defaults.yscale};
+      this.axvlines = [];
+      this.axhlines = [];
+      this.graph_title = "";
+    }
+
+    get_dataset() {
+      return this.dataset;
+    }
+
+    title(title) {
+      this.graph_title = title;
+    }
+
+    xscale(scale) {
+      this.xAxis.scale = scale;
+    }
+
+    yscale(scale) {
+      this.yAxis.scale = scale;
+    }
+
+    axvline(x, options = {}) {
+      this.axvlines.push({x, ...options});
+    }
+
+    axhline(y, options = {}) {
+      this.axhlines.push({y, ...options});
+    }
+
+    set_defaults(defaults) {
+      override(this.defaults, defaults);
+      if ('xscale' in defaults) this.xAxis.scale = this.defaults.xscale;
+      if ('yscale' in defaults) this.yAxis.scale = this.defaults.yscale;
+    }
+
+    plot(x, y, options = {}) {
+      let o = {x, y, ...options};
+      o.color = o.color || this.colors[(this.current_color++) % this.colors.length]
+      this.dataset.push(o);
+    }
+
+    show () {
+      if (this.dataset.length > 0) {
+        let graph = document.createElement('div');
+        this.container.appendChild(graph);
+
+        // set the dimensions and margins of the graph
+        let margin = {top: 50, right: 30, bottom: 30, left: 60},
+            width = 760 - margin.left - margin.right,
+            height = 500 - margin.top - margin.bottom;
+
+        // append the svg object to the body of the page
+        let svg = d3.select(graph)
+          .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .attr('class', 'plot')
+          .append("g")
+            .attr("transform",
+                  "translate(" + margin.left + "," + margin.top + ")");
+
+        let first = this.dataset[0];
+        let indices = [...first.x.keys()];
+
+        let xlims = [Infinity, -Infinity];
+        let ylims = [Infinity, -Infinity];
+        for (let data of this.dataset) {
+          xlims[0] = Math.min(np.min(data.x), xlims[0]);
+          xlims[1] = Math.max(np.max(data.x), xlims[1]);
+
+          ylims[0] = Math.min(np.min(data.y), ylims[0]);
+          ylims[1] = Math.max(np.max(data.y), ylims[1]);
+        }
+
+        let nameToScale = {
+          'linear': d3.scaleLinear,
+          'log': d3.scaleLog,
+        };
+
+        let xScale = nameToScale[this.xAxis.scale]();
+        let yScale = nameToScale[this.yAxis.scale]();
+
+        let x = xScale
+          .domain(xlims)
+          .range([0, width])
+        ;
+
+        // Add Y axis
+        let y = yScale
+          .domain(ylims)
+          .range([height, 0])
+        ;
+
+        // Add the paths
+        for (let data of this.dataset) {
+          let indices = [...data.x.keys()];
+          svg.append("path")
+            .datum(indices)
+            .attr("fill", "none")
+            .attr("stroke", data.color)
+            .attr("stroke-width", 2.5)
+            .attr("d", d3.line()
+              .x(function(i) { return x(data.x[i]) })
+              .y(function(i) { return y(data.y[i]) })
+            );
+        }
+
+        // Vertical lines
+        for (let axvline of this.axvlines) {
+          svg.append('line')
+            .attr('x1', x(axvline.x))
+            .attr('x2', x(axvline.x))
+            .attr('y1', 0)
+            .attr('y2', height)
+            .attr("stroke", axvline.color || this.defaults.axline_color)
+            .style("stroke-dasharray", this.get_dasharray(axvline.linestyle || this.defaults.axline_linestyle))
+            .attr("stroke-width", 2)
+          ;
+        }
+
+        // Horizontal lines
+        for (let axhline of this.axhlines) {
+          svg.append('line')
+            .attr('x1', 0)
+            .attr('x2', width)
+            .attr('y1', y(axhline.y))
+            .attr('y2', y(axhline.y))
+            .attr("stroke", axhline.color || this.defaults.axline_color)
+            .style("stroke-dasharray", this.get_dasharray(axhline.linestyle || this.defaults.axline_linestyle))
+            .attr("stroke-width", 2)
+          ;
+        }
+
+        svg.append("g")
+          .attr("transform", "translate(0," + height + ")")
+          .attr("stroke-width", 2)
+          .call(d3.axisBottom(x));
+
+        svg.append("g")
+          .attr("stroke-width", 2)
+          .call(d3.axisLeft(y));
+
+        let add_legend = false;
+        for (let data of this.dataset) {
+          if (data.label) {
+            add_legend = true;
+            break;
+          }
+        }
+
+        if (add_legend) {
+          let legend = svg.append('g')
+            .attr('transform', 'translate(20,20)')
+          ;
+
+          let legend_y = 0;
+          for (let i = 0; i < this.dataset.length; i++) {
+            let data = this.dataset[i];
+            if (!data.label) continue;
+
+            legend.append('line')
+              .attr('x1', 0)
+              .attr('x2', 15)
+              .attr('y1', legend_y)
+              .attr('y2', legend_y)
+              .attr('stroke', data.color)
+              .attr('stroke-width', 2)
+            ;
+
+            legend.append('text')
+              .attr('x', 21)
+              .attr('y', legend_y)
+              .text(data.label)
+              .style('alignment-baseline', 'middle')
+            ;
+
+            legend_y += 20;
+          }
+
+          // Add legend background
+          let box = legend.node().getBBox();
+          let padding = 3;
+          let r = 3;
+          box.x -= padding;
+          box.y -= padding;
+          box.width += 2*padding;
+          box.height += 2*padding;
+          legend.append('rect')
+            .lower()
+            .attr('x', box.x)
+            .attr('y', box.y)
+            .attr('rx', r)
+            .attr('ry', r)
+            .attr('width', box.width)
+            .attr('height', box.height)
+            .attr('fill', 'white')
+            .attr('stroke', 'grey')
+          ;
+        }
+
+        if (this.graph_title) {
+          svg.append('text')
+            .attr('x', (width / 2))             
+            .attr('y', -8)
+            .attr('text-anchor', 'middle')  
+            .style('font-size', '16px') 
+            .text(this.graph_title)
+          ;
+        }
+
+        this.dataset = [];
+      }
+
+      this.reset();
+    }
+
+    get_dasharray(dash_type) {
+      let types = {
+        'dotted': '2,5',
+        '-.':     '3,1',
+        'dashed': '4,4',
+      };
+
+      let dasharray = (dash_type in types) ? types[dash_type] : dash_type;
+
+      return dasharray;
+    }
+
+    clear_all() {
+      this.container.innerHTML = '';
+    }
+  }
+
+  let plt = new Plotter('#viz-container');
+
+  function nodify(node_or_query) {
+    if (typeof(node_or_query) == 'string') {
+      return document.querySelector(node_or_query);
+    }
+    return node_or_query;
+  }
+
+  function plot_compute_decomposition(sim, crop_after_agi = true) {
+    let start_idx = 0;
+    let reference_idx = (sim.rampup_start != null) ? sim.time_to_index(sim.rampup_start) : 0;
+    let end_idx = (crop_after_agi && sim.agi_year != null) ? Math.min(sim.time_to_index(sim.agi_year + 5), sim.states.length) : sim.states.length;
+
+    let t = sim.timesteps.slice(start_idx, end_idx);
+
+    function normalized(path) {
+      let x = sim.get_thread(path);
+      return np.div(x.slice(start_idx, end_idx), x[reference_idx]);
+    }
+
+    plt.plot(t, normalized('compute_investment'),      {label: '$ on FLOP globally',               color: 'blue'})
+    plt.plot(t, normalized('hardware_performance.v'),  {label: 'Hardware (FLOP/$)',                color: 'orange'})
+    plt.plot(t, normalized('software.v'),              {label: 'Software (2020-FLOP per FLOP)',    color: 'green'})
+    plt.plot(t, normalized('frac_compute.training.v'), {label: 'Fraction global FLOP on training', color: 'red'})
+
+    plot_vlines(sim)
+
+    plt.title('Compute increase decomposition');
+
+    plot_oom_lines();
+  }
+
+  ///////////////////////////////////////////////////////////////////////////////
+  // Table stuff
+  //////////////////////////////////////////////////////////////////////////////
+
+  function clear_tables(container) {
+    container = nodify(container);
+    container.innerHTML = '';
+  }
+
+  function add_table(container, table) {
+    container = nodify(container);
+
+    let str = [];
+    str.push('<table class="dataframe">');
+
+    str.push('<thead>');
+    str.push('<tr>');
+    for (let a in table) {
+      str.push(`<th>${a}</th>`);
+    }
+    str.push('</tr>');
+    str.push('</thead>');
+
+    let num_rows = 0;
+    for (let v of Object.values(table)) {
+      num_rows = Math.max(num_rows, Array.isArray(v) ? v.length : 1);
+    }
+
+    let formatted_columns = {};
+    for (let col_name in table) {
+      let col = table[col_name];
+      if (!Array.isArray(col)) col = [col];
+      formatted_columns[col_name] = formatColumn(col);
+    }
+
+    for (let i = 0; i < num_rows; i++) {
+      str.push('<tr>');
+      for (let a in table) {
+        let cell = formatted_columns[a][i];
+        str.push(`<td>${cell}</td>`);
+      }
+      str.push('</tr>');
+    }
+    str.push('</table>');
+
+    let wrapper = document.createElement('div');
+    wrapper.classList.add('table-wrapper');
+    wrapper.innerHTML = str.join('');
+    container.appendChild(wrapper);
+  }
+
+  function format_value_for_cell(v) {
+    if (Array.isArray(v)) {
+      return '[' + v.join(', ') + ']';
+    }
+    return v;
+  }
+
+  function getFormatInformation(x) {
+    let str;
+    if (Math.abs(x) > 1e4) {
+      // Force exponential
+      str = x.toExponential();
+    } else {
+      str = x.toString();
+    }
+
+    let re = /^-?([0-9]*)(\.?[0-9]*)(e[+-][0-9]*)?$/i;
+
+    let m = str.match(re);
+
+    let groups = m.slice(1);
+
+    let intDigits = (typeof groups[0] === 'undefined') ? 0 : groups[0].length;
+    let fracDigits = (typeof groups[1] === 'undefined') ? 0 : groups[1].length - 1;
+    let expDigits = (typeof groups[2] === 'undefined') ? 0 : groups[2].length - 2;
+    let isExponential = (typeof groups[2] !== 'undefined');
+
+    let expFracDigits;
+    if (isExponential) {
+      expFracDigits = fracDigits;
+    } else {
+      let strExp = x.toExponential();
+      let mExp = strExp.match(re);
+      let groupsExp = mExp.slice(1);
+      expFracDigits = (typeof groupsExp[1] === 'undefined') ? 0 : groupsExp[1].length - 1;
+      expDigits = (typeof groupsExp[2] === 'undefined') ? 0 : groupsExp[2].length - 2;
+    }
+
+    let info = {
+      intDigits: intDigits,
+      fracDigits: fracDigits,
+      expDigits: expDigits,
+      isExponential: isExponential,
+      expFracDigits: expFracDigits,
+    }
+    return info;
+  }
+
+  function formatColumn(col) {
+    let maxFracDigits = 0;
+    let maxExpFracDigits = 0;
+    let maxExpDigits = 0;
+    let someExponential = false;
+
+    for (let x of col) {
+      if (!Array.isArray(x) && typeof x != 'string' && typeof x != 'boolean' && !Number.isNaN(x)) {
+        let formatInfo = getFormatInformation(x);
+        maxFracDigits = Math.max(maxFracDigits, formatInfo.fracDigits);
+        maxExpFracDigits = Math.max(maxExpFracDigits, formatInfo.expFracDigits);
+        maxExpDigits = Math.max(maxExpDigits, formatInfo.expDigits);
+        someExponential |= formatInfo.isExponential;
+      }
+    }
+
+    const FRAC_DIGIT_CAP = 6;
+    maxFracDigits = Math.min(maxFracDigits, FRAC_DIGIT_CAP);
+    maxExpFracDigits = Math.min(maxExpFracDigits, FRAC_DIGIT_CAP);
+
+    let formatted = [];
+    for (let i = 0; i < col.length; i++) {
+      let x = col[i];
+      if (Array.isArray(x)) {
+        formatted.push('[' + x.join(', ') + ']');
+      } else if (typeof x == 'boolean') {
+        formatted.push(x ? 'Yes' : 'No');
+      } else if (typeof x == 'string' || Number.isNaN(x)) {
+        formatted.push(x);
+      } else {
+        if (someExponential) {
+          let f = col[i].toExponential(maxExpFracDigits);
+          let [coefficient, exponent] = f.split('e');
+          let sign = exponent.charAt(0);
+          formatted.push(`${coefficient}e${sign}${exponent.substring(1).padStart(maxExpDigits, '0')}`);
+        } else {
+          formatted.push(col[i].toFixed(maxFracDigits));
+        }
+      }
+    }
+
+    return formatted;
+  }
+
+  ///////////////////////////////////////////////////////////////////////////////
+  // Background stuff
+  //////////////////////////////////////////////////////////////////////////////
+
+  let backgroundTimers = [];
+
+  function dispatchBackgroundProcess(f, debounceTimeout) {
+    if (debounceTimeout == 0) {
+      f();
+      return null;
+    }
+
+    let timer = setTimeout(f, debounceTimeout);
+    backgroundTimers.push(timer);
+    return timer;
+  }
+
+  function cancelBackgroundProcesses() {
+    for (let timer of backgroundTimers) {
+      clearTimeout(timer);
+    }
+  }
+
+  ///////////////////////////////////////////////////////////////////////////////
+  // Misc
+  //////////////////////////////////////////////////////////////////////////////
+
+  let paramNotes = {"full_automation_requirements_training": "FLOP needed to train an AI capable of performing the most hard-to-train cognitive task.", "flop_gap_training": "Ratio between the FLOP needed to train the most demanding AI task and the 20% most demanding task.", "goods_vs_rnd_requirements_training": "Ratio between the FLOP needed to train the most demanding cognitive task for goods and services production, versus for R&D. The higher this is, the easier it is to automate R&D with respect to goods and services production.", "full_automation_requirements_runtime": "FLOP/year needed to substitute the output of one human worker in the most demanding AI task.", "flop_gap_runtime": "Ratio between the FLOP/year needed to automate the most demanding AI task and the 20% most demanding AI task.", "goods_vs_rnd_requirements_runtime": "Ratio between the FLOP/year needed to automate the most demanding cognitive task for goods production and for R&D. The higher this is, the easier it is to automate R&D with respect to goods and services production.", "runtime_training_tradeoff": "How efficiently you can substitute training for higher runtime compute requirements.", "runtime_training_max_tradeoff": "The maximum ratio of training that can be substituted with extra runtime", "labour_substitution_goods": NaN, "labour_substitution_rnd": NaN, "capital_substitution_goods": NaN, "capital_substitution_rnd": NaN, "hardware_returns": "How cumulative inputs to hardware R&D translate to better performance improvements. Doubling the cumulative input of harware R&D results in 2^hardware_returns improvement of hardware_efficiency (not accounting for the damping effect of the ceiling)", "software_returns": "How cumulative inputs to software R&D translate to better performance improvements. Doubling the cumulative input of software R&D results in 2^software_returns improvement of hardware_efficiency (not accounting for the damping effect of the ceiling)", "hardware_performance_ceiling": "Maximum FLOP/year/$ achiveable. Performance improvements get increasingly penalized as they approach this quantitiy.", "software_ceiling": "Maximum Effective FLOP / physical FLOP achievable. Performance improvements get increasingly penalized as they approach this quantitiy.", "rnd_parallelization_penalty": "Penalization to concurrent R&D efforts. The ouputs of the hardware and software production function R&D get raised to this penalty before being aggregated to the cumulative total.", "hardware_delay": "Years between a chip design and its commercial release.", "frac_capital_hardware_rnd_growth": "Growth of the fraction of capital dedicated to hardware R&D", "frac_labour_hardware_rnd_growth": "Growth of the fraction of labour dedicated to hardware R&D", "frac_compute_hardware_rnd_growth": "Growth of the fraction of compute dedicated to hardware R&D", "frac_labour_software_rnd_growth": "Growth of the fraction of labour dedicated to software R&D", "frac_compute_software_rnd_growth": "Growth of the fraction of compute dedicated to software R&D", "frac_gwp_compute_growth": "Growth of the fraction of gwp dedicated to buying compute", "frac_compute_training_growth": "Growth of the fraction of compute dedicated to training AI models", "frac_capital_hardware_rnd_growth_rampup": "Growth of the fraction of capital dedicated to hardware R&D after AI becomes economically important", "frac_labour_hardware_rnd_growth_rampup": "Growth of the fraction of labour dedicated to hardware R&D after AI becomes economically important", "frac_compute_hardware_rnd_growth_rampup": "Growth of the fraction of compute dedicated to hardware R&D after AI becomes economically important", "frac_labour_software_rnd_growth_rampup": "Growth of the fraction of labour dedicated to software R&D after AI becomes economically important", "frac_compute_software_rnd_growth_rampup": "Growth of the fraction of compute dedicated to software R&D after AI becomes economically important", "frac_gwp_compute_growth_rampup": "Growth of the fraction of gwp dedicated to buying compute after AI becomes economically important", "frac_compute_training_growth_rampup": "Growth of the fraction of compute dedicated to training AI models after AI becomes economically important", "frac_capital_hardware_rnd_ceiling": "Maximum of the fraction of capital dedicated to hardware R&D", "frac_labour_hardware_rnd_ceiling": "Maximum of the fraction of labour dedicated to hardware R&D", "frac_compute_hardware_rnd_ceiling": "Maximum of the fraction of compute dedicated to hardware R&D", "frac_labour_software_rnd_ceiling": "Maximum of the fraction of labour dedicated to software R&D", "frac_compute_software_rnd_ceiling": "Maximum of the fraction of compute dedicated to software R&D", "frac_gwp_compute_ceiling": "Maximum of the fraction of gwp dedicated to buying compute", "frac_compute_training_ceiling": "Maximum of the fraction of compute dedicated to training AI models", "initial_frac_capital_hardware_rnd": "Initial value of the fraction of capital dedicated to hardware R&D", "initial_frac_labour_hardware_rnd": "Initial value of the fraction of labour dedicated to hardware R&D", "initial_frac_compute_hardware_rnd": "Initial value of the fraction of compute dedicated to hardware R&D", "initial_frac_labour_software_rnd": "Initial value of the fraction of labour dedicated to software R&D", "initial_frac_compute_software_rnd": "Initial value of the fraction of compute dedicated to software R&D", "initial_biggest_training_run": "Initial biggest AI training run in 2020-FLOP", "ratio_initial_to_cumulative_input_hardware_rnd": "Ratio of budget of hardware R&D in 2022 versus cumulative budget through history", "ratio_initial_to_cumulative_input_software_rnd": "Ratio of budget of software R&D in 2022 versus cumulative budget through history", "initial_hardware_production": "FLOP/year capabilities of hardware produced in 2022", "ratio_hardware_to_initial_hardware_production": "FLOP/year capabilities of total available hardware in 2022 vs hardware produced in 2022", "initial_hardware_performance": "FLOP/year of the most cost efficient chip. Measured in FLOP/year/$", "initial_gwp": "Initial real global world product. Measured in 2020 USD.", "initial_cognitive_share_goods": "Initial fraction of the GWP captured by labour and compute owners vs capital owners", "initial_cognitive_share_rnd": "Initial fraction of the R&D captured by labour and compute owners vs capital owners", "initial_compute_share_goods": "Initial fraction of cognitive output done by computers for goods production", "initial_compute_share_rnd": "Initial fraction of cognitive output done by computers for R&D", "rampup_trigger": "Threshold of task automation in the production of goods and services that triggers massive investment growth.", "initial_capital_growth": "Initial rate of growth of capital", "labour_growth": "Population yearly growth rate. Controls the growth of labour.", "tfp_growth": "Yearly rate of growth of the total factor productivity. Each year the production gets passively better by a factor TFP that grows at this rate.", "compute_depreciation": "Yearly rate of depreciation of hardware. Each year this portion of the accumulated compute is depreciated."};
+  let metricNotes = {"cog_output_multiplier": "Years between <a href=\"https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#heading=h.vg16ijfr9w9a/\">AI's cognitive value-add</a> in hardware R&D being 2X and 10X.", "billion_agis": "Years between AI that automates 10% of cognitive tasks in R&D to the point when you can train and run 10 billion AGI-equivalents (taking the AGI runtime compute to be the runtime compute for the most compute-intensive R&D task).", "full_automation": "Years between AI that can perform 50% of cognitive tasks to AI that can perform 100%.", "rampup_to_agi": "Years between AI automating 3% of cognitive tasks in goods and services and AI that can perform 100% of cognitive tasks.", "combined": "Average of previous metrics.", "gwp_growth": "Years between instantaneous gwp growth reaching 5% and reaching 20%.\n\n(Not very meaningful because of zigzagging issues.)", "agi_year": "Year when all cognitive tasks have been automated", "rampup_start": "Year when AI becomes economically significant. This happens when a certain percentage of goods and services cognitive tasks have been automated (usually 3% but depends on the inputs) ", "doubling_times": "Years between successive GWP doublings"};
+
+  function injectMeaningTooltips() {
+    document.querySelectorAll('th').forEach(node => {
+      if (node._meaningInjected) return;
+
+      let name = node.innerText;
+      let note = paramNotes[name] || metricNotes[name];
+
+      if (note) {
+        tippy(node, {
+          content: note,
+          allowHTML: true,
+          interactive: true,
+          //placement: (node.parentElement.parentElement.tagName == 'THEAD') ? 'top' : 'right',
+          theme: 'light-border',
+          appendTo: document.body,
+        });
+
+        node._meaningInjected = true;
+      }
+    });
+  }
+
+  ///////////////////////////////////////////////////////////////////////////////
+  // Run
+  //////////////////////////////////////////////////////////////////////////////
+
+  run_simulation(true);
+</script>
