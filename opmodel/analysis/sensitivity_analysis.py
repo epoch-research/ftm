@@ -57,6 +57,8 @@ def sensitivity_analysis(quick_test_mode=False):
     log.info('  Collecting results...')
 
     def skew(high, med, low):
+      if high is None or med is None or low is None: return np.nan
+
       result = np.abs(med - low) - np.abs(high - med)
       if abs(result) < 1e-12: result = 0
       return result
@@ -81,9 +83,13 @@ def sensitivity_analysis(quick_test_mode=False):
 
     result["delta"] = np.abs(high_model.takeoff_metrics["combined"] - low_model.takeoff_metrics["combined"])
 
+    def format_year(model, year):
+      if year is None or np.isnan(year): return f'> {model.t_end}'
+      return f"{year:0.2f}"
+
     # Add timelines metrics
-    result["rampup_start"] = f"[{low_model.rampup_start:0.2f}, {med_model.rampup_start:0.2f}, {high_model.rampup_start:0.2f}]"
-    result["agi_date"] = f"[{low_model.agi_year:0.2f}, {med_model.agi_year:0.2f}, {high_model.agi_year:0.2f}]"
+    result["rampup_start"] = f"[{format_year(low_model, low_model.rampup_start)}, {format_year(med_model, med_model.rampup_start)}, {format_year(high_model, high_model.rampup_start)}]"
+    result["agi_date"] = f"[{format_year(low_model, low_model.agi_year)}, {format_year(med_model, med_model.agi_year)}, {format_year(high_model, high_model.agi_year)}]"
 
     result["agi_date skew"] = skew(
       high_model.agi_year,
@@ -137,9 +143,12 @@ def write_sensitivity_analysis_report(quick_test_mode=False, report_file_path=No
   tfoot.append(et.fromstring(f'<th>Totals</th>'))
   current_col = 0
   for skew in skews:
+    total_skew = results.table[skew].sum(skipna = False)
+    total_skew_str = f'{total_skew:0.2f}' if not np.isnan(total_skew) else 'NaN'
+
     skew_col = columns.index(skew)
     tfoot.append(et.fromstring(f'<th colspan="{skew_col - current_col}">Sum of {skew}s:</th>'))
-    tfoot.append(et.fromstring(f'<th>{results.table[skew].sum():.2}</th>'))
+    tfoot.append(et.fromstring(f'<th>{total_skew_str}</th>'))
     current_col = skew_col + 1
   tfoot.append(et.fromstring(f'<th colspan="{len(columns) - current_col}"></th>'))
 
