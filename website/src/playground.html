@@ -5,7 +5,7 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
 
 <style>
   :root {
-    --sidebar-width: 310px;
+    --sidebar-width: 325px;
   }
 
   .playground {
@@ -20,7 +20,7 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
 
   .sidebar {
     position: sticky;
-    height: 100vh;
+    height: calc(100vh - 80px);
     left: 0;
     top: 1em;
     padding: 1em;
@@ -38,7 +38,7 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
     padding-top: 0;
     border-radius: var(--border-radius);
     background-color: white;
-    height: 80%;
+    height: calc(100% - 60px);
     position: relative;
   }
 
@@ -230,17 +230,37 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
         </div>
 
         <div class="parameter-group">
+          <div class="parameter-group-label">Initial values</div>
+          <div class="input-parameter"><label for="initial_frac_capital_hardware_rnd">initial_frac_c</label> <input id="initial_frac_capital_hardware_rnd" value="0.002"></div>
+          <div class="input-parameter"><label for="initial_frac_labour_hardware_rnd">initial_frac_l</label> <input id="initial_frac_labour_hardware_rnd" value="0.002"></div>
+          <div class="input-parameter"><label for="initial_frac_compute_hardware_rnd">initial_frac_c</label> <input id="initial_frac_compute_hardware_rnd" value="0.002"></div>
+          <div class="input-parameter"><label for="initial_frac_labour_software_rnd">initial_frac_l</label> <input id="initial_frac_labour_software_rnd" value="0.0002"></div>
+          <div class="input-parameter"><label for="initial_frac_compute_software_rnd">initial_frac_c</label> <input id="initial_frac_compute_software_rnd" value="0.0002"></div>
+          <div class="input-parameter"><label for="initial_biggest_training_run">Biggest training run</label> <input id="initial_biggest_training_run" value="3e+24"></div>
+          <div class="input-parameter"><label for="ratio_initial_to_cumulative_input_hardware_rnd">ratio_initial_</label> <input id="ratio_initial_to_cumulative_input_hardware_rnd" value="0.047"></div>
+          <div class="input-parameter"><label for="ratio_initial_to_cumulative_input_software_rnd">ratio_initial_</label> <input id="ratio_initial_to_cumulative_input_software_rnd" value="0.2"></div>
+          <div class="input-parameter"><label for="initial_hardware_production">Hardware production</label> <input id="initial_hardware_production" value="1e+28"></div>
+          <div class="input-parameter"><label for="ratio_hardware_to_initial_hardware_production">ratio_hardware</label> <input id="ratio_hardware_to_initial_hardware_production" value="2.0"></div>
+          <div class="input-parameter"><label for="initial_hardware_performance">Hardware performance</label> <input id="initial_hardware_performance" value="1.5e+17"></div>
+          <div class="input-parameter"><label for="initial_gwp">GWP</label> <input id="initial_gwp" value="85000000000000.0"></div>
+          <div class="input-parameter"><label for="initial_cognitive_share_goods">Cognitive share goods</label> <input id="initial_cognitive_share_goods" value="0.5"></div>
+          <div class="input-parameter"><label for="initial_cognitive_share_rnd">Cognitive share R&D</label> <input id="initial_cognitive_share_rnd" value="0.7"></div>
+          <div class="input-parameter"><label for="initial_compute_share_goods">Compute share goods</label> <input id="initial_compute_share_goods" value="0.01"></div>
+          <div class="input-parameter"><label for="initial_compute_share_rnd">Compute share R&D</label> <input id="initial_compute_share_rnd" value="0.01"></div>
+        </div>
+
+        <div class="parameter-group">
           <div class="parameter-group-label">Misc</div>
-          <div class="input-parameter"><label for="labour_substitution_goods">labour_substit</label> <input id="labour_substitution_goods" value="-0.5"></div>
-          <div class="input-parameter"><label for="labour_substitution_rnd">labour_substit</label> <input id="labour_substitution_rnd" value="-0.5"></div>
-          <div class="input-parameter"><label for="capital_substitution_goods">capital_substi</label> <input id="capital_substitution_goods" value="-0.4"></div>
-          <div class="input-parameter"><label for="capital_substitution_rnd">capital_substi</label> <input id="capital_substitution_rnd" value="-0.25"></div>
-          <div class="input-parameter"><label for="hardware_returns">hardware_retur</label> <input id="hardware_returns" value="5.1"></div>
-          <div class="input-parameter"><label for="software_returns">software_retur</label> <input id="software_returns" value="1.25"></div>
-          <div class="input-parameter"><label for="hardware_performance_ceiling">hardware_perfo</label> <input id="hardware_performance_ceiling" value="1e+30"></div>
-          <div class="input-parameter"><label for="software_ceiling">software_ceili</label> <input id="software_ceiling" value="10000000.0"></div>
-          <div class="input-parameter"><label for="rnd_parallelization_penalty">rnd_paralleliz</label> <input id="rnd_parallelization_penalty" value="0.7"></div>
-          <div class="input-parameter"><label for="hardware_delay">hardware_delay</label> <input id="hardware_delay" value="1.0"></div>
+          <div class="input-parameter"><label for="labour_substitution_goods">Labour substitution goods</label> <input id="labour_substitution_goods" value="-0.5"></div>
+          <div class="input-parameter"><label for="labour_substitution_rnd">Labour substitution R&D</label> <input id="labour_substitution_rnd" value="-0.5"></div>
+          <div class="input-parameter"><label for="capital_substitution_goods">Capital substitution goods</label> <input id="capital_substitution_goods" value="-0.4"></div>
+          <div class="input-parameter"><label for="capital_substitution_rnd">Capital substitution R&D</label> <input id="capital_substitution_rnd" value="-0.25"></div>
+          <div class="input-parameter"><label for="hardware_returns">Hardware returns</label> <input id="hardware_returns" value="5.1"></div>
+          <div class="input-parameter"><label for="software_returns">Software returns</label> <input id="software_returns" value="1.25"></div>
+          <div class="input-parameter"><label for="hardware_performance_ceiling">Hardware perf. ceiling</label> <input id="hardware_performance_ceiling" value="1e+30"></div>
+          <div class="input-parameter"><label for="software_ceiling">Software ceiling</label> <input id="software_ceiling" value="10000000.0"></div>
+          <div class="input-parameter"><label for="rnd_parallelization_penalty">R&D parallelization penalty</label> <input id="rnd_parallelization_penalty" value="0.7"></div>
+          <div class="input-parameter"><label for="hardware_delay">Hardware delay</label> <input id="hardware_delay" value="1.0"></div>
           <div class="input-parameter"><label for="frac_capital_hardware_rnd_growth">frac_capital_h</label> <input id="frac_capital_hardware_rnd_growth" value="0.01"></div>
           <div class="input-parameter"><label for="frac_labour_hardware_rnd_growth">frac_labour_ha</label> <input id="frac_labour_hardware_rnd_growth" value="0.01"></div>
           <div class="input-parameter"><label for="frac_compute_hardware_rnd_growth">frac_compute_h</label> <input id="frac_compute_hardware_rnd_growth" value="0.01"></div>
@@ -262,30 +282,12 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
           <div class="input-parameter"><label for="frac_compute_software_rnd_ceiling">frac_compute_s</label> <input id="frac_compute_software_rnd_ceiling" value="0.2"></div>
           <div class="input-parameter"><label for="frac_gwp_compute_ceiling">frac_gwp_compu</label> <input id="frac_gwp_compute_ceiling" value="0.3"></div>
           <div class="input-parameter"><label for="frac_compute_training_ceiling">frac_compute_t</label> <input id="frac_compute_training_ceiling" value="0.1"></div>
-          <div class="input-parameter"><label for="initial_frac_capital_hardware_rnd">initial_frac_c</label> <input id="initial_frac_capital_hardware_rnd" value="0.002"></div>
-          <div class="input-parameter"><label for="initial_frac_labour_hardware_rnd">initial_frac_l</label> <input id="initial_frac_labour_hardware_rnd" value="0.002"></div>
-          <div class="input-parameter"><label for="initial_frac_compute_hardware_rnd">initial_frac_c</label> <input id="initial_frac_compute_hardware_rnd" value="0.002"></div>
-          <div class="input-parameter"><label for="initial_frac_labour_software_rnd">initial_frac_l</label> <input id="initial_frac_labour_software_rnd" value="0.0002"></div>
-          <div class="input-parameter"><label for="initial_frac_compute_software_rnd">initial_frac_c</label> <input id="initial_frac_compute_software_rnd" value="0.0002"></div>
-          <div class="input-parameter"><label for="initial_biggest_training_run">initial_bigges</label> <input id="initial_biggest_training_run" value="3e+24"></div>
-          <div class="input-parameter"><label for="ratio_initial_to_cumulative_input_hardware_rnd">ratio_initial_</label> <input id="ratio_initial_to_cumulative_input_hardware_rnd" value="0.047"></div>
-          <div class="input-parameter"><label for="ratio_initial_to_cumulative_input_software_rnd">ratio_initial_</label> <input id="ratio_initial_to_cumulative_input_software_rnd" value="0.2"></div>
-          <div class="input-parameter"><label for="initial_hardware_production">initial_hardwa</label> <input id="initial_hardware_production" value="1e+28"></div>
-          <div class="input-parameter"><label for="ratio_hardware_to_initial_hardware_production">ratio_hardware</label> <input id="ratio_hardware_to_initial_hardware_production" value="2.0"></div>
-          <div class="input-parameter"><label for="initial_hardware_performance">initial_hardwa</label> <input id="initial_hardware_performance" value="1.5e+17"></div>
-          <div class="input-parameter"><label for="initial_gwp">initial_gwp</label> <input id="initial_gwp" value="85000000000000.0"></div>
-          <div class="input-parameter"><label for="initial_cognitive_share_goods">initial_cognit</label> <input id="initial_cognitive_share_goods" value="0.5"></div>
-          <div class="input-parameter"><label for="initial_cognitive_share_rnd">initial_cognit</label> <input id="initial_cognitive_share_rnd" value="0.7"></div>
-          <div class="input-parameter"><label for="initial_compute_share_goods">initial_comput</label> <input id="initial_compute_share_goods" value="0.01"></div>
-          <div class="input-parameter"><label for="initial_compute_share_rnd">initial_comput</label> <input id="initial_compute_share_rnd" value="0.01"></div>
-          <div class="input-parameter"><label for="rampup_trigger">rampup_trigger</label> <input id="rampup_trigger" value="0.03"></div>
-          <div class="input-parameter"><label for="initial_capital_growth">Initial capital growth</label> <input id="initial_capital_growth" value="0.0275"></div>
+          <div class="input-parameter"><label for="rampup_trigger">Rampup trigger</label> <input id="rampup_trigger" value="0.03"></div>
+          <div class="input-parameter"><label for="initial_capital_growth">Capital growth</label> <input id="initial_capital_growth" value="0.0275"></div>
           <div class="input-parameter"><label for="labour_growth">Labour growth</label> <input id="labour_growth" value="0.01"></div>
           <div class="input-parameter"><label for="tfp_growth">TFP growth</label> <input id="tfp_growth" value="0.01"></div>
-          <div class="input-parameter"><label for="compute_depreciation">compute_deprec</label> <input id="compute_depreciation" value="0.2"></div>
+          <div class="input-parameter"><label for="compute_depreciation">Compute depreciation</label> <input id="compute_depreciation" value="0.2"></div>
         </div>
-        <!--
-        -->
       </div>
     </div>
   </div>
