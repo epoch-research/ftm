@@ -721,6 +721,18 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
             .attr("transform",
                   "translate(" + margin.left + "," + margin.top + ")");
 
+        let clip = svg.append("defs").append("SVG:clipPath")
+          .attr("id", "clip")
+          .append("SVG:rect")
+          .attr("width", width)
+          .attr("height", height)
+          .attr("x", 0)
+          .attr("y", 0)
+        ;
+
+        let content = svg.append('g')
+          .attr("clip-path", "url(#clip)");
+
         let first = this.dataset[0];
         let indices = [...first.x.keys()];
 
@@ -755,23 +767,29 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
 
         // Add the paths
         for (let data of this.dataset) {
-          let indices = [...data.x.keys()];
-          svg.append("path")
-            .datum(indices)
+          let datum = [];
+          for (let i = 0; i < data.x.length; i++) {
+            datum.push({x: data.x[i], y: data.y[i]});
+          }
+          content.append("path")
+            .datum(datum)
+            .attr("class", "data-path")
             .attr("fill", "none")
             .attr("stroke", data.color)
             .attr("stroke-width", 2.5)
             .attr("d", d3.line()
-              .x(function(i) { return x(data.x[i]) })
-              .y(function(i) { return y(data.y[i]) })
+              .x(d => x(d.x))
+              .y(d => y(d.y))
             );
         }
 
         // Vertical lines
         for (let axvline of this.axvlines) {
-          svg.append('line')
-            .attr('x1', x(axvline.x))
-            .attr('x2', x(axvline.x))
+          content.append('line')
+            .datum([axvline.x])
+            .attr('class', 'axvline')
+            .attr('x1', d => x(d))
+            .attr('x2', d => x(d))
             .attr('y1', 0)
             .attr('y2', height)
             .attr("stroke", axvline.color || this.defaults.axline_color)
@@ -782,7 +800,9 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
 
         // Horizontal lines
         for (let axhline of this.axhlines) {
-          svg.append('line')
+          content.append('line')
+            .datum([axhline.y])
+            .attr('class', 'axhline')
             .attr('x1', 0)
             .attr('x2', width)
             .attr('y1', y(axhline.y))
@@ -793,12 +813,12 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
           ;
         }
 
-        svg.append("g")
+        let xAxis = svg.append("g")
           .attr("transform", "translate(0," + height + ")")
           .attr("stroke-width", 2)
           .call(d3.axisBottom(x));
 
-        svg.append("g")
+        let yAxis = svg.append("g")
           .attr("stroke-width", 2)
           .call(d3.axisLeft(y));
 
@@ -867,6 +887,56 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
             .attr('text-anchor', 'middle')  
             .style('font-size', '16px') 
             .text(this.graph_title)
+          ;
+        }
+
+        // Zooming
+        let zoom = d3.zoom()
+          .scaleExtent([1, 20])
+          .extent([[0, 0], [width, height]])
+          .translateExtent([[0, 0], [width, height]])
+          .on("zoom", updateChart)
+        ;
+
+        content.append("rect")
+          .attr("width", width)
+          .attr("height", height)
+          .style("fill", "none")
+          .style("pointer-events", "all")
+          .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
+          .call(zoom);
+
+        content.on('wheel', (e) => {
+        d3.event.preventDefault()
+        return false;
+        });
+
+        function updateChart() {
+          let newX = d3.event.transform.rescaleX(x);
+          //let newY = d3.event.transform.rescaleY(y);
+          let newY = y;
+
+          xAxis.call(d3.axisBottom(newX));
+          yAxis.call(d3.axisLeft(newY));
+
+          content
+            .selectAll('.data-path')
+            .attr("d", d3.line()
+              .x(d => newX(d.x))
+              .y(d => newY(d.y))
+            );
+          ;
+
+          content
+            .selectAll('.axvline')
+            .attr('x1', d => newX(d) )
+            .attr('x2', d => newX(d) )
+          ;
+
+          content
+            .selectAll('.axhline')
+            .attr('y1', d => newY(d) )
+            .attr('y2', d => newY(d) )
           ;
         }
 
