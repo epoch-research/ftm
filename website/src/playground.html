@@ -644,7 +644,7 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
       "steelblue", "orange", "pink",
     ];
 
-    constructor (container) {
+    constructor(container) {
       this.container = nodify(container);
       this.defaults = {
         xscale: 'linear',
@@ -701,7 +701,7 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
       this.dataset.push(o);
     }
 
-    show () {
+    show() {
       if (this.dataset.length > 0) {
         let graph = document.createElement('div');
         this.container.appendChild(graph);
@@ -764,6 +764,9 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
           .domain(ylims)
           .range([height, 0])
         ;
+
+        let currentX = x;
+        let currentY = y;
 
         // Add the paths
         for (let data of this.dataset) {
@@ -890,6 +893,78 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
           ;
         }
 
+        let tooltip = d3.select('body')
+          .append("div")
+          .style("position", "absolute")
+          .style("display", "none")
+          .attr("class", "tooltip")
+          .style("background-color", "white")
+          .style("border", "solid")
+          .style("border-width", "2px")
+          .style("border-radius", "5px")
+          .style("padding", "5px")
+
+        for (let data of this.dataset) {
+          content
+            .append('circle')
+            .datum(data)
+            .attr('class', 'mouse-circle')
+            .style('display', 'none')
+            .attr('stroke', data.color)
+            .attr('stroke-width', 2)
+            .attr('fill', 'none')
+            .attr('r', 4)
+            .attr('cx', x(2030))
+            .attr('cy', y(data.y[0]))
+          ;
+        }
+
+        let mouseover = function(d) {
+          let mouseP = d3.mouse(this)
+          updateTooltip(d3.event, mouseP);
+          //tooltip.style("display", "");
+          //content.selectAll('.mouse-circle').style("display", "");
+          updateCircles(d3.event, mouseP);
+        };
+
+        let mousemove = function(d) {
+          let mouseP = d3.mouse(this)
+          updateTooltip(d3.event, mouseP);
+          updateCircles(d3.event, mouseP);
+        };
+
+        let mouseleave = function(d) {
+          tooltip.style("display", "none");
+          content.selectAll('.mouse-circle').style("display", "none");
+        };
+
+        let updateTooltip = function(event, mouseP) {
+          let date = x.invert(mouseP[0]);
+          tooltip
+            .html("Year: " + date.toFixed(1))
+            .style("left", (event.pageX + 20) + "px")
+            .style("top", (event.pageY - 20) + "px")
+        }
+
+        let updateCircles = function(event, mouseP) {
+          let date = currentX.invert(mouseP[0]);
+
+          content.selectAll('.mouse-circle')
+            .attr('cx', mouseP[0])
+            .attr('cy', data => {
+              // Poor way of doing this
+              let index = d3.bisect(data.x, date);
+
+              if (index == 0) {
+                return currentY(data.y[0]);
+              } else {
+                let beta = (data.x[index] - date)/(data.x[index] - data.x[index-1]);
+                return currentY(data.y[index] - beta*(data.y[index] - data.y[index-1]));
+              }
+            })
+          ;
+        }
+
         // Zooming
         let zoom = d3.zoom()
           .scaleExtent([1, 20])
@@ -898,13 +973,19 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
           .on("zoom", updateChart)
         ;
 
-        content.append("rect")
+        let overlay = content.append("rect")
           .attr("width", width)
           .attr("height", height)
           .style("fill", "none")
           .style("pointer-events", "all")
-          .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
-          .call(zoom);
+          .call(zoom)
+        ;
+
+        overlay
+          .on('mouseover', mouseover)
+          .on('mousemove', mousemove)
+          .on('mouseleave', mouseleave)
+        ;
 
         content.on('wheel', (e) => {
         d3.event.preventDefault()
@@ -912,31 +993,30 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
         });
 
         function updateChart() {
-          let newX = d3.event.transform.rescaleX(x);
-          //let newY = d3.event.transform.rescaleY(y);
-          let newY = y;
+          currentX = d3.event.transform.rescaleX(x);
+          //currentY = d3.event.transform.rescaleY(y);
 
-          xAxis.call(d3.axisBottom(newX));
-          yAxis.call(d3.axisLeft(newY));
+          xAxis.call(d3.axisBottom(currentX));
+          yAxis.call(d3.axisLeft(currentY));
 
           content
             .selectAll('.data-path')
             .attr("d", d3.line()
-              .x(d => newX(d.x))
-              .y(d => newY(d.y))
+              .x(d => currentX(d.x))
+              .y(d => currentY(d.y))
             );
           ;
 
           content
             .selectAll('.axvline')
-            .attr('x1', d => newX(d) )
-            .attr('x2', d => newX(d) )
+            .attr('x1', d => currentX(d) )
+            .attr('x2', d => currentX(d) )
           ;
 
           content
             .selectAll('.axhline')
-            .attr('y1', d => newY(d) )
-            .attr('y2', d => newY(d) )
+            .attr('y1', d => currentY(d) )
+            .attr('y2', d => currentY(d) )
           ;
         }
 
