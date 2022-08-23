@@ -11,9 +11,10 @@ from opmodel.core.utils import *
 from opmodel.core.opmodel import *
 from opmodel.analysis.mc_analysis import ParamsDistribution
 
-#set_parameter_table_url('/home/edu/Projects/AI/Trends/github/model/opmodel/_cache_/parameters.csv')
+MODULE_DIR = os.path.dirname(os.path.realpath(__file__))
+
 set_parameter_table_url("https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/edit#gid=104966230")
-js_model_path = '/home/edu/Projects/AI/Trends/github/lab/opjs'
+js_model_path = os.path.join(MODULE_DIR, '../src')
 
 parameter_table = get_parameter_table()
 best_guess_parameters   = {parameter : row['Best guess']   for parameter, row in parameter_table.iterrows()}
