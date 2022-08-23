@@ -1441,12 +1441,13 @@ class SimulateTakeOff():
 
   def compute_doubling_times(self):
     self.doubling_times = [self.t_step / np.log2(self.gwp[1]/self.gwp[0])]
-    if self.rampup_start is None: return
-    reference_idx = self.time_to_index(self.rampup_start)
-    for idx in range(reference_idx, self.n_timesteps):
-      if self.gwp[idx] > 2*self.gwp[reference_idx]:
-        self.doubling_times.append(self.index_to_time(idx) - self.index_to_time(reference_idx))
-        reference_idx = idx
+
+    if self.rampup_start is not None:
+      reference_idx = self.time_to_index(self.rampup_start)
+      for idx in range(reference_idx, self.n_timesteps):
+        if self.gwp[idx] > 2*self.gwp[reference_idx]:
+          self.doubling_times.append(self.index_to_time(idx) - self.index_to_time(reference_idx))
+          reference_idx = idx
     
     # Round doubling times
     self.doubling_times = [round(dt, 2) for dt in self.doubling_times]
