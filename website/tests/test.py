@@ -21,11 +21,6 @@ best_guess_parameters   = {parameter : row['Best guess']   for parameter, row in
 aggressive_parameters   = {parameter : row['Aggressive']   for parameter, row in parameter_table.iterrows()}
 conservative_parameters = {parameter : row['Conservative'] for parameter, row in parameter_table.iterrows()}
 
-parameters = best_guess_parameters
-for p in parameters:
-  if not np.isnan(aggressive_parameters[p]):
-    parameters[p] = aggressive_parameters[p]
-
 class JSModel:
   def __init__(self, project_path):
     from py_mini_racer import MiniRacer
@@ -70,18 +65,16 @@ class JSModel:
     return self.module.call('foo')
 
 
-params_dist = ParamsDistribution()
-
 def compare(params):
   # Run Js model
   js_model = JSModel(js_model_path)
-  js_model.simulate(parameters)
+  js_model.simulate(params)
 
   js_summary_table = js_model.get_summary_table()
   js_takeoff_metrics = js_model.get_takeoff_metrics()
 
   # Run Python model
-  python_model = SimulateTakeOff(**parameters)
+  python_model = SimulateTakeOff(**params)
   python_model.run_simulation()
 
   python_summary_table = python_model.get_summary_table().to_dict(orient = 'list')
@@ -111,22 +104,39 @@ def compare(params):
       w = b[k]
       if isinstance(v, (list, tuple)):
         assert(len(v) == len(w))
-        print(v, w)
-        for i in range(len(v)): assert_roughly_equal(v[i], w[i])
+        print(k, v, w)
+        if k == 'doubling times':
+          # Sorry about this
+          fields_v = v[0]
+          fields_w = w[0]
+
+          if isinstance(fields_v, str): fields_v = fields_v[1:][:-1].split(', ')
+          if isinstance(fields_w, str): fields_w = fields_w[1:][:-1].split(', ')
+
+          print(fields_v, fields_w)
+          assert(len(fields_v) == len(fields_w))
+          for i in range(len(fields_v)): assert_roughly_equal(float(fields_v[i]), float(fields_w[i]))
+        else:
+          for i in range(len(v)): assert_roughly_equal(v[i], w[i])
       else:
         assert_roughly_equal(v, w)
 
   assert('doubling times' in js_takeoff_metrics)
-  js_takeoff_metrics['doubling times'] = [str(js_takeoff_metrics['doubling times'][0][:4])]
+
+  js_takeoff_metrics['doubling times'] = [js_takeoff_metrics['doubling times'][0][:4]]
 
   compare_tables(python_summary_table, js_summary_table)
   compare_tables(python_takeoff_metrics, js_takeoff_metrics)
 
   print("All good!!")
 
+params_dist = ParamsDistribution()
+
 for i in range(10):
   sample = params_dist.rvs(1)
   params = {param: sample[param][0] for param in sample}
   params['t_step'] = 1
+  #params['runtime_training_tradeoff'] = 10
+  #params['runtime_training_max_tradeoff'] = 100
   print(params)
   compare(params)
