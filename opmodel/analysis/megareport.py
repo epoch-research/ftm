@@ -18,21 +18,21 @@ def megareport(report_file_path=None, report_dir_path=None, quick_test_mode=Fals
   log.info('Generating timelines analysis tab')
   log.indent()
   report.begin_tab_group()
-  report.begin_tab('Timelines analysis')
+  report.begin_tab('Timelines analysis', 'timelines_analysis')
   write_timelines_analysis_report(report = report)
   log.deindent()
   log.info()
 
   log.info('Generating sensitivity analysis tab')
   log.indent()
-  report.begin_tab('Sensitivity analysis')
+  report.begin_tab('Sensitivity analysis', 'sensitivity_analysis')
   write_sensitivity_analysis_report(report = report, quick_test_mode = quick_test_mode)
   log.deindent()
   log.info()
 
   log.info('Generating Monte Carlo analysis tab')
   log.indent()
-  report.begin_tab('Monte Carlo analysis')
+  report.begin_tab('Monte Carlo analysis', 'mc_analysis')
   if quick_test_mode:
     write_mc_analysis_report(report = report, n_trials = 4)
   else:

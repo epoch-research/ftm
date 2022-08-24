@@ -195,7 +195,7 @@ class Report:
           background:#e7e7e7;
         }
 
-        .tab-links a {
+        .tab-links span {
           padding:9px 15px;
           margin-right: 1px;
           display:inline-block;
@@ -203,13 +203,14 @@ class Report:
           font-weight:600;
           text-decoration: none;
           color:black;
+          cursor: pointer;
         }
 
         .tab-links li:hover {
           background:#aaa;
         }
 
-        .tab-links a:hover {
+        .tab-links span:hover {
           text-decoration:none;
         }
 
@@ -552,26 +553,6 @@ class Report:
       </script>
     '''))
 
-    # Tabs
-    # See https://inspirationalpixels.com/creating-tabs-with-html-css-and-jquery/#step-jquery
-    self.content.append(et.fromstring('''
-      <script>
-        jQuery(document).ready(function() {
-          jQuery('.tabs .tab-links a').on('click', function(e) {
-            var currentAttrValue = jQuery(this).attr('href');
-
-            // Show/Hide Tabs
-            jQuery('.tabs ' + currentAttrValue).show().siblings().hide();
-
-            // Change/remove current tab to active
-            jQuery(this).parent('li').addClass('active').siblings().removeClass('active');
-
-            e.preventDefault();
-          });
-        });
-      </script>
-    '''))
-
     # Tooltips explaining the params and metrics on hover 
     script = et.Element('script')
     self.body.append(script);
@@ -649,6 +630,47 @@ class Report:
     self.html.append(self.head)
     self.html.append(self.body)
     self.body.append(self.content)
+
+    # Tabs
+    # See https://inspirationalpixels.com/creating-tabs-with-html-css-and-jquery/#step-jquery
+    self.body.append(et.fromstring('''
+      <script>
+        jQuery('.tabs .tab-links span').on('click', function(e) {
+          var currentAttrValue = jQuery(this).data('href');
+
+          // Show/Hide Tabs
+          jQuery(`.tabs [data-id="${currentAttrValue.slice(1)}"]`).show().siblings().hide();
+
+          // Change/remove current tab to active
+          jQuery(this).parent('li').addClass('active').siblings().removeClass('active');
+
+          history.replaceState(null, null, currentAttrValue);
+
+          e.preventDefault();
+        });
+      </script>
+    '''))
+
+    self.body.append(et.fromstring('''
+      <script>
+        let tab;
+
+        if (location.hash) {
+          tab = document.querySelector(`.tab[data-id="${location.hash.slice(1)}"]`);
+        }
+
+        // By default, activate the first tab
+        if (!tab) {
+          tab = document.querySelector('.tab');
+        }
+
+        let link = document.querySelector(`span[data-href="#${tab.dataset.id}"]`);
+
+        tab.classList.add("active");
+        link.parentElement.classList.add("active");
+      </script>
+    '''))
+
 
     self.default_parent = self.content
 
@@ -773,28 +795,24 @@ class Report:
 
     tab_links = et.Element('ul', {'class': 'tab-links'})
     for i, tab in enumerate(group):
-      li = et.fromstring(f'<li><a href="#{tab.id}">{tab.name}</a></li>')
-      if i == 0: li.set('class', 'active')
+      li = et.fromstring(f'<li><span data-href="#{tab.id}">{tab.name}</span></li>')
       tab_links.append(li)
     tab_group_el.append(tab_links)
 
     tab_content = et.Element('div', {'class': 'tab-content'})
     tab_group_el.append(tab_content)
     for i, tab in enumerate(group):
-      classes = 'tab'
-      if i == 0: classes += ' active'
-
-      tab.node.set('class', classes)
-      tab.node.set('id', tab.id)
+      tab.node.set('class', 'tab')
+      tab.node.set('data-id', tab.id)
       tab_content.append(tab.node)
 
     parent.append(tab_group_el)
     self.default_parent = parent
 
-  def begin_tab(self, name):
+  def begin_tab(self, name, id = None):
     node = et.Element('div', {'class': 'tab'})
 
-    self.tab_groups[-1].append(Tab(name, node))
+    self.tab_groups[-1].append(Tab(name, node, id))
     self.default_parent = node
 
 
@@ -838,12 +856,15 @@ class Report:
 class Tab:
   id = 0
 
-  def __init__(self, name, node):
+  def __init__(self, name, node, id = None):
     self.name = name
     self.node = node
 
-    self.id = f'tab_{Tab.id}'
-    Tab.id += 1
+    if id is None:
+      self.id = f'tab_{Tab.id}'
+      Tab.id += 1
+    else:
+      self.id = id
 
 if __name__ == '__main__':
   import numpy as np
