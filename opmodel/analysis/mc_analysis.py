@@ -37,6 +37,8 @@ def mc_analysis(n_trials = 100, max_retries = 100):
       state_metric : [] for state_metric in state_metrics
   }
 
+  slow_takeoff_count = 0
+
   params_dist = ParamsDistribution()
   samples = []
 
@@ -95,6 +97,9 @@ def mc_analysis(n_trials = 100, max_retries = 100):
       assert metric_value.shape == (mc_model.n_timesteps,)
       state_metrics[state_metric].append(metric_value)
 
+    if mc_model.is_slow_takeoff():
+      slow_takeoff_count += 1
+
   log.deindent()
 
   # Summary of scalar metrics
@@ -113,15 +118,16 @@ def mc_analysis(n_trials = 100, max_retries = 100):
   metrics_quantiles.append(row)
 
   results = McAnalysisResults()
-  results.quantiles         = quantiles
-  results.metrics_quantiles = metrics_quantiles
-  results.state_metrics     = state_metrics
-  results.n_trials          = n_trials
-  results.timesteps         = mc_model.timesteps
-  results.param_samples     = pd.concat(samples, ignore_index = True)
-  results.ajeya_cdf         = params_dist.marginals['full_automation_requirements_training'].cdf_pd
-  results.parameter_table   = params_dist.parameter_table
-  results.rank_correlations = params_dist.rank_correlations
+  results.quantiles          = quantiles
+  results.metrics_quantiles  = metrics_quantiles
+  results.state_metrics      = state_metrics
+  results.n_trials           = n_trials
+  results.timesteps          = mc_model.timesteps
+  results.param_samples      = pd.concat(samples, ignore_index = True)
+  results.ajeya_cdf          = params_dist.marginals['full_automation_requirements_training'].cdf_pd
+  results.parameter_table    = params_dist.parameter_table
+  results.rank_correlations  = params_dist.rank_correlations
+  results.slow_takeoff_count = slow_takeoff_count
 
   return results
 
@@ -135,6 +141,8 @@ def write_mc_analysis_report(n_trials=100, max_retries = 100, include_sample_tab
   new_report = report is None
   if new_report:
     report = Report(report_file_path=report_file_path, report_dir_path=report_dir_path)
+
+  report.add_paragraph(f"<span style='font-weight:bold'>Percentage of slow takeoffs:</span> {results.slow_takeoff_count/results.n_trials:.0%}")
 
   metrics_quantiles = pd.DataFrame(results.metrics_quantiles)
   report.add_data_frame(metrics_quantiles)
@@ -185,7 +193,6 @@ def write_mc_analysis_report(n_trials=100, max_retries = 100, include_sample_tab
       <td colspan="4" style="text-align: center">sampled from a clipped Cotra's distribution <span data-modal-trigger="ajeya-modal">(<i>click here to view</i>)</span></td>
     </tr>
   '''))
-
 
   if new_report:
     report_path = report.write()
