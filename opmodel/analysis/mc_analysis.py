@@ -142,7 +142,7 @@ def write_mc_analysis_report(n_trials=100, max_retries = 100, include_sample_tab
   if new_report:
     report = Report(report_file_path=report_file_path, report_dir_path=report_dir_path)
 
-  report.add_paragraph(f"<span style='font-weight:bold'>Percentage of slow takeoffs:</span> {results.slow_takeoff_count/results.n_trials:.0%}")
+  report.add_paragraph(f"<span style='font-weight:bold'>Probability of slow takeoff:</span> {results.slow_takeoff_count/results.n_trials:.0%}")
 
   metrics_quantiles = pd.DataFrame(results.metrics_quantiles)
   report.add_data_frame(metrics_quantiles)
