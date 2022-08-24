@@ -159,13 +159,21 @@ def write_mc_analysis_report(n_trials=100, max_retries = 100, include_sample_tab
   params_stats_table.columns.name = 'quantiles'
   report.add_data_frame(params_stats_table)
 
+  # Write down the rank correlations
+  report.add_header("Rank correlations", level = 3)
+  report.add_data_frame(results.rank_correlations.fillna(''))
+
+  if include_sample_table:
+    report.add_header("Parameter samples", level = 3)
+    report.add_data_frame(results.param_samples)
+
   # Write down the parameters
   report.add_header("Inputs", level = 3)
   report.add_paragraph(f"<span style='font-weight:bold'>Number of samples:</span> {n_trials}")
   report.add_data_frame_modal(results.ajeya_cdf, 'ajeya-modal', show_index = False)
 
   # the parameter full_automation_requirements_training is special (we are sampling from Ajeya's distribution)
-  table = report.add_data_frame(results.parameter_table.drop(index = 'full_automation_requirements_training'))
+  table = report.add_data_frame(results.parameter_table.drop(index = 'full_automation_requirements_training', columns = 'Type'))
   tbody = None
   for element in table.iter():
     if element.tag == 'tbody':
@@ -178,14 +186,6 @@ def write_mc_analysis_report(n_trials=100, max_retries = 100, include_sample_tab
     </tr>
   '''))
 
-  # Write down the rank correlations
-  report.add_header("Rank correlations", level = 3)
-  report.add_data_frame(results.rank_correlations.fillna(''))
-
-  # Write down the rank correlations
-  if include_sample_table:
-    report.add_header("Parameter samples", level = 3)
-    report.add_data_frame(results.param_samples)
 
   if new_report:
     report_path = report.write()
