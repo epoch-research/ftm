@@ -140,6 +140,31 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
     align-items: center;
     text-align: center;
   }
+
+  .graph {
+    position: relative;
+  }
+
+  .svg-container {
+    position: relative;
+    display: inline-block;
+  }
+
+  .graph .legend {
+    background-color: white;
+    border: 2px solid #aaa;
+    border-radius: 3px;
+    padding: 3px;
+  }
+
+  .legend-item {
+    text-align: left;
+  }
+
+  .legend-item-line {
+    margin-right: 5px;
+    vertical-align: middle;
+  }
 </style>
 
 <style>
@@ -614,7 +639,8 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
       plt.axvline(sim.rampup_start, {
         linestyle: 'dotted',
         color: line_color,
-        label: 'Wake up'
+        label: 'Wake up',
+        //description: 'Wake up, folks!',
       });
     }
                 
@@ -622,7 +648,8 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
       plt.axvline(sim.rampup_mid, {
         linestyle: '-.',
         color: line_color,
-        label: '30% automation'
+        label: '30% automation',
+        //description: '30% automation my ass',
       });
     }
                 
@@ -630,7 +657,8 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
       plt.axvline(sim.agi_year, {
         linestyle: 'dashed',
         color: line_color,
-        label: 'Full automation'
+        label: 'Full automation',
+        //description: 'Yeah!',
       });
     }
   }
@@ -704,6 +732,7 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
     show() {
       if (this.dataset.length > 0) {
         let graph = document.createElement('div');
+        graph.classList.add('graph');
         this.container.appendChild(graph);
 
         // set the dimensions and margins of the graph
@@ -712,7 +741,12 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
             height = 500 - margin.top - margin.bottom;
 
         // append the svg object to the body of the page
-        let svg = d3.select(graph)
+        let svg_container = d3.select(graph)
+          .append('div')
+          .attr('class', 'svg-container')
+        ;
+
+        let svg = svg_container
           .append("svg")
             .attr("width", width + margin.left + margin.right)
             .attr("height", height + margin.top + margin.bottom)
@@ -825,62 +859,62 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
           .attr("stroke-width", 2)
           .call(d3.axisLeft(y));
 
-        let add_legend = false;
+        let legend_objects = [];
+
         for (let data of this.dataset) {
-          if (data.label) {
-            add_legend = true;
-            break;
-          }
+          if (!data.label) continue;
+          legend_objects.push(data);
         }
 
-        if (add_legend) {
-          let legend = svg.append('g')
-            .attr('transform', 'translate(20,20)')
+        for (let axvline of this.axvlines) {
+          if (!axvline.label) continue;
+          legend_objects.push(axvline);
+        }
+
+        if (legend_objects.length > 0) {
+        let legend = svg_container
+            .append('div')
+              .style('top', margin.top + 20 + 'px')
+              .style('left', margin.left + 20 + 'px')
+              .attr('class', 'legend')
+              .style('position', 'absolute')
           ;
 
-          let legend_y = 0;
-          for (let i = 0; i < this.dataset.length; i++) {
-            let data = this.dataset[i];
-            if (!data.label) continue;
-
-            legend.append('line')
-              .attr('x1', 0)
-              .attr('x2', 15)
-              .attr('y1', legend_y)
-              .attr('y2', legend_y)
-              .attr('stroke', data.color)
-              .attr('stroke-width', 2)
+          for (let object of legend_objects) {
+            let item = legend.append('div')
+              .attr("class", "legend-item")
             ;
 
-            legend.append('text')
-              .attr('x', 21)
-              .attr('y', legend_y)
-              .text(data.label)
-              .style('alignment-baseline', 'middle')
+            item.append('svg')
+              .attr("width", 20)
+              .attr("height", 4)
+              .attr("class", "legend-item-line")
+              .append('line')
+                .attr('x1', 0)
+                .attr('x2', 20)
+                .attr('y1', 2)
+                .attr('y2', 2)
+                .attr('stroke', object.color)
+                .style("stroke-dasharray", object.linestyle ? this.get_dasharray(object.linestyle) : "")
+                .attr('stroke-width', 2)
             ;
 
-            legend_y += 20;
+            item.append('span')
+              .text(object.label)
+            ;
+
+            if (object.description) {
+              tippy(item.node(), {
+                content: object.description,
+                allowHTML: true,
+                interactive: true,
+                placement: 'left',
+                appendTo: document.body,
+                hideOnClick: false,
+                theme: 'light-border',
+              });
+            }
           }
-
-          // Add legend background
-          let box = legend.node().getBBox();
-          let padding = 3;
-          let r = 3;
-          box.x -= padding;
-          box.y -= padding;
-          box.width += 2*padding;
-          box.height += 2*padding;
-          legend.append('rect')
-            .lower()
-            .attr('x', box.x)
-            .attr('y', box.y)
-            .attr('rx', r)
-            .attr('ry', r)
-            .attr('width', box.width)
-            .attr('height', box.height)
-            .attr('fill', 'white')
-            .attr('stroke', 'grey')
-          ;
         }
 
         if (this.graph_title) {
