@@ -94,6 +94,7 @@ class SimulateTakeOff():
       ratio_hardware_to_initial_hardware_production,
       initial_hardware_performance,
       initial_gwp,
+      initial_population,
       initial_cognitive_share_goods,
       initial_cognitive_share_rnd,
       initial_compute_share_goods,
@@ -161,7 +162,6 @@ class SimulateTakeOff():
     self.initial_tfp_rnd = 1
     self.initial_rnd_input_hardware = 8000000.0
     self.initial_rnd_input_software = 8000000.0
-    self.initial_population = 8e9
     self.investment_rate = 0.2
     self.initial_hardware = \
       self.initial_hardware_production \

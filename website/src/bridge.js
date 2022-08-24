@@ -60,6 +60,7 @@ let python_to_js_keys = {
   'initial_compute_share_goods':                    'initial.goods.share.compute',
   'initial_compute_share_rnd':                      'initial.rnd.share.compute',
   'initial_capital_growth':                         'initial.capital_growth',
+  'initial_population':                             'initial.population',
 
   'labour_growth':                                  'labour_growth',
   'tfp_growth':                                     'tfp_growth',

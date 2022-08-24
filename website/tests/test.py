@@ -6,6 +6,7 @@
 
 import json
 import numpy as np
+from numpy.random import uniform
 
 from opmodel.core.utils import *
 from opmodel.core.opmodel import *
@@ -136,6 +137,7 @@ for i in range(10):
   sample = params_dist.rvs(1)
   params = {param: sample[param][0] for param in sample}
   params['t_step'] = 1
+  params['initial_population'] = 10**uniform(3, 12)
   #params['runtime_training_tradeoff'] = 10
   #params['runtime_training_max_tradeoff'] = 100
   print(params)

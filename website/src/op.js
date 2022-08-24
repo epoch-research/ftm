@@ -543,7 +543,6 @@ function process_params(params) {
   params.initial.tfp_rnd = 1;
   params.initial.rnd_input_hardware = 8000000.0;
   params.initial.rnd_input_software = 8000000.0;
-  params.initial.population = 8e9;
   params.initial.hardware = params.initial.hardware_production * params.initial.ratio_hardware_to_initial_hardware_production;
   params.investment_rate = 0.2;
 
