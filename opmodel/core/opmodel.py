@@ -476,7 +476,7 @@ class SimulateTakeOff():
     
     self.compute_investment[0] = \
       self.initial_hardware_production * self.t_step \
-      / self.initial_buyable_hardware_performance # Hardware production is 
+      / self.initial_buyable_hardware_performance
     
     self.compute[0] = self.hardware[0] * self.initial_software
 
