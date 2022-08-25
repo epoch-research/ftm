@@ -137,6 +137,7 @@ for i in range(10):
   params = {param: sample[param][0] for param in sample}
   params['t_step'] = 1
   params['initial_population'] = 10**uniform(3, 12)
+  params['initial_buyable_hardware_performance'] = 10**uniform(14, 16)
   #params['runtime_training_tradeoff'] = 10
   #params['runtime_training_max_tradeoff'] = 100
   print(params)
