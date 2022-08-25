@@ -386,7 +386,7 @@ class ModelManager:
   def get_parameters(params_url):
     if params_url not in ModelManager.params_cache:
       parameters = pd.read_csv(params_url)
-      parameters = parameters.set_index("Parameter")
+      parameters = parameters.set_index("Parameter id")
       ModelManager.params_cache[params_url] = parameters
     parameters = ModelManager.params_cache[params_url].copy()
 

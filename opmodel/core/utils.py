@@ -176,7 +176,7 @@ def get_parameter_table():
     else:
       # By default we read the table from the omni workbook
       cached_param_table = pd.read_excel(get_input_workbook(), sheet_name = 'Parameters')
-    cached_param_table = cached_param_table.set_index("Parameter")
+    cached_param_table = cached_param_table.set_index("Parameter id")
     cached_param_table.fillna(np.nan, inplace = True)
   return cached_param_table.copy()
 
