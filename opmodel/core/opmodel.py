@@ -92,7 +92,7 @@ class SimulateTakeOff():
       ratio_initial_to_cumulative_input_software_rnd,
       initial_hardware_production,
       ratio_hardware_to_initial_hardware_production,
-      initial_hardware_performance,
+      initial_buyable_hardware_performance,
       initial_gwp,
       initial_population,
       initial_cognitive_share_goods,
@@ -447,7 +447,6 @@ class SimulateTakeOff():
   def initialize_rnd_state(self):
 
     ## Hardware
-    self.hardware_performance[0] = self.initial_hardware_performance
 
     self.cumulative_rnd_input_hardware[0]  =                \
       self.initial_rnd_input_hardware                       \
@@ -477,7 +476,7 @@ class SimulateTakeOff():
     
     self.compute_investment[0] = \
       self.initial_hardware_production * self.t_step \
-      / self.initial_hardware_performance # Hardware production is 
+      / self.initial_buyable_hardware_performance # Hardware production is 
     
     self.compute[0] = self.hardware[0] * self.initial_software
 
@@ -909,6 +908,30 @@ class SimulateTakeOff():
       return new_performance, new_cumulative_adjusted_input
 
     # Hardware
+    
+    # In the first time step, we move forward the buyable hardware 
+    # performance to adjust for the delay in hardware performance
+    if t_idx == 1:
+      improved_hardware_performance, _ = \
+        _update_rnd(
+        self.initial_buyable_hardware_performance, 
+        self.initial_buyable_hardware_performance,
+        self.rnd_input_hardware[t_idx-1], 
+        self.cumulative_rnd_input_hardware[t_idx-1], 
+        self.hardware_returns,
+        self.hardware_performance_ceiling
+        )
+        
+      initial_hardware_improvement_rate = \
+        improved_hardware_performance \
+        / self.initial_buyable_hardware_performance
+        
+      self.initial_hardware_performance = \
+        self.initial_buyable_hardware_performance \
+        * initial_hardware_improvement_rate**self.hardware_delay_idx
+      
+      self.hardware_performance[0] = self.initial_hardware_performance
+    
     self.hardware_performance[t_idx],\
     self.cumulative_rnd_input_hardware[t_idx] = \
       _update_rnd(
