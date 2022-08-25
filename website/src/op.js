@@ -475,7 +475,7 @@ let input_params = {
 
     biggest_training_run: 3e24,
     hardware_production: 1e28,
-    hardware_performance: 1.5e17,
+    buyable_hardware_performance: 1.5e17,
     gwp: 8.5e13,
 
     ratio_initial_to_cumulative_input_hardware_rnd: 0.047,
@@ -645,8 +645,6 @@ function init_input_state(state, params) {
   // Initialize R&D state
 
   // Hardware
-  state.hardware_performance.v = initial.hardware_performance;
-
   state.hardware_performance.cumulative_rnd_input = np.div(
     np.pow(initial.rnd_input_hardware, params.rnd.parallelization_penalty),
     np.mult(params.initial.ratio_initial_to_cumulative_input_hardware_rnd, params.rnd.parallelization_penalty)
@@ -672,7 +670,7 @@ function init_input_state(state, params) {
   state.hardware = initial.hardware;
   
   state.compute = initial.hardware * initial.software;
-  state.compute_investment = initial.hardware_production * params.t_step / initial.hardware_performance;
+  state.compute_investment = initial.hardware_production * params.t_step / initial.buyable_hardware_performance;
 
   state.goods.tfp = initial.tfp_goods;
   state.rnd.tfp = initial.tfp_rnd;
@@ -1090,6 +1088,28 @@ function _update_rnd(
 
 update_rnd_state = block({
   map: (state, params, states) => {
+    // In the first time step, we move forward the buyable hardware performance to adjust for the delay in hardware performance
+    if (state.t_idx == 1) {
+      let result = _update_rnd(
+        params.initial.buyable_hardware_performance, 
+        params.initial.buyable_hardware_performance,
+        state.hardware_performance.rnd_input,
+        state.hardware_performance.cumulative_rnd_input,
+        params.hardware_performance.returns,
+        params.hardware_performance.ceiling,
+        params,
+      );
+
+      let improved_hardware_performance = result[0];
+        
+      let initial_hardware_improvement_rate = improved_hardware_performance / params.initial.buyable_hardware_performance;
+        
+      params.initial.hardware_performance = params.initial.buyable_hardware_performance * initial_hardware_improvement_rate**params.hardware_delay_idx;
+      
+      state.hardware_performance.v = params.initial.hardware_performance;
+      states[0].hardware_performance.v = params.initial.hardware_performance;
+    }
+
     let hardware_result = _update_rnd(
       state.hardware_performance.v,
       states[0].hardware_performance.v,

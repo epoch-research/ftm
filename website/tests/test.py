@@ -14,7 +14,6 @@ from opmodel.analysis.mc_analysis import ParamsDistribution
 
 MODULE_DIR = os.path.dirname(os.path.realpath(__file__))
 
-set_parameter_table_url("https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/edit#gid=104966230")
 js_model_path = os.path.join(MODULE_DIR, '../src')
 
 parameter_table = get_parameter_table()
