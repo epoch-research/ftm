@@ -53,7 +53,7 @@ let python_to_js_keys = {
   'ratio_initial_to_cumulative_input_software_rnd': 'initial.ratio_initial_to_cumulative_input_software_rnd',
   'initial_hardware_production':                    'initial.hardware_production',
   'ratio_hardware_to_initial_hardware_production':  'initial.ratio_hardware_to_initial_hardware_production',
-  'initial_buyable_hardware_performance':           'initial.buyable.hardware_performance',
+  'initial_buyable_hardware_performance':           'initial.buyable_hardware_performance',
   'initial_gwp':                                    'initial.gwp',
   'initial_cognitive_share_goods':                  'initial.goods.share.cognitive',
   'initial_cognitive_share_rnd':                    'initial.rnd.share.cognitive',
