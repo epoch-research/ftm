@@ -105,7 +105,17 @@ class PythonModel(Model):
 
     # Get the parameters and remove those that are not part of this version of the model
     model_parameters = inspect.signature(self.model).parameters
-    inputs = {parameter : row['Best guess'] for parameter, row in self.parameters.iterrows() if parameter in model_parameters}
+
+    raw_inputs = self.parameters['Best guess'].to_dict()
+
+    # Handle the parameters that have been renamed
+    if not 'initial_buyable_hardware_performance' in raw_inputs:
+      raw_inputs['initial_buyable_hardware_performance'] = raw_inputs['initial_hardware_performance']
+    if not 'initial_hardware_performance' in raw_inputs:
+      raw_inputs['initial_hardware_performance'] = raw_inputs['initial_buyable_hardware_performance']
+
+    # Delete the extraneous parameters
+    inputs = {k : v for k, v in raw_inputs.items() if k in model_parameters}
 
     self.inputs = inputs
 
@@ -234,14 +244,16 @@ class ModelManager:
 
   @staticmethod
   def load_model(
-      name                 = None,
-      project_ref          = None, # commit, branch (e.g, 'b:main') or path
-      params_url           = None,
-
-      relative_python_module_path = 'opmodel/core/opmodel.py', # relative to the root of the project
+      name                        = None,
+      project_ref                 = None, # commit, branch (e.g, 'b:main') or path
+      params_url                  = None,
+      relative_python_module_path = None
     ):
 
     original_params_url = params_url
+
+    if not relative_python_module_path:
+      relative_python_module_path = 'opmodel/core/opmodel.py'
 
     # Clean the param url if it's a Google sheet
     pattern = r'https://docs.google.com/spreadsheets/d/([a-zA-Z0-9-_]*)/.*\bgid\b=([0-9]*)?.*'
@@ -395,9 +407,11 @@ class ModelManager:
 def diffy(
     project_ref_a = 'g:main',
     params_url_a = None,
+    relative_module_path_a = None,
 
     project_ref_b = '.',
     params_url_b = None,
+    relative_module_path_b = None,
 
     max_steps = 10,
 
@@ -424,12 +438,14 @@ def diffy(
     name = 'Model a',
     project_ref = project_ref_a,
     params_url = params_url_a,
+    relative_python_module_path = relative_module_path_a,
   )
 
   model_b = ModelManager.load_model(
     name = 'Model b',
     project_ref = project_ref_b,
     params_url = params_url_b,
+    relative_python_module_path = relative_module_path_b,
   )
 
   for model in [model_a, model_b]:
@@ -1014,6 +1030,18 @@ if __name__ == '__main__':
   )
 
   parser.add_argument(
+    "--module-path-a",
+    default=None,
+    help="Relative Python module path for model a",
+  )
+
+  parser.add_argument(
+    "--module-path-b",
+    default=None,
+    help="Relative Python module path for model b",
+  )
+
+  parser.add_argument(
     "--params",
     default=None,
     help="Parameters URL or local path for both models",
@@ -1047,5 +1075,8 @@ if __name__ == '__main__':
 
   diff_args['max_steps'] = args.max_steps
   diff_args['ignore_missings'] = args.ignore_missings
+
+  if args.module_path_a: diff_args['relative_module_path_a'] = args.module_path_a
+  if args.module_path_b: diff_args['relative_module_path_b'] = args.module_path_b
 
   diffy(**diff_args)
