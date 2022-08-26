@@ -23,7 +23,7 @@ def megareport(report_file_path=None, report_dir_path=None, quick_test_mode=Fals
   log.deindent()
   log.info()
 
-  log.info('Generating sensitivity analysis tab')
+  log.info('Generating parameter importance analysis tab')
   log.indent()
   report.begin_tab('Parameter importance analysis', 'parameter_importance_analysis')
   write_sensitivity_analysis_report(report = report, quick_test_mode = quick_test_mode)

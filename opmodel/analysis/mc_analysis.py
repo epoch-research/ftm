@@ -13,7 +13,7 @@ from numpy.random import default_rng
 from matplotlib import cm
 from xml.etree import ElementTree as et
 from copula_wrapper import joint_distribution
-from ..core.utils import get_clipped_ajeya_dist
+from ..core.utils import get_clipped_ajeya_dist, get_param_names
 
 rng = default_rng()
 
@@ -187,9 +187,9 @@ def write_mc_analysis_report(n_trials=100, max_retries = 100, include_sample_tab
     if element.tag == 'tbody':
       tbody = element
       break
-  tbody.insert(0, et.fromstring('''
+  tbody.insert(0, et.fromstring(f'''
     <tr>
-      <th>full_automation_requirements_training</th>
+      <th data-param-id='full_automation_requirements_training'>{get_param_names()['full_automation_requirements_training'] if get_option('human_names') else 'full_automation_requirements_training'}</th>
       <td colspan="4" style="text-align: center">sampled from a clipped Cotra's distribution <span data-modal-trigger="ajeya-modal">(<i>click here to view</i>)</span></td>
     </tr>
   '''))

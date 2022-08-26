@@ -78,6 +78,12 @@ def init_cli_arguments():
     default=None,
   )
 
+  parser.add_argument(
+    "--human-names",
+    action='store_true',
+    help="Show human names for the parameters and metrics",
+  )
+
   return parser
 
 def handle_cli_arguments(parser):
@@ -104,6 +110,8 @@ def handle_cli_arguments(parser):
 
   if args.ajeya_dist_url is not None:
     set_ajeya_dist_url(args.ajeya_dist_url)
+
+  if args.human_names is not None: set_option('human_names', args.human_names)
 
   if args.t_start is not None: set_option('t_start', args.t_start)
   if args.t_end is not None: set_option('t_end', args.t_end)

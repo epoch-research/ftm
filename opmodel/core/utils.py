@@ -119,6 +119,7 @@ def expand_string(string, context):
 cached_input_workbook = None
 cached_ajeya_dist = None
 cached_param_table = None
+cached_metrics_table = None
 cached_rank_correlations = None
 cached_timelines_parameters = None
 
@@ -126,6 +127,7 @@ def set_input_workbook(url):
   global input_workbook
   global cached_input_workbook
   global cached_param_table
+  global cached_metrics_table
   global cached_rank_correlations
   global cached_timelines_parameters
 
@@ -139,6 +141,7 @@ def set_input_workbook(url):
   set_option('input_workbook', url)
   cached_input_workbook = None
   cached_param_table = None
+  cached_metrics_table = None
   cached_rank_correlations = None
   cached_timelines_parameters = None
 
@@ -179,6 +182,13 @@ def get_parameter_table():
     cached_param_table = cached_param_table.set_index("Parameter id")
     cached_param_table.fillna(np.nan, inplace = True)
   return cached_param_table.copy()
+
+def get_metrics_table():
+  global cached_metrics_table
+  if cached_metrics_table is None:
+    cached_metrics_table = pd.read_excel(get_input_workbook(), sheet_name = 'Output metrics')
+    cached_metrics_table = cached_metrics_table.set_index(cached_metrics_table.columns[0])
+  return cached_metrics_table
 
 def set_parameter_table_url(url):
   global cached_param_table
@@ -233,10 +243,6 @@ def get_timelines_parameters():
     cached_timelines_parameters = cached_timelines_parameters.set_index(cached_timelines_parameters.columns[0])
   return cached_timelines_parameters.copy()
 
-def get_parameters_meanings():
-  param_table = get_parameter_table()
-  return param_table['Meaning'].to_dict()
-
 def get_parameters_colors():
   colors = {}
 
@@ -250,10 +256,28 @@ def get_parameters_colors():
 
   return colors
 
+def get_parameters_meanings():
+  return get_parameter_table()['Meaning'].to_dict()
+
 def get_metrics_meanings():
-  metric_meanings = pd.read_excel(get_input_workbook(), sheet_name = 'Output metrics')
-  metric_meanings = metric_meanings.set_index(metric_meanings.columns[0])
-  return metric_meanings['Meaning'].to_dict()
+  return get_metrics_table()['Meaning'].to_dict()
+
+def snake_case_to_human(s):
+  words = s.split('_')
+  words[0] = words[0].capitalize()
+  return " ".join(words)
+
+def get_param_names():
+  table = get_parameter_table()['Parameter'].to_dict()
+  for k, v in table.items():
+    if np.isnan(v): table[k] = snake_case_to_human(k)
+  return table
+
+def get_metric_names():
+  table = get_metrics_table()['Metric'].to_dict()
+  for k, v in table.items():
+    if np.isnan(v): table[k] = snake_case_to_human(k)
+  return table
 
 #--------------------------------------------------------------------------
 # Misc

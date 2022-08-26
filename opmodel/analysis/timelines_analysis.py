@@ -169,11 +169,16 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
   # Add JavaScript
   #
 
+  param_names = get_param_names()
+  if not get_option('human_names', False):
+    param_names = {k: k for k in param_names.keys()}
+
   script = et.Element('script')
   script.text = '''
     let summaries = ''' + summaries_json + ''';
     let inputs = ''' + inputs_json + ''';
     let rowCount = ''' + str(row_count) + ''';
+    let param_names = ''' + json.dumps(get_param_names()) + ''';
 
     function getFormatInformation(x) {
       let str;
@@ -325,7 +330,7 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
 
       for (let param in formattedCols[0]) {
         html += '<tr>';
-        html += `<th>${param}</th>`;
+        html += `<th data-param-id="${param}">${param_names[param]}</th>`;
         for (let col of formattedCols) {
           html += `<td>${col[param]}</td>`;
         }

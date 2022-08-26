@@ -11,7 +11,7 @@ from xml.etree import ElementTree as et
 DEFAULT_REPORT_DIRECTORY = '_output_'     # Relative to the root of the repository
 DEFAULT_REPORT_FILE      = 'report.html'  # Relative to the DEFAULT_REPORT_DIRECTORY
 
-from ..core.utils import get_parameters_meanings, get_metrics_meanings, get_parameters_colors
+from ..core.utils import *
 
 # Tabs code taking from https://inspirationalpixels.com/creating-tabs-with-html-css-and-jquery/
 
@@ -23,6 +23,9 @@ class Report:
     self.make_tables_scrollable = True
 
     self.add_csv_copy_button = add_csv_copy_button
+
+    self.param_names = get_param_names()
+    self.metric_names = get_metric_names()
 
     self.tab_groups = []
     self.tab_groups_parents = []
@@ -561,40 +564,44 @@ class Report:
         let backgroundColors = ''' + json.dumps(get_parameters_colors()) + ''';
         let metricNotes = ''' + json.dumps(get_metrics_meanings()) + ''';
 
-        function injectMeaningTooltips() {
-          document.querySelectorAll('th').forEach(node => {
-            if (node._meaningInjected) return;
+        function injectMeaningTooltip(node, meaning) {
+          if (node._meaningInjected) return;
 
-            let name = node.innerText;
-            let note = paramNotes[name] || metricNotes[name];
+          if (meaning) {
+            let icon = document.createElement('i');
+            icon.classList.add('bi', 'bi-info-circle', 'info-icon');
+            node.append(icon);
 
-            if (note) {
-              let icon = document.createElement('i');
-              icon.classList.add('bi', 'bi-info-circle', 'info-icon');
-              node.append(icon);
+            tippy(icon, {
+              content: meaning,
+              allowHTML: true,
+              interactive: true,
+              placement: (node.parentElement.parentElement.tagName == 'THEAD') ? 'top' : 'right',
+            });
 
-              tippy(icon, {
-                content: note,
-                allowHTML: true,
-                interactive: true,
-                placement: (node.parentElement.parentElement.tagName == 'THEAD') ? 'top' : 'right',
-              });
-
-              node._meaningInjected = true;
-            } else {
-              // TODO Temporary, remove later
-              if (node.parentElement.firstElementChild == node) {
-                // When the ths run vertically, add padding extra padding to account for the missing icon
-                node.style.paddingRight = '3em';
-              }
+            node._meaningInjected = true;
+          } else {
+            // TODO Temporary, remove later
+            if (node.parentElement.firstElementChild == node) {
+              // When the ths run vertically, add extra padding to account for the missing icon
+              node.style.paddingRight = '3em';
             }
-          });
+          }
+        }
+
+        function injectMeaningTooltips() {
+          for (let node of document.querySelectorAll('[data-param-id]')) {
+            injectMeaningTooltip(node, paramNotes[node.dataset.paramId]);
+          }
+
+          for (let node of document.querySelectorAll('[data-metric-id]')) {
+            injectMeaningTooltip(node, metricNotes[node.dataset.metricId]);
+          }
         }
 
         function injectParamBgColors() {
-          document.querySelectorAll('th').forEach(node => {
-            let name = node.innerText;
-            let color = backgroundColors[name];
+          document.querySelectorAll('[data-param-id]').forEach(node => {
+            let color = backgroundColors[node.dataset.paramId];
 
             if (color) {
               node.style.backgroundColor = color;
@@ -662,6 +669,11 @@ class Report:
         // By default, activate the first tab
         if (!tab) {
           tab = document.querySelector('.tab');
+        }
+
+        //... if any
+        if (!tab) {
+          return;
         }
 
         let link = document.querySelector(`span[data-href="#${tab.dataset.id}"]`);
@@ -758,6 +770,8 @@ class Report:
 
     dataframe_wrapper = et.fromstring(f'<div class="dataframe-container">{html}</div>')
 
+    self.process_table(dataframe_wrapper)
+
     container = et.Element('div', {'class': 'table-container'})
     container.append(dataframe_wrapper)
 
@@ -771,6 +785,29 @@ class Report:
 
     parent.append(container)
     return container
+
+  def process_table(self, table):
+    # Add data attributes
+    for th in table.findall('.//th'):
+      if th.text in self.param_names:
+        th.attrib['data-param-id'] = th.text
+      if th.text in self.metric_names:
+        th.attrib['data-metric-id'] = th.text
+
+    if get_option('human_names', False):
+      # Convert parameter and metric ids into human names
+      # (in a hacky way)
+      for th in table.findall('.//th'):
+        if th.text in self.param_names:
+          human_name = self.param_names[th.text]
+          th.attrib['data-param-id'] = th.text
+          th.text = human_name
+
+        if th.text in self.metric_names:
+          human_name = self.metric_names[th.text]
+          th.attrib['data-metric-id'] = th.text
+          th.text = human_name
+
 
   def add_banner_message(self, message, classes = []):
     element = et.fromstring(f'<div>{message}</div>')
