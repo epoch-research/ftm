@@ -672,14 +672,12 @@ class Report:
         }
 
         //... if any
-        if (!tab) {
-          return;
+        if (tab) {
+          let link = document.querySelector(`span[data-href="#${tab.dataset.id}"]`);
+
+          tab.classList.add("active");
+          link.parentElement.classList.add("active");
         }
-
-        let link = document.querySelector(`span[data-href="#${tab.dataset.id}"]`);
-
-        tab.classList.add("active");
-        link.parentElement.classList.add("active");
       </script>
     '''))
 
