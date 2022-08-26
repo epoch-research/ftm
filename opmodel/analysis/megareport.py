@@ -7,7 +7,7 @@ from .sensitivity_analysis import write_sensitivity_analysis_report
 from .timelines_analysis import write_timelines_analysis_report
 from .mc_analysis import write_mc_analysis_report
 
-def megareport(report_file_path=None, report_dir_path=None, quick_test_mode=False, report=None):
+def megareport(report_file_path=None, report_dir_path=None, quick_test_mode=False, report=None, mc_trials=None):
   if report_file_path is None:
     report_file_path = 'megareport.html'
 
@@ -34,9 +34,9 @@ def megareport(report_file_path=None, report_dir_path=None, quick_test_mode=Fals
   log.indent()
   report.begin_tab('Monte Carlo analysis', 'mc_analysis')
   if quick_test_mode:
-    write_mc_analysis_report(report = report, n_trials = 4)
+    write_mc_analysis_report(report = report, n_trials = 4 if mc_trials is None else mc_trials)
   else:
-    write_mc_analysis_report(report = report)
+    write_mc_analysis_report(report = report, n_trials = mc_trials)
   log.deindent()
   log.info()
 
@@ -50,10 +50,19 @@ def megareport(report_file_path=None, report_dir_path=None, quick_test_mode=Fals
 
 if __name__ == '__main__':
   parser = init_cli_arguments()
+
   parser.add_argument(
     "-q",
     "--quick-test-mode",
     action='store_true',
   )
+
+  parser.add_argument(
+    "-n",
+    "--mc-trials",
+    type=int,
+  )
+
   args = handle_cli_arguments(parser)
-  megareport(report_file_path=args.output_file, report_dir_path=args.output_dir, quick_test_mode=args.quick_test_mode)
+
+  megareport(report_file_path=args.output_file, report_dir_path=args.output_dir, quick_test_mode=args.quick_test_mode, mc_trials=args.mc_trials)

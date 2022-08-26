@@ -47,6 +47,13 @@ class Report:
           margin-left: 0.5em;
         }
 
+        .super-info-icon {
+          position: relative;
+          font-size: 0.8em;
+          margin-left: 0;
+          bottom: 0.5em;
+        }
+
         .tippy-content {
           text-align: left;
         }
@@ -681,6 +688,18 @@ class Report:
       </script>
     '''))
 
+    # Tooltips
+    self.body.append(et.fromstring('''
+      <script>
+        for (let tooltipContainer of document.querySelectorAll(`[data-tooltip-content]`)) {
+          tippy(tooltipContainer, {
+            content: tooltipContainer.dataset.tooltipContent,
+            allowHTML: true,
+            interactive: true,
+          });
+        }
+      </script>
+    '''))
 
     self.default_parent = self.content
 
@@ -806,11 +825,16 @@ class Report:
           th.attrib['data-metric-id'] = th.text
           th.text = human_name
 
-
   def add_banner_message(self, message, classes = []):
     element = et.fromstring(f'<div>{message}</div>')
     element.set('class', 'banner ' + ' '.join(classes))
     self.body.insert(0, element)
+
+  def generate_tooltip_html(self, content):
+    return f'<i class="bi-info-circle super-info-icon" data-tooltip-content="{content}"></i>'
+
+  def generate_tooltip(self, content):
+    return et.fromstring(generate_tooltip_html(content))
 
   # ---------------------------------------------------------------------------
   # Tabs

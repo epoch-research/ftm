@@ -142,7 +142,8 @@ def write_mc_analysis_report(n_trials=100, max_retries = 100, include_sample_tab
   if new_report:
     report = Report(report_file_path=report_file_path, report_dir_path=report_dir_path)
 
-  report.add_paragraph(f"<span style='font-weight:bold'>Probability of slow takeoff:</span> {results.slow_takeoff_count/results.n_trials:.0%}")
+  description = 'Probability of a full 4 year doubling of GWP before a 1 year doubling of GWP starts'
+  report.add_paragraph(f"<span style='font-weight:bold'>Probability of slow takeoff</span>{report.generate_tooltip_html(description)}<span style='font-weight:bold'>:</span> {results.slow_takeoff_count/results.n_trials:.0%}")
 
   metrics_quantiles = pd.DataFrame(results.metrics_quantiles)
   report.add_data_frame(metrics_quantiles)
@@ -162,19 +163,6 @@ def write_mc_analysis_report(n_trials=100, max_retries = 100, include_sample_tab
   param_names = results.param_samples.columns
   columns = [['mean'] + results.quantiles]
 
-  report.add_header("Input parameters stats", level = 3)
-  params_stats_table = pd.DataFrame(param_stats, index = param_names, columns = columns)
-  params_stats_table.columns.name = 'quantiles'
-  report.add_data_frame(params_stats_table)
-
-  # Write down the rank correlations
-  report.add_header("Rank correlations", level = 3)
-  report.add_data_frame(results.rank_correlations.fillna(''))
-
-  if include_sample_table:
-    report.add_header("Parameter samples", level = 3)
-    report.add_data_frame(results.param_samples)
-
   # Write down the parameters
   report.add_header("Inputs", level = 3)
   report.add_paragraph(f"<span style='font-weight:bold'>Number of samples:</span> {n_trials}")
@@ -193,6 +181,19 @@ def write_mc_analysis_report(n_trials=100, max_retries = 100, include_sample_tab
       <td colspan="4" style="text-align: center">sampled from a clipped Cotra's distribution <span data-modal-trigger="ajeya-modal">(<i>click here to view</i>)</span></td>
     </tr>
   '''))
+
+  report.add_header("Input parameters stats", level = 3)
+  params_stats_table = pd.DataFrame(param_stats, index = param_names, columns = columns)
+  params_stats_table.columns.name = 'quantiles'
+  report.add_data_frame(params_stats_table)
+
+  # Write down the rank correlations
+  report.add_header("Rank correlations", level = 3)
+  report.add_data_frame(results.rank_correlations.fillna(''))
+
+  if include_sample_table:
+    report.add_header("Parameter samples", level = 3)
+    report.add_data_frame(results.param_samples)
 
   if new_report:
     report_path = report.write()
