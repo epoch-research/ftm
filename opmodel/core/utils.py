@@ -270,13 +270,13 @@ def snake_case_to_human(s):
 def get_param_names():
   table = get_parameter_table()['Parameter'].to_dict()
   for k, v in table.items():
-    if np.isnan(v): table[k] = snake_case_to_human(k)
+    if pd.isnull(v): table[k] = snake_case_to_human(k)
   return table
 
 def get_metric_names():
   table = get_metrics_table()['Metric'].to_dict()
   for k, v in table.items():
-    if np.isnan(v): table[k] = snake_case_to_human(k)
+    if pd.isnull(v): table[k] = snake_case_to_human(k)
   return table
 
 #--------------------------------------------------------------------------
