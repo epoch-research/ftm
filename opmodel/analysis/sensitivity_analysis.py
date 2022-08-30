@@ -99,7 +99,6 @@ def sensitivity_analysis(quick_test_mode=False):
 
     # Add GWP doubling times
     result["GWP doubling times"] = f"[{low_model.doubling_times[:4]}, {med_model.doubling_times[:4]}, {high_model.doubling_times[:4]}]"
-    result["doubling times"] = result["GWP doubling times"] # alias
 
     table.append(result)
 
