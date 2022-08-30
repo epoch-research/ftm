@@ -73,6 +73,7 @@ let python_to_js_keys = {
   'software_returns':                               'software.returns',
   'runtime_training_tradeoff':                      'runtime_training_tradeoff',
   'runtime_training_max_tradeoff':                  'runtime_training_max_tradeoff',
+  'n_labour_tasks':                                 'n_labour_tasks',
 };
 
 let internal_variables = {
