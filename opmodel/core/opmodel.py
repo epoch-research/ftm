@@ -428,7 +428,26 @@ class SimulateTakeOff():
     except FloatingPointError as e: 
       print("An overflow has happened and the simulation has stopped.")
       print(e)
-      print(traceback.format_exc())
+      print(traceback.format_exc(), end = '')
+
+      # Pickle the model for further inspection
+      import pickle
+      import os
+
+      if not hasattr(SimulateTakeOff, 'dump_count'):
+        SimulateTakeOff.dump_count = 0
+
+      cache_dir = os.path.join(get_option('cache_dir'), 'dumps')
+      os.makedirs(cache_dir, exist_ok=True)
+      self.exception = e
+      pickle_file = os.path.join(cache_dir, f'model_{SimulateTakeOff.dump_count}.pickle')
+      with open(pickle_file, 'wb') as f:
+        pickle.dump(self, f)
+
+      SimulateTakeOff.dump_count = (SimulateTakeOff.dump_count + 1) % 4 # limit the number of pickle files
+
+      print(f"You can find a copy of the model in {pickle_file}")
+      print()
     finally:
       # Set default error handling
       np.seterr()
