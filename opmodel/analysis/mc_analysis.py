@@ -5,6 +5,7 @@ Monte carlo analysis.
 from . import log
 from . import *
 
+import pickle
 import traceback
 from scipy.interpolate import interp1d
 from scipy.stats import rv_continuous
@@ -41,6 +42,8 @@ def mc_analysis(n_trials = 100, max_retries = 100):
 
   params_dist = ParamsDistribution()
   samples = []
+
+  last_valid_indices = []
 
   log.info(f'Running simulations...')
   log.indent()
@@ -97,7 +100,9 @@ def mc_analysis(n_trials = 100, max_retries = 100):
       assert metric_value.shape == (mc_model.n_timesteps,)
       state_metrics[state_metric].append(metric_value)
 
-    if mc_model.is_slow_takeoff():
+    last_valid_indices.append(mc_model.t_idx)
+
+    if is_slow_takeoff(mc_model):
       slow_takeoff_count += 1
 
   log.deindent()
@@ -123,19 +128,74 @@ def mc_analysis(n_trials = 100, max_retries = 100):
   results.state_metrics      = state_metrics
   results.n_trials           = n_trials
   results.timesteps          = mc_model.timesteps
+  results.t_step             = mc_model.t_step
   results.param_samples      = pd.concat(samples, ignore_index = True)
   results.ajeya_cdf          = params_dist.marginals['full_automation_requirements_training'].cdf_pd
   results.parameter_table    = params_dist.parameter_table
   results.rank_correlations  = params_dist.rank_correlations
   results.slow_takeoff_count = slow_takeoff_count
+  results.last_valid_indices = last_valid_indices
 
   return results
 
-def write_mc_analysis_report(n_trials=100, max_retries = 100, include_sample_table = False, report_file_path=None, report_dir_path=None, report=None):
+def is_slow_takeoff(model):
+  return n_year_doubling_before_m_year_doubling(model.gwp[:model.t_idx], model.t_step, 4, 1)
+
+def n_year_doubling_before_m_year_doubling(array, t_step, n, m):
+  delta_n = round(n/t_step)
+  delta_m = round(m/t_step)
+
+  idx_n = SimulateTakeOff.first_index(array[delta_n:]/array[:-delta_n] >= 2)
+  idx_m = SimulateTakeOff.first_index(array[delta_m:]/array[:-delta_m] >= 2)
+
+  if idx_m is None:
+    return True
+  elif idx_n is None:
+    return False
+
+  t_diff = (idx_m - idx_n) * t_step
+
+  return t_diff >= n
+
+def write_takeoff_probability_table(n_trials=100, max_retries=100, input_results_filename=None):
+  if input_results_filename:
+    with open(input_results_filename, 'rb') as f:
+      results = pickle.load(f)
+  else:
+    results = mc_analysis(n_trials, max_retries)
+
+  t_step = results.t_step
+  gwps = [results.state_metrics['gwp'][i][:results.last_valid_indices[i]] for i in range(results.n_trials)]
+
+  ns = list(range(1, 20))
+  ms = list(range(1, 20))
+  table = []
+  for n in ns:
+    row = []
+    for m in ms:
+      p = np.sum([n_year_doubling_before_m_year_doubling(gwp, t_step, n, m) for gwp in gwps])/results.n_trials if (n > m) else np.nan
+      row.append(p)
+    table.append(row)
+
+  df = pd.DataFrame(table)
+  df.index = ns
+  df.columns = ms
+
+  return df
+
+def write_mc_analysis_report(n_trials=100, max_retries=100, include_sample_table=False, report_file_path=None, report_dir_path=None, report=None, output_results_filename=None, input_results_filename=None):
   if report_file_path is None:
     report_file_path = 'mc_analysis.html'
 
-  results = mc_analysis(n_trials, max_retries)
+  if input_results_filename:
+    with open(input_results_filename, 'rb') as f:
+      results = pickle.load(f)
+  else:
+    results = mc_analysis(n_trials, max_retries)
+
+  if output_results_filename:
+    with open(output_results_filename, 'wb') as f:
+      pickle.dump(results, f)
 
   log.info('Writing report...')
   new_report = report is None
@@ -472,6 +532,16 @@ if __name__ == '__main__':
     action='store_true',
   )
 
+  parser.add_argument(
+    "--input-results-file",
+    help = 'Read the MC results from this file (pickle) instead of regenerating them',
+  )
+
+  parser.add_argument(
+    "--output-results-file",
+    help = 'Store the results of the analysis in this file (pickle)',
+  )
+
   args = handle_cli_arguments(parser)
 
   write_mc_analysis_report(
@@ -479,6 +549,8 @@ if __name__ == '__main__':
     max_retries=args.max_retries,
     include_sample_table=args.include_sample_table,
     report_file_path=args.output_file,
-    report_dir_path=args.output_dir
+    report_dir_path=args.output_dir,
+    output_results_filename=args.output_results_file,
+    input_results_filename=args.input_results_file,
   )
 

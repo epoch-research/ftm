@@ -1503,22 +1503,6 @@ class SimulateTakeOff():
     # We are only interested in the first five doubling times
     self.doubling_times = self.doubling_times[:5]
 
-  def is_slow_takeoff(self, gwp = None):
-    if gwp is None: gwp = self.gwp
-
-    delta_4 = round(4/self.t_step)
-    delta_1 = round(1/self.t_step)
-
-    idx_4 = SimulateTakeOff.first_index(gwp[delta_4:self.t_idx]/gwp[:self.t_idx-delta_4] >= 2)
-    idx_1 = SimulateTakeOff.first_index(gwp[delta_1:self.t_idx]/gwp[:self.t_idx-delta_1] >= 2)
-
-    if idx_4 is None or idx_1 is None:
-      return True
-
-    t_diff = (idx_1 - idx_4) * self.t_step
-
-    return t_diff >= 4
-
   ###########################################################################
 
   ## VISUALIZATION ##
