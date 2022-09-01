@@ -106,6 +106,7 @@ class SimulateTakeOff():
       labour_growth,
       tfp_growth,
       compute_depreciation,
+      money_cap_training_before_wakeup,
 
       # Simulation resolution
       t_start = None,
@@ -335,6 +336,7 @@ class SimulateTakeOff():
 
     self.tfp_goods = np.zeros(self.n_timesteps)
     self.tfp_rnd = np.zeros(self.n_timesteps)
+    self.money_spent_training = np.zeros(self.n_timesteps)
   
   def create_simulation_state_automation(self):
     self.biggest_training_run = np.zeros(self.n_timesteps)
@@ -501,6 +503,10 @@ class SimulateTakeOff():
 
     self.tfp_goods[0] = self.initial_tfp_goods
     self.tfp_rnd[0] = self.initial_tfp_rnd
+    
+    self.money_spent_training[0] = \
+      self.initial_biggest_training_run \
+      / self.initial_buyable_hardware_performance
   
   def initialize_fractional_inputs(self):
 
@@ -1027,6 +1033,12 @@ class SimulateTakeOff():
       1 - self.frac_labour_hardware_rnd[t_idx] - self.frac_labour_software_rnd[t_idx]
     self.frac_compute_goods[t_idx] = \
       1 - self.frac_compute_hardware_rnd[t_idx] - self.frac_compute_software_rnd[t_idx] - self.frac_compute_training[t_idx]
+      
+    
+    # Cap the growth of the fraction of FLOP before rampup
+    if self.money_spent_training[t_idx-1] > self.money_cap_training_before_wakeup \
+    and not self.rampup[t_idx-1]:
+      self.frac_compute_training[t_idx] = self.frac_compute_training[t_idx-1]
   
   def calculate_total_inputs(self, t_idx):
     
@@ -1060,8 +1072,14 @@ class SimulateTakeOff():
       self.labour[t_idx-1] * np.exp(self.labour_growth * self.t_step)
     
     # Total factor production
-    self.tfp_goods[t_idx] = self.tfp_goods[t_idx-1] * np.exp(self.tfp_growth * self.t_step)
-    self.tfp_rnd[t_idx] = self.tfp_rnd[t_idx-1] * np.exp(self.tfp_growth * self.t_step)
+    self.tfp_goods[t_idx] = \
+      self.tfp_goods[t_idx-1] * np.exp(self.tfp_growth * self.t_step)
+    self.tfp_rnd[t_idx] = \
+      self.tfp_rnd[t_idx-1] * np.exp(self.tfp_growth * self.t_step)
+    
+    # Track money spent training
+    self.money_spent_training[t_idx] = \
+      self.compute_investment[t_idx] * self.frac_compute_training[t_idx]
 
   ###########################################################################
 
