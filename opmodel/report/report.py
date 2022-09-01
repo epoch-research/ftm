@@ -157,6 +157,7 @@ class Report:
         .dataframe-modal .modal-content-content {
           overflow-y: auto;
           max-height: 90vh;
+          max-width: calc(100vw - 100px);
           background-color: white;
         }
 

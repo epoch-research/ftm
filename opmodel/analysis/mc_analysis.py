@@ -225,7 +225,18 @@ def write_mc_analysis_report(n_trials=100, max_retries=100, include_sample_table
 
   # Write down the parameters
   report.add_header("Inputs", level = 3)
+
   report.add_paragraph(f"<span style='font-weight:bold'>Number of samples:</span> {n_trials}")
+
+  report.add_paragraph("<span style='font-weight:bold'>Rank correlations:</span> <span data-modal-trigger='rank-correlations-modal'><i>click here to view</i>.</span>")
+  report.add_data_frame_modal(results.rank_correlations.fillna(''), 'rank-correlations-modal')
+
+  params_stats_table = pd.DataFrame(param_stats, index = param_names, columns = columns)
+  params_stats_table.columns.name = 'quantiles'
+
+  report.add_paragraph("<span style='font-weight:bold'>Input statistics:</span> <span data-modal-trigger='input-stats-modal'><i>click here to view</i>.</span>")
+  report.add_data_frame_modal(params_stats_table, 'input-stats-modal')
+
   report.add_data_frame_modal(results.ajeya_cdf, 'ajeya-modal', show_index = False)
 
   # the parameter full_automation_requirements_training is special (we are sampling from Ajeya's distribution)
@@ -241,15 +252,6 @@ def write_mc_analysis_report(n_trials=100, max_retries=100, include_sample_table
       <td colspan="4" style="text-align: center">sampled from a clipped Cotra's distribution <span data-modal-trigger="ajeya-modal">(<i>click here to view</i>)</span></td>
     </tr>
   '''))
-
-  report.add_header("Input parameters stats", level = 3)
-  params_stats_table = pd.DataFrame(param_stats, index = param_names, columns = columns)
-  params_stats_table.columns.name = 'quantiles'
-  report.add_data_frame(params_stats_table)
-
-  # Write down the rank correlations
-  report.add_header("Rank correlations", level = 3)
-  report.add_data_frame(results.rank_correlations.fillna(''))
 
   if include_sample_table:
     report.add_header("Parameter samples", level = 3)
