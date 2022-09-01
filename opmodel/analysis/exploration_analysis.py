@@ -1,14 +1,14 @@
 from . import log
 from . import *
 
-def plot_compute_increase(scenario_group, title = "Compute increase over time", show_legend = True):
+def plot_compute_increase(scenario_group, title = "Compute increase over time", get_label = lambda scenario: scenario.name, show_legend = True):
   # Plot compute decomposition
   plt.figure(figsize=(14 if show_legend else 12, 8), dpi=80)
 
   for i, scenario in enumerate(scenario_group):
     plt.subplot(len(scenario_group), 1, i + 1)
     scenario.model.plot_compute_decomposition(new_figure=False)
-    plt.ylabel(scenario.name)
+    plt.ylabel(get_label(scenario))
 
     if i == 0:
       plt.title(title)

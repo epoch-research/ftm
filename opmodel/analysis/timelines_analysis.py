@@ -397,6 +397,12 @@ def timelines_analysis(report_file_path=None, report_dir_path=None):
 
   return results
 
+def plot_best_guesses_compute_increase():
+  results = timelines_analysis()
+  best_guesses_group = [scenario for group in results.scenario_groups for scenario in group if scenario.name == 'Best guess']
+  plot_compute_increase(best_guesses_group, get_label = lambda scenario: f'{scenario.model.full_automation_requirements_training} FLOP')
+  plt.show()
+
 if __name__ == '__main__':
   parser = init_cli_arguments()
   args = handle_cli_arguments(parser)
