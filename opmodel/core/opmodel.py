@@ -1079,7 +1079,7 @@ class SimulateTakeOff():
     
     # Track money spent training
     self.money_spent_training[t_idx] = \
-      self.compute_investment[t_idx] * self.frac_compute_training[t_idx]
+      self.compute_investment[t_idx] * self.frac_compute_training[t_idx] / self.t_step
 
   ###########################################################################
 
