@@ -8,6 +8,71 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
     --sidebar-width: 325px;
   }
 
+  .graph-wrapper.interactive .graph-body {
+    display: flex;
+  }
+
+  .selector label {
+    cursor: pointer;
+    padding: 5px;
+    border: 1px solid #aaa;
+  }
+
+  .selector label.active {
+    background-color: #295ea1 !important;
+    color: white;
+  }
+
+  .selector label:hover {
+    background-color: #6258ff;
+    color: white;
+  }
+
+  .graph-header {
+    text-align: left;
+    margin-left: 45px;
+  }
+
+  .graph-header .selector label:not(:first-child) {
+    border-left: none;
+  }
+
+  .graph-side .selector label:not(:first-child) {
+    border-top: none;
+  }
+
+  .graph-header .selector label:first-child {
+    border-top-left-radius: var(--border-radius);
+    border-bottom-left-radius: var(--border-radius);
+  }
+
+  .graph-header .selector label:last-child {
+    border-top-right-radius: var(--border-radius);
+    border-bottom-right-radius: var(--border-radius);
+  }
+
+  .graph-side .selector label:first-child {
+    border-top-left-radius: var(--border-radius);
+    border-top-right-radius: var(--border-radius);
+  }
+
+  .graph-side .selector label:last-child {
+    border-bottom-left-radius: var(--border-radius);
+    border-bottom-right-radius: var(--border-radius);
+  }
+
+  .graph-side {
+    width: 100%;
+    min-width: 180px;
+    margin-top: 20px;
+    margin-right: 20px;
+  }
+
+  .graph-side label {
+    display: block;
+    text-align: left;
+  }
+
   .playground {
     position: relative;
   }
@@ -135,13 +200,13 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
     margin-bottom: 7px;
   }
 
-  #viz-container {
+  .graph-container {
     place-content: center;
     align-items: center;
     text-align: center;
   }
 
-  .graph {
+  .graph-plot {
     position: relative;
   }
 
@@ -150,7 +215,7 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
     display: inline-block;
   }
 
-  .graph .legend {
+  .graph-plot .legend {
     background-color: white;
     border: 2px solid #aaa;
     border-radius: 3px;
@@ -326,10 +391,23 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
     <p>Work in progress!</p>
   </div>
   <div class="inner-content">
-    <div id="textbox"></div>
-    <div id="viz-container">
+    <h2>Compute decomposition</h2>
+    <div id="compute-decomposition-graph-container" class="graph-container"></div>
+    <h2>Takeoff metrics</h2>
+    <div id="takeoff-metrics-table-container"></div>
+    <h2>Summary</h2>
+    <p>Click <span data-modal-trigger="year-by-year-modal"><i>here</i> for the detailed year by year table.</p>
+    <div id="summary-table-container"></div>
+    <h2>Metrics</h2>
+    <div id="metrics-graph-container" class="graph-container"></div>
+  </div>
+
+  <div class="modal micromodal-slide dataframe-modal" id="year-by-year-modal" aria-hidden="true">
+    <div class="modal-overlay" tabindex="-1" data-micromodal-close="true">
+      <div class="modal-content-content">
+        <div id="year-by-year-table-container"></div>
+      </div>
     </div>
-    <div id="table-container"></div>
   </div>
 </div>
 
@@ -466,9 +544,9 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
         //let b = sim.get_thread('biggest_training_run');
         let b = sim.get_thread('compute');
 
-        let table_container = document.querySelector('#table-container');
-
-        clear_tables(table_container);
+        clear_tables('#takeoff-metrics-table-container');
+        clear_tables('#summary-table-container');
+        clear_tables('#year-by-year-table-container');
 
         let metrics_table = {
           ...sim.takeoff_metrics,
@@ -476,21 +554,8 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
           'agi_year': sim.agi_year,
         };
 
-        {
-          let h = document.createElement('h2');
-          h.innerHTML = 'Takeoff metrics';
-          table_container.appendChild(h);
-        }
-
-        add_table(table_container, metrics_table);
-
-        {
-          let h = document.createElement('h2');
-          h.innerHTML = 'Summary';
-          table_container.appendChild(h);
-        }
-
-        add_table(table_container, sim.get_summary_table());
+        add_table('#takeoff-metrics-table-container', metrics_table);
+        add_table('#summary-table-container', sim.get_summary_table());
 
         let detailed_table = {
           'Year':                 t,
@@ -517,30 +582,82 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
           }
         }
 
-        {
-          let h = document.createElement('h2');
-          h.innerHTML = 'Detailed table for debugging';
-          table_container.appendChild(h);
-        }
-
-        add_table(table_container, yearly_table);
+        add_table('#year-by-year-table-container', yearly_table);
 
         injectMeaningTooltips();
 
-        plt.clear_all();
+        plt.clear('#metrics-graph-container');
+        plt.clear('#compute-decomposition-graph-container');
 
         plt.set_defaults({
           yscale: 'log',
         });
 
-        plot_variable(sim, 'gwp', 'GWP over time');
+        //plot_variable(sim, 'gwp', 'GWP over time');
 
-        plot_variable(sim, 'gwp', 'GWP growth over time', {plot_growth: true});
+        //plot_variable(sim, 'gwp', 'GWP growth over time', {plot_growth: true});
 
-        plot_compute_decomposition(sim);
-        plt.show();
+        add_multigraph(sim, [
+          { label: 'GWP',                  var: 'gwp'},
+          { label: 'Software',             var: 'software.v'},
+          { label: 'Hardware',             var: 'hardware'},
+          { label: 'Hardware efficiency',  var: 'hardware_performance.v'},
+          { label: 'Labour',               var: 'labour'},
+          { label: 'Capital',              var: 'capital'},
+          { label: 'Biggest training run', var: 'biggest_training_run'},
+          { label: 'Fraction of compute invested in training', var: 'frac_compute.training.v'},
+        ], '#metrics-graph-container');
+
+        plot_compute_decomposition(sim, '#compute-decomposition-graph-container');
+
       }, immediate ? 1 : 500);
     }
+  }
+
+  function add_multigraph(sim, variables, container, crop_after_agi = true) {
+    let label_to_var = {};
+    let labels = [];
+    for (let o of variables) {
+      labels.push(o.label);
+      label_to_var[o.label] = o.var;
+    }
+
+    plt.set_top_selections(['raw metric (log)', 'growth per year (linear)']);
+    plt.set_side_selections(labels);
+    plt.on_select((top, side, graph) => {
+      graph.clear_dataset();
+
+      let x;
+      let y;
+
+      let show_growth = (top == 'growth per year (linear)');
+
+      if (show_growth) {
+        let r = sim.get_growth(label_to_var[side]);
+        x = r.t;
+        y = r.growth;
+        graph.yscale('linear');
+      } else {
+        x = sim.timesteps;
+        y = sim.get_thread(label_to_var[side]);
+        graph.yscale('log');
+      }
+
+      if (crop_after_agi) {
+        let end_idx = (crop_after_agi && sim.agi_year != null) ? Math.min(sim.time_to_index(sim.agi_year + 5), sim.states.length) : sim.states.length;
+        x = x.slice(0, end_idx);
+        y = y.slice(0, end_idx);
+      }
+
+      let label = side;
+      if (show_growth) {
+        label += ' growth';
+      }
+      graph.add_data_xy(x, y, {label: label});
+    });
+    plot_vlines(sim);
+
+    plt.show(container);
   }
 
   function plot_variable(sim, var_name, title, {plot_growth = false, crop_after_agi = true} = {}) {
@@ -565,7 +682,7 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
       
     plt.plot(x, y);
     plot_vlines(sim);
-    plt.title(title);
+    plt.set_title(title);
     plt.show();
   }
 
@@ -670,38 +787,65 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
   // Plotting stuff
   //////////////////////////////////////////////////////////////////////////////
 
-  class Plotter {
+  class Graph {
     colors = [
       "steelblue", "orange", "pink",
     ];
 
-    constructor(container) {
-      this.container = nodify(container);
-      this.defaults = {
-        xscale: 'linear',
-        yscale: 'linear',
-        axline_color: 'grey',
-        axline_linestyle: 'dashed',
-      };
-      this.reset();
-    }
 
-    reset() {
+    nameToScale = {
+      'linear': d3.scaleLinear,
+      'log': d3.scaleLog,
+    };
+
+    constructor(options) {
+      this.nodes = {};
+      this.nodes.wrapper = document.createElement('div');
+      this.nodes.wrapper.classList.add('graph-wrapper');
+
       this.dataset = [];
-      this.current_color = 0;
-      this.xAxis = {scale: this.defaults.xscale};
-      this.yAxis = {scale: this.defaults.yscale};
+      this.xAxis = {scale: options.xscale};
+      this.yAxis = {scale: options.yscale};
       this.axvlines = [];
       this.axhlines = [];
-      this.graph_title = "";
+      this.current_color = 0;
+      this.title = "";
+
+      this.top_selections = [];
+      this.side_selections = [];
+      this.on_select_callback = null;
+    }
+
+    attach(container) {
+      this.container = nodify(container);
+      this.container.appendChild(this.nodes.wrapper);
+      this.render();
     }
 
     get_dataset() {
       return this.dataset;
     }
 
-    title(title) {
-      this.graph_title = title;
+    clear() {
+      this.dataset = [];
+      this.axhlines = [];
+      this.axvlines = [];
+      this.current_color = 0;
+    }
+
+    clear_dataset() {
+      this.dataset = [];
+      this.current_color = 0;
+    }
+
+    set_title(title) {
+      this.title = title;
+    }
+
+    add_data_xy(x, y, options = {}) {
+      let o = {x, y, ...options};
+      o.color = o.color || this.colors[(this.current_color++) % this.colors.length]
+      this.dataset.push(o);
     }
 
     xscale(scale) {
@@ -720,347 +864,415 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
       this.axhlines.push({y, ...options});
     }
 
-    set_defaults(defaults) {
-      override(this.defaults, defaults);
-      if ('xscale' in defaults) this.xAxis.scale = this.defaults.xscale;
-      if ('yscale' in defaults) this.yAxis.scale = this.defaults.yscale;
-    }
+    update() {
+      this.nodes.plot.innerHTML = "";
 
-    plot(x, y, options = {}) {
-      let o = {x, y, ...options};
-      o.color = o.color || this.colors[(this.current_color++) % this.colors.length]
-      this.dataset.push(o);
-    }
+      // set the dimensions and margins of the graph
+      let margin = {top: 20, right: 10, bottom: 30, left: 40},
+          width = 760 - margin.left - margin.right,
+          height = 500 - margin.top - margin.bottom;
 
-    show() {
-      if (this.dataset.length > 0) {
-        let graph = document.createElement('div');
-        graph.classList.add('graph');
-        this.container.appendChild(graph);
+      // append the svg object to the body of the page
+      let svg_container = d3.select(this.nodes.plot)
+        .append('div')
+        .attr('class', 'svg-container')
+      ;
 
-        // set the dimensions and margins of the graph
-        let margin = {top: 50, right: 30, bottom: 30, left: 60},
-            width = 760 - margin.left - margin.right,
-            height = 500 - margin.top - margin.bottom;
+      let svg = svg_container
+        .append("svg")
+          .attr("width", width + margin.left + margin.right)
+          .attr("height", height + margin.top + margin.bottom)
+          .attr('class', 'plot')
+        .append("g")
+          .attr("transform",
+                "translate(" + margin.left + "," + margin.top + ")");
 
-        // append the svg object to the body of the page
-        let svg_container = d3.select(graph)
-          .append('div')
-          .attr('class', 'svg-container')
-        ;
+      // Add a margin so that we don't clip half a line
+      let top_clip_margin = 1;
 
-        let svg = svg_container
-          .append("svg")
-            .attr("width", width + margin.left + margin.right)
-            .attr("height", height + margin.top + margin.bottom)
-            .attr('class', 'plot')
-          .append("g")
-            .attr("transform",
-                  "translate(" + margin.left + "," + margin.top + ")");
+      let clip = svg.append("defs").append("SVG:clipPath")
+        .attr("id", "clip")
+        .append("SVG:rect")
+        .attr("width", width)
+        .attr("height", height + top_clip_margin)
+        .attr("x", 0)
+        .attr("y", -top_clip_margin)
+      ;
 
-        let clip = svg.append("defs").append("SVG:clipPath")
-          .attr("id", "clip")
-          .append("SVG:rect")
-          .attr("width", width)
-          .attr("height", height)
-          .attr("x", 0)
-          .attr("y", 0)
-        ;
+      let content = svg.append('g')
+        .attr("clip-path", "url(#clip)");
 
-        let content = svg.append('g')
-          .attr("clip-path", "url(#clip)");
+      let first = this.dataset[0];
+      let indices = [...first.x.keys()];
 
-        let first = this.dataset[0];
-        let indices = [...first.x.keys()];
+      let xlims = [Infinity, -Infinity];
+      let ylims = [Infinity, -Infinity];
+      for (let data of this.dataset) {
+        xlims[0] = Math.min(np.min(data.x), xlims[0]);
+        xlims[1] = Math.max(np.max(data.x), xlims[1]);
 
-        let xlims = [Infinity, -Infinity];
-        let ylims = [Infinity, -Infinity];
-        for (let data of this.dataset) {
-          xlims[0] = Math.min(np.min(data.x), xlims[0]);
-          xlims[1] = Math.max(np.max(data.x), xlims[1]);
-
-          ylims[0] = Math.min(np.min(data.y), ylims[0]);
-          ylims[1] = Math.max(np.max(data.y), ylims[1]);
-        }
-
-        let nameToScale = {
-          'linear': d3.scaleLinear,
-          'log': d3.scaleLog,
-        };
-
-        let xScale = nameToScale[this.xAxis.scale]();
-        let yScale = nameToScale[this.yAxis.scale]();
-
-        let x = xScale
-          .domain(xlims)
-          .range([0, width])
-        ;
-
-        // Add Y axis
-        let y = yScale
-          .domain(ylims)
-          .range([height, 0])
-        ;
-
-        let currentX = x;
-        let currentY = y;
-
-        // Add the paths
-        for (let data of this.dataset) {
-          let datum = [];
-          for (let i = 0; i < data.x.length; i++) {
-            datum.push({x: data.x[i], y: data.y[i]});
-          }
-          content.append("path")
-            .datum(datum)
-            .attr("class", "data-path")
-            .attr("fill", "none")
-            .attr("stroke", data.color)
-            .attr("stroke-width", 2.5)
-            .attr("d", d3.line()
-              .x(d => x(d.x))
-              .y(d => y(d.y))
-            );
-        }
-
-        // Vertical lines
-        for (let axvline of this.axvlines) {
-          content.append('line')
-            .datum([axvline.x])
-            .attr('class', 'axvline')
-            .attr('x1', d => x(d))
-            .attr('x2', d => x(d))
-            .attr('y1', 0)
-            .attr('y2', height)
-            .attr("stroke", axvline.color || this.defaults.axline_color)
-            .style("stroke-dasharray", this.get_dasharray(axvline.linestyle || this.defaults.axline_linestyle))
-            .attr("stroke-width", 2)
-          ;
-        }
-
-        // Horizontal lines
-        for (let axhline of this.axhlines) {
-          content.append('line')
-            .datum([axhline.y])
-            .attr('class', 'axhline')
-            .attr('x1', 0)
-            .attr('x2', width)
-            .attr('y1', y(axhline.y))
-            .attr('y2', y(axhline.y))
-            .attr("stroke", axhline.color || this.defaults.axline_color)
-            .style("stroke-dasharray", this.get_dasharray(axhline.linestyle || this.defaults.axline_linestyle))
-            .attr("stroke-width", 2)
-          ;
-        }
-
-        let xAxis = svg.append("g")
-          .attr("transform", "translate(0," + height + ")")
-          .attr("stroke-width", 2)
-          .call(d3.axisBottom(x));
-
-        let yAxis = svg.append("g")
-          .attr("stroke-width", 2)
-          .call(d3.axisLeft(y));
-
-        let legend_objects = [];
-
-        for (let data of this.dataset) {
-          if (!data.label) continue;
-          legend_objects.push(data);
-        }
-
-        for (let axvline of this.axvlines) {
-          if (!axvline.label) continue;
-          legend_objects.push(axvline);
-        }
-
-        if (legend_objects.length > 0) {
-        let legend = svg_container
-            .append('div')
-              .style('top', margin.top + 20 + 'px')
-              .style('left', margin.left + 20 + 'px')
-              .attr('class', 'legend')
-              .style('position', 'absolute')
-          ;
-
-          for (let object of legend_objects) {
-            let item = legend.append('div')
-              .attr("class", "legend-item")
-            ;
-
-            item.append('svg')
-              .attr("width", 20)
-              .attr("height", 4)
-              .attr("class", "legend-item-line")
-              .append('line')
-                .attr('x1', 0)
-                .attr('x2', 20)
-                .attr('y1', 2)
-                .attr('y2', 2)
-                .attr('stroke', object.color)
-                .style("stroke-dasharray", object.linestyle ? this.get_dasharray(object.linestyle) : "")
-                .attr('stroke-width', 2)
-            ;
-
-            item.append('span')
-              .text(object.label)
-            ;
-
-            if (object.description) {
-              tippy(item.node(), {
-                content: object.description,
-                allowHTML: true,
-                interactive: true,
-                placement: 'left',
-                appendTo: document.body,
-                hideOnClick: false,
-                theme: 'light-border',
-              });
-            }
-          }
-        }
-
-        if (this.graph_title) {
-          svg.append('text')
-            .attr('x', (width / 2))             
-            .attr('y', -8)
-            .attr('text-anchor', 'middle')  
-            .style('font-size', '16px') 
-            .text(this.graph_title)
-          ;
-        }
-
-        let tooltip = d3.select('body')
-          .append("div")
-          .style("position", "absolute")
-          .style("display", "none")
-          .attr("class", "tooltip")
-          .style("background-color", "white")
-          .style("border", "solid")
-          .style("border-width", "2px")
-          .style("border-radius", "5px")
-          .style("padding", "5px")
-
-        for (let data of this.dataset) {
-          content
-            .append('circle')
-            .datum(data)
-            .attr('class', 'mouse-circle')
-            .style('display', 'none')
-            .attr('stroke', data.color)
-            .attr('stroke-width', 2)
-            .attr('fill', 'none')
-            .attr('r', 4)
-            .attr('cx', x(2030))
-            .attr('cy', y(data.y[0]))
-          ;
-        }
-
-        let mouseover = function(d) {
-          let mouseP = d3.mouse(this)
-          updateTooltip(d3.event, mouseP);
-          //tooltip.style("display", "");
-          //content.selectAll('.mouse-circle').style("display", "");
-          updateCircles(d3.event, mouseP);
-        };
-
-        let mousemove = function(d) {
-          let mouseP = d3.mouse(this)
-          updateTooltip(d3.event, mouseP);
-          updateCircles(d3.event, mouseP);
-        };
-
-        let mouseleave = function(d) {
-          tooltip.style("display", "none");
-          content.selectAll('.mouse-circle').style("display", "none");
-        };
-
-        let updateTooltip = function(event, mouseP) {
-          let date = x.invert(mouseP[0]);
-          tooltip
-            .html("Year: " + date.toFixed(1))
-            .style("left", (event.pageX + 20) + "px")
-            .style("top", (event.pageY - 20) + "px")
-        }
-
-        let updateCircles = function(event, mouseP) {
-          let date = currentX.invert(mouseP[0]);
-
-          content.selectAll('.mouse-circle')
-            .attr('cx', mouseP[0])
-            .attr('cy', data => {
-              // Poor way of doing this
-              let index = d3.bisect(data.x, date);
-
-              if (index == 0) {
-                return currentY(data.y[0]);
-              } else {
-                let beta = (data.x[index] - date)/(data.x[index] - data.x[index-1]);
-                return currentY(data.y[index] - beta*(data.y[index] - data.y[index-1]));
-              }
-            })
-          ;
-        }
-
-        // Zooming
-        let zoom = d3.zoom()
-          .scaleExtent([1, 20])
-          .extent([[0, 0], [width, height]])
-          .translateExtent([[0, 0], [width, height]])
-          .on("zoom", updateChart)
-        ;
-
-        let overlay = content.append("rect")
-          .attr("width", width)
-          .attr("height", height)
-          .style("fill", "none")
-          .style("pointer-events", "all")
-          .call(zoom)
-        ;
-
-        overlay
-          .on('mouseover', mouseover)
-          .on('mousemove', mousemove)
-          .on('mouseleave', mouseleave)
-        ;
-
-        content.on('wheel', (e) => {
-        d3.event.preventDefault()
-        return false;
-        });
-
-        function updateChart() {
-          currentX = d3.event.transform.rescaleX(x);
-          //currentY = d3.event.transform.rescaleY(y);
-
-          xAxis.call(d3.axisBottom(currentX));
-          yAxis.call(d3.axisLeft(currentY));
-
-          content
-            .selectAll('.data-path')
-            .attr("d", d3.line()
-              .x(d => currentX(d.x))
-              .y(d => currentY(d.y))
-            );
-          ;
-
-          content
-            .selectAll('.axvline')
-            .attr('x1', d => currentX(d) )
-            .attr('x2', d => currentX(d) )
-          ;
-
-          content
-            .selectAll('.axhline')
-            .attr('y1', d => currentY(d) )
-            .attr('y2', d => currentY(d) )
-          ;
-        }
-
-        this.dataset = [];
+        ylims[0] = Math.min(np.min(data.y), ylims[0]);
+        ylims[1] = Math.max(np.max(data.y), ylims[1]);
       }
 
-      this.reset();
+      if ((ylims[1] - ylims[0]) < 0.001) {
+        ylims[0] = 0;
+        ylims[1] *= 10;
+      }
+
+      let xScale = this.nameToScale[this.xAxis.scale]();
+      let yScale = this.nameToScale[this.yAxis.scale]();
+
+      let x = xScale
+        .domain(xlims)
+        .range([0, width])
+      ;
+
+      // Add Y axis
+      let y = yScale
+        .domain(ylims)
+        .range([height, 0])
+      ;
+
+      let currentX = x;
+      let currentY = y;
+
+      // Add the paths
+      for (let data of this.dataset) {
+        let datum = [];
+        for (let i = 0; i < data.x.length; i++) {
+          datum.push({x: data.x[i], y: data.y[i]});
+        }
+        content.append("path")
+          .datum(datum)
+          .attr("class", "data-path")
+          .attr("fill", "none")
+          .attr("stroke", data.color)
+          .attr("stroke-width", 2.5)
+          .attr("d", d3.line()
+            .x(d => x(d.x))
+            .y(d => y(d.y))
+          );
+      }
+
+      // Vertical lines
+      for (let axvline of this.axvlines) {
+        content.append('line')
+          .datum([axvline.x])
+          .attr('class', 'axvline')
+          .attr('x1', d => x(d))
+          .attr('x2', d => x(d))
+          .attr('y1', 0)
+          .attr('y2', height)
+          .attr("stroke", axvline.color || this.defaults.axline_color)
+          .style("stroke-dasharray", this.get_dasharray(axvline.linestyle || this.defaults.axline_linestyle))
+          .attr("stroke-width", 2)
+        ;
+      }
+
+      // Horizontal lines
+      for (let axhline of this.axhlines) {
+        content.append('line')
+          .datum([axhline.y])
+          .attr('class', 'axhline')
+          .attr('x1', 0)
+          .attr('x2', width)
+          .attr('y1', y(axhline.y))
+          .attr('y2', y(axhline.y))
+          .attr("stroke", axhline.color || this.defaults.axline_color)
+          .style("stroke-dasharray", this.get_dasharray(axhline.linestyle || this.defaults.axline_linestyle))
+          .attr("stroke-width", 2)
+        ;
+      }
+
+      let xAxis = svg.append("g")
+        .attr("transform", "translate(0," + height + ")")
+        .attr("stroke-width", 2)
+        .call(d3.axisBottom(x));
+
+      let yAxis = svg.append("g")
+        .attr("stroke-width", 2)
+        .call(d3.axisLeft(y));
+
+      let legend_objects = [];
+
+      for (let data of this.dataset) {
+        if (!data.label) continue;
+        legend_objects.push(data);
+      }
+
+      for (let axvline of this.axvlines) {
+        if (!axvline.label) continue;
+        legend_objects.push(axvline);
+      }
+
+      if (legend_objects.length > 0) {
+      let legend = svg_container
+          .append('div')
+            .style('top', margin.top + 20 + 'px')
+            .style('left', margin.left + 20 + 'px')
+            .attr('class', 'legend')
+            .style('position', 'absolute')
+        ;
+
+        for (let object of legend_objects) {
+          let item = legend.append('div')
+            .attr("class", "legend-item")
+          ;
+
+          item.append('svg')
+            .attr("width", 20)
+            .attr("height", 4)
+            .attr("class", "legend-item-line")
+            .append('line')
+              .attr('x1', 0)
+              .attr('x2', 20)
+              .attr('y1', 2)
+              .attr('y2', 2)
+              .attr('stroke', object.color)
+              .style("stroke-dasharray", object.linestyle ? this.get_dasharray(object.linestyle) : "")
+              .attr('stroke-width', 2)
+          ;
+
+          item.append('span')
+            .text(object.label)
+          ;
+
+          if (object.description) {
+            tippy(item.node(), {
+              content: object.description,
+              allowHTML: true,
+              interactive: true,
+              placement: 'left',
+              appendTo: document.body,
+              hideOnClick: false,
+              theme: 'light-border',
+            });
+          }
+        }
+      }
+
+      if (this.graph_title) {
+        svg.append('text')
+          .attr('x', (width / 2))             
+          .attr('y', -8)
+          .attr('text-anchor', 'middle')  
+          .style('font-size', '16px') 
+          .text(this.graph_title)
+        ;
+      }
+
+      let tooltip = d3.select('body')
+        .append("div")
+        .style("position", "absolute")
+        .style("display", "none")
+        .attr("class", "tooltip")
+        .style("background-color", "white")
+        .style("border", "solid")
+        .style("border-width", "2px")
+        .style("border-radius", "5px")
+        .style("padding", "5px")
+
+      for (let data of this.dataset) {
+        content
+          .append('circle')
+          .datum(data)
+          .attr('class', 'mouse-circle')
+          .style('display', 'none')
+          .attr('stroke', data.color)
+          .attr('stroke-width', 2)
+          .attr('fill', 'none')
+          .attr('r', 4)
+          .attr('cx', x(2030))
+          .attr('cy', y(data.y[0]))
+        ;
+      }
+
+      let mouseover = function(d) {
+        let mouseP = d3.mouse(this)
+        updateTooltip(d3.event, mouseP);
+        //tooltip.style("display", "");
+        //content.selectAll('.mouse-circle').style("display", "");
+        updateCircles(d3.event, mouseP);
+      };
+
+      let mousemove = function(d) {
+        let mouseP = d3.mouse(this)
+        updateTooltip(d3.event, mouseP);
+        updateCircles(d3.event, mouseP);
+      };
+
+      let mouseleave = function(d) {
+        tooltip.style("display", "none");
+        content.selectAll('.mouse-circle').style("display", "none");
+      };
+
+      let updateTooltip = function(event, mouseP) {
+        let date = x.invert(mouseP[0]);
+        tooltip
+          .html("Year: " + date.toFixed(1))
+          .style("left", (event.pageX + 20) + "px")
+          .style("top", (event.pageY - 20) + "px")
+      }
+
+      let updateCircles = function(event, mouseP) {
+        let date = currentX.invert(mouseP[0]);
+
+        content.selectAll('.mouse-circle')
+          .attr('cx', mouseP[0])
+          .attr('cy', data => {
+            // Poor way of doing this
+            let index = d3.bisect(data.x, date);
+
+            if (index == 0) {
+              return currentY(data.y[0]);
+            } else {
+              let beta = (data.x[index] - date)/(data.x[index] - data.x[index-1]);
+              return currentY(data.y[index] - beta*(data.y[index] - data.y[index-1]));
+            }
+          })
+        ;
+      }
+
+      let self = this;
+
+      // Zooming
+      let zoom = d3.zoom()
+        .scaleExtent([1, 20])
+        .extent([[0, 0], [width, height]])
+        .translateExtent([[0, 0], [width, height]])
+        .on("zoom", updateChart)
+      ;
+
+      let overlay = content.append("rect")
+        .attr("width", width)
+        .attr("height", height)
+        .style("fill", "none")
+        .style("pointer-events", "all")
+        .call(zoom.transform, self.lastTransform || d3.zoomIdentity)
+        .call(zoom)
+      ;
+
+      overlay
+        .on('mouseover', mouseover)
+        .on('mousemove', mousemove)
+        .on('mouseleave', mouseleave)
+      ;
+
+      content.on('wheel', (e) => {
+        d3.event.preventDefault()
+        return false;
+      });
+
+      function updateChart(transform) {
+        currentX = d3.event.transform.rescaleX(x);
+        //currentY = d3.event.transform.rescaleY(y);
+
+        self.lastTransform = d3.event.transform;
+
+        xAxis.call(d3.axisBottom(currentX));
+        yAxis.call(d3.axisLeft(currentY));
+
+        content
+          .selectAll('.data-path')
+          .attr("d", d3.line()
+            .x(d => currentX(d.x))
+            .y(d => currentY(d.y))
+          );
+        ;
+
+        content
+          .selectAll('.axvline')
+          .attr('x1', d => currentX(d) )
+          .attr('x2', d => currentX(d) )
+        ;
+
+        content
+          .selectAll('.axhline')
+          .attr('y1', d => currentY(d) )
+          .attr('y2', d => currentY(d) )
+        ;
+      }
+    }
+
+    render() {
+      let nodes = this.nodes;
+
+      nodes.body = document.createElement('div');
+      nodes.body.classList.add('graph-body');
+
+      nodes.plot = document.createElement('div');
+      nodes.plot.classList.add('graph-plot');
+
+      nodes.wrapper.append(nodes.body);
+      nodes.body.append(nodes.plot);
+
+      if (this.top_selections.length || this.side_selections.length) {
+        // This is an interactive graph. Let the manager generate the first state.
+        let top = (this.top_selections.length > 0) ? this.top_selections[0] : null;
+        let side = (this.side_selections.length > 0) ? this.side_selections[0] : null;
+        this.selected_top = top;
+        this.selected_side = side;
+        this.on_select_callback(top, side, this);
+
+        nodes.wrapper.classList.add('interactive');
+      }
+
+      if (this.top_selections.length) {
+        nodes.header = document.createElement('div');
+        nodes.header.classList.add('graph-header');
+        nodes.wrapper.prepend(nodes.header);
+
+        let top_selector = document.createElement('div');
+        top_selector.classList.add('selector');
+        let labels = [];
+        for (let field of this.top_selections) {
+          let label = document.createElement('label');
+          label.innerHTML = field;
+          top_selector.append(label);
+          label.addEventListener('click', () => {
+            this.selected_top = field;
+            this.on_select_callback(this.selected_top, this.selected_side, this);
+            for (let label of labels) {
+              label.classList.remove('active');
+            }
+            label.classList.add('active');
+            this.update();
+          });
+          labels.push(label);
+        }
+        labels[0].classList.add('active');
+        this.nodes.header.prepend(top_selector);
+      }
+
+      if (this.side_selections.length) {
+        nodes.side = document.createElement('div');
+        nodes.side.classList.add('graph-side');
+        nodes.body.append(nodes.side);
+
+        let side_selector = document.createElement('div');
+        side_selector.classList.add('selector');
+        let labels = [];
+        for (let field of this.side_selections) {
+          let label = document.createElement('label');
+          label.innerHTML = field;
+          side_selector.append(label);
+          label.addEventListener('click', () => {
+            this.selected_side = field;
+            this.on_select_callback(this.selected_top, this.selected_side, this);
+            for (let label of labels) {
+              label.classList.remove('active');
+            }
+            label.classList.add('active');
+            this.update();
+          });
+          labels.push(label);
+        }
+        labels[0].classList.add('active');
+        this.nodes.side.append(side_selector);
+      }
+
+      this.update();
     }
 
     get_dasharray(dash_type) {
@@ -1074,13 +1286,81 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
 
       return dasharray;
     }
+  }
 
-    clear_all() {
-      this.container.innerHTML = '';
+  class Plotter {
+    constructor(container) {
+      this.container = nodify(container);
+      this.defaults = {
+        xscale: 'linear',
+        yscale: 'linear',
+        axline_color: 'grey',
+        axline_linestyle: 'dashed',
+      };
+      this.reset();
+    }
+
+    reset() {
+      this.graph = new Graph(this.defaults);
+    }
+
+    get_dataset() {
+      return this.graph.get_dataset();
+    }
+
+    set_title(title) {
+      this.graph.set_title(title);
+    }
+
+    set_top_selections(fields) {
+      this.graph.top_selections = fields;
+    }
+
+    set_side_selections(fields) {
+      this.graph.side_selections = fields;
+    }
+
+    on_select(callback) {
+      this.graph.on_select_callback = callback;
+    }
+
+    xscale(scale) {
+      this.graph.xscale(scale);
+    }
+
+    yscale(scale) {
+      this.graph.yscale(scale);
+    }
+
+    axvline(x, options = {}) {
+      this.graph.axvline(x, options);
+    }
+
+    axhline(y, options = {}) {
+      this.graph.axhline(y, options);
+    }
+
+    set_defaults(defaults) {
+      override(this.defaults, defaults);
+      if ('xscale' in defaults) this.graph.xscale(this.defaults.xscale);
+      if ('yscale' in defaults) this.graph.yscale(this.defaults.yscale);
+    }
+
+    plot(x, y, options = {}) {
+      this.graph.add_data_xy(x, y, options);
+    }
+
+    show(container) {
+      this.graph.attach(container ? nodify(container) : this.container);
+      this.reset();
+    }
+
+    clear(container) {
+      (container ? nodify(container) : this.container).innerHTML = '';
     }
   }
 
-  let plt = new Plotter('#viz-container');
+  let plt = new Plotter();
 
   function nodify(node_or_query) {
     if (typeof(node_or_query) == 'string') {
@@ -1089,7 +1369,7 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
     return node_or_query;
   }
 
-  function plot_compute_decomposition(sim, crop_after_agi = true) {
+  function plot_compute_decomposition(sim, container, crop_after_agi = true) {
     let start_idx = 0;
     let reference_idx = (sim.rampup_start != null) ? sim.time_to_index(sim.rampup_start) : 0;
     let end_idx = (crop_after_agi && sim.agi_year != null) ? Math.min(sim.time_to_index(sim.agi_year + 5), sim.states.length) : sim.states.length;
@@ -1108,9 +1388,11 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
 
     plot_vlines(sim)
 
-    plt.title('Compute increase decomposition');
+    plt.set_title('Compute increase decomposition');
 
     plot_oom_lines();
+
+    plt.show(container);
   }
 
   ///////////////////////////////////////////////////////////////////////////////

@@ -60,7 +60,7 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
     figure.set('style', 'min-width: 900px')
 
   #
-  # Model summaries and inputs
+  # Model summaries and assumptions
   #
 
   # Summary
@@ -122,9 +122,9 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
     summaries[group.name] = summaries_group
   summaries_json = json.dumps(summaries)
 
-  # Inputs
+  # Assumptions
 
-  report.add_header("Inputs", level = 3)
+  report.add_header("Assumptions", level = 3)
 
   report.add_html(f'''
     <p>

@@ -41,6 +41,255 @@
   }
 </style>
 
+<style>
+    /**************************
+      Basic Modal Styles
+    **************************/
+
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.75);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index:10;
+    }
+
+    .modal-container {
+      background-color: #fff;
+      padding: 30px;
+      height: 100%;
+      border-radius: 4px;
+      overflow-y: auto;
+      box-sizing: border-box;
+    }
+
+    @supports (display: flex) {
+      .modal-container {
+        height: initial;
+        max-height: 80vh;
+      }
+    }
+
+    .modal-header {
+      position: relative;
+      display: block;
+      height: 30px;
+      margin-bottom: 20px;
+    }
+
+    @supports (display: flex) {
+      .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+        height:initial;
+        margin-bottom: 0px;
+      }
+    }
+
+    .modal-title {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      margin-top: 0;
+      margin-bottom: 0;
+      font-weight: 600;
+      font-size: 1.25rem;
+      line-height: 1.25;
+      color: #00449e;
+      box-sizing: border-box;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: transparent;
+      border: 0;
+      cursor: pointer;
+      margin: 0px;
+      padding: 0px;
+    }
+
+    @supports (display: flex) {
+      .modal-title {
+        position: static;
+      }
+
+      .modal-close {
+        position: static;
+      }
+    }
+
+    .modal-header .modal-close:before { content: "¹5"; }
+
+    .modal-content {
+      margin-top: 10px;
+      margin-bottom: 10px;
+      color: rgba(0,0,0,.8);
+    }
+
+    @supports (display: flex) {
+      .modal-content {
+        margin-top: 2rem;
+        margin-bottom: 2rem;
+        line-height: 1.5;
+      }
+    }
+
+    .modal-btn {
+      font-size: .875rem;
+      padding-left: 1rem;
+      padding-right: 1rem;
+      padding-top: .5rem;
+      padding-bottom: .5rem;
+      background-color: #e6e6e6;
+      color: rgba(0,0,0,.8);
+      border-radius: .25rem;
+      border-style: none;
+      border-width: 0;
+      cursor: pointer;
+      -webkit-appearance: button;
+      text-transform: none;
+      overflow: visible;
+      line-height: 1.15;
+      margin: 0;
+      will-change: transform;
+      -moz-osx-font-smoothing: grayscale;
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
+      -webkit-transform: translateZ(0);
+      transform: translateZ(0);
+      transition: -webkit-transform .25s ease-out;
+      transition: transform .25s ease-out;
+      transition: transform .25s ease-out,-webkit-transform .25s ease-out;
+    }
+
+    .modal-btn-primary {
+      background-color: #00449e;
+      color: #fff;
+    }
+
+    /**************************
+      Demo Animation Style
+    **************************/
+
+    @keyframes mmfadeIn {
+      from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @keyframes mmfadeOut {
+      from { opacity: 1; }
+        to { opacity: 0; }
+    }
+
+    .micromodal-slide {
+      display: none;
+    }
+
+    .micromodal-slide.is-open {
+      display: block;
+    }
+
+    .micromodal-slide[aria-hidden="false"] .modal-overlay {
+      animation: mmfadeIn .3s cubic-bezier(0.0, 0.0, 0.2, 1);
+    }
+
+    .micromodal-slide[aria-hidden="true"] .modal-overlay {
+      animation: mmfadeOut .3s cubic-bezier(0.0, 0.0, 0.2, 1);
+    }
+
+    .micromodal-slide .modal-container,
+    .micromodal-slide .modal-overlay {
+      will-change: transform;
+    }
+
+    /**************************
+      Custom styles for individual modals
+    **************************/
+
+    .modal-container button {
+      outline: none;
+      cursor: pointer !important;
+    }
+
+    .modal-container h2.modal-title {
+      color: #595959;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-title {
+      margin-top: 0;
+      margin-bottom: 0;
+      font-weight: 600;
+      font-size: 1.25rem;
+      line-height: 1.25;
+      color: #00449e;
+      box-sizing: border-box;
+    }
+
+    .modal-close {
+      font-size: 24px;
+    }
+
+    .modal-content {
+      margin-top: 2rem;
+      margin-bottom: 2rem;
+      line-height: 1.5;
+      color: rgba(0,0,0,.8);
+    }
+
+    .modal-btn {
+      padding: 10px 15px;
+      background-color: #e6e6e6;
+      border-radius: 4px;
+      -webkit-appearance: none;
+    }
+
+    /**************************
+      Mobile custom styles for individual modals
+    **************************/
+
+    @media only screen and (min-device-width : 320px) and (max-device-width : 480px) {
+      .modal-container {
+        width: 90% !important;
+        min-width: 90% !important;
+      }
+      
+      @supports (display: flex) {
+        .modal-container {
+          width: 90% !important;
+          min-width: 90% !important;
+        }
+      }
+    }
+
+    [data-modal-trigger] {
+      cursor: pointer;
+    }
+
+    .dataframe-modal .modal-content-content {
+      overflow-y: auto;
+      max-height: 90vh;
+      max-width: calc(100vw - 100px);
+      background-color: white;
+      border-radius: var(--border-radius);
+    }
+  </style>
+
+<script defer="true" src="https://unpkg.com/micromodal/dist/micromodal.min.js"></script>
+
 <header class="site-header" role="banner">
   <div class="header-wrapper">
     <nav class="site-nav">
@@ -49,3 +298,14 @@
     </nav>
   </div>
 </header>
+
+<script>
+window.addEventListener('load', () => {
+  for (let trigger of document.querySelectorAll('[data-modal-trigger]')) {
+    trigger.addEventListener('click', () => {
+      let modalId = trigger.dataset.modalTrigger;
+      MicroModal.show(modalId);
+    });
+  }
+});
+</script>
