@@ -1,4 +1,5 @@
 import os
+import re
 import time
 import json
 import base64
@@ -29,11 +30,15 @@ class Report:
 
     self.tab_groups = []
     self.tab_groups_parents = []
+    self.current_tab = None
+
+    self.generated_ids = []
 
     self.html    = et.Element('html')
     self.head    = et.Element('head')
     self.body    = et.Element('body')
     self.content = et.Element('div', {'class': 'main'})
+
 
     # General styling
     self.head.append(et.fromstring('''
@@ -709,7 +714,7 @@ class Report:
   def add_header(self, title, level=1, parent=None):
     if parent is None: parent = self.default_parent
 
-    element = et.Element(f'h{max(1, level)}')
+    element = et.Element(f'h{max(1, level)}', {'id': self.convert_to_id(title)})
     element.text = title
     parent.append(element)
 
@@ -843,6 +848,7 @@ class Report:
   def begin_tab_group(self, parent = None):
     if parent is None: parent = self.default_parent
 
+    self.current_tab = None
     self.tab_groups.append([])
     self.tab_groups_parents.append(parent)
 
@@ -867,11 +873,13 @@ class Report:
 
     parent.append(tab_group_el)
     self.default_parent = parent
+    self.current_tab = None
 
   def begin_tab(self, name, id = None):
     node = et.Element('div', {'class': 'tab'})
 
-    self.tab_groups[-1].append(Tab(name, node, id))
+    self.current_tab = Tab(name, node, id)
+    self.tab_groups[-1].append(self.current_tab)
     self.default_parent = node
 
 
@@ -903,6 +911,22 @@ class Report:
   # ---------------------------------------------------------------------------
   # Utils
   # ---------------------------------------------------------------------------
+
+  def convert_to_id(self, s):
+    s = re.sub(' +', '-', s.lower())
+
+    if self.current_tab:
+      s = f'{self.current_tab.id}-{s}'
+
+    if s in self.generated_ids:
+      n = 2
+      while f'{s}-n' in self.generated_ids:
+        n += 1
+      s = f'{s}-n'
+
+    self.generated_ids.append(s)
+
+    return s
 
   @staticmethod
   def escape(s):
