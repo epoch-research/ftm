@@ -675,7 +675,8 @@ class Report:
         let tab;
 
         if (location.hash) {
-          tab = document.querySelector(`.tab[data-id="${location.hash.slice(1)}"]`);
+          let tabName = location.hash.slice(1).split('-')[0];
+          tab = document.querySelector(`.tab[data-id="${tabName}"]`);
         }
 
         // By default, activate the first tab
