@@ -65,6 +65,7 @@ let python_to_js_keys = {
   'labour_growth':                                  'labour_growth',
   'tfp_growth':                                     'tfp_growth',
   'compute_depreciation':                           'compute_depreciation',
+  'money_cap_training_before_wakeup':               'money_cap_training_before_wakeup',
   't_start':                                        't_start',
   't_end':                                          't_end',
   't_step':                                         't_step',

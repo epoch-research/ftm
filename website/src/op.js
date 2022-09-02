@@ -368,6 +368,8 @@ let input_params = {
   t_end: 2100,
   t_step: 0.1,
 
+  money_cap_training_before_wakeup: 1e9,
+
   rampup_trigger: 0.03,
   hardware_delay: 1,
   compute_depreciation: 0.2,
@@ -674,6 +676,9 @@ function init_input_state(state, params) {
 
   state.goods.tfp = initial.tfp_goods;
   state.rnd.tfp = initial.tfp_rnd;
+
+
+  state.money_spent_training = params.initial.biggest_training_run / params.initial.buyable_hardware_performance;
 
 
   //
@@ -1188,6 +1193,15 @@ allocate_fractional_inputs_goods = block({
   }
 });
 
+cap_training = block({
+  map: (state, params, states) => {
+    // Cap the growth of the fraction of FLOP before rampup
+    if (state.money_spent_training > params.money_cap_training_before_wakeup && !states[states.length-2].rampup) {
+      state.frac_compute.training.v = states[states.length-2].frac_compute.training.v;
+    }
+  }
+});
+
 // Calculate total inputs
 
 calculate_total_inputs_compute = block({
@@ -1225,6 +1239,12 @@ calculate_total_factor_production = block({
   }
 });
 
+
+track_money_spent_training = block({
+  map: (state, params) => {
+    state.money_spent_training = state.compute_investment * state.frac_compute.training.v / params.t_step;
+  }
+});
 
 // Automate tasks
 
