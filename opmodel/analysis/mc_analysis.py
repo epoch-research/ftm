@@ -7,6 +7,7 @@ from . import *
 
 import pickle
 import traceback
+import seaborn as sns
 from scipy.interpolate import interp1d
 from scipy.stats import rv_continuous
 from scipy.special import erfinv
@@ -14,7 +15,7 @@ from numpy.random import default_rng
 from matplotlib import cm
 from xml.etree import ElementTree as et
 from copula_wrapper import joint_distribution
-from ..core.utils import get_clipped_ajeya_dist, get_param_names
+from ..core.utils import get_clipped_ajeya_dist, get_param_names, get_metric_names
 
 rng = default_rng()
 
@@ -26,7 +27,7 @@ class TooManyRetries(Exception):
 
 def mc_analysis(n_trials = 100, max_retries = 100):
   scalar_metrics = ['rampup_start', 'agi_year']
-  state_metrics = ['gwp', 'biggest_training_run', 'compute']
+  state_metrics = ['biggest_training_run']
 
   scalar_metrics = {
       scalar_metric : [] for scalar_metric in scalar_metrics
@@ -126,6 +127,7 @@ def mc_analysis(n_trials = 100, max_retries = 100):
   results.quantiles          = quantiles
   results.metrics_quantiles  = metrics_quantiles
   results.state_metrics      = state_metrics
+  results.scalar_metrics     = scalar_metrics
   results.n_trials           = n_trials
   results.timesteps          = mc_model.timesteps
   results.t_step             = mc_model.t_step
@@ -213,6 +215,24 @@ def write_mc_analysis_report(n_trials=100, max_retries=100, include_sample_table
     results.state_metrics[state_metric] = np.stack(results.state_metrics[state_metric])
     plot_quantiles(results.timesteps, results.state_metrics[state_metric], "Year", state_metric)
     report.add_figure()
+
+  # Add violin plots of scalar metrics
+  metric_id_to_human = get_metric_names()
+
+  absolute_violin_metrics = {metric_id_to_human[id]: results.scalar_metrics[id] for id in ['rampup_start', 'agi_year']}
+  relative_violin_metrics = {metric_id_to_human[id]: results.scalar_metrics[id] for id in ['billion_agis', 'full_automation']}
+
+  fig, ax = plt.subplots(1,2, num=1, figsize=(10, 6), dpi=80)
+
+  ax[0].set_ylabel('Year')
+  sns.violinplot(data = pd.DataFrame(absolute_violin_metrics), ax = ax[0])
+
+  ax[1].set_ylabel('Years')
+  sns.violinplot(data = pd.DataFrame(relative_violin_metrics), ax = ax[1], palette = sns.color_palette()[2:])
+
+  plt.subplots_adjust(wspace = 0.3) # Increase spacing between subplots
+
+  report.add_figure()
 
   # Display input parameter statistics
   param_stats = []
