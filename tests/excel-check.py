@@ -1,5 +1,6 @@
 import re
 import os
+import sys
 import inspect
 import argparse
 import pandas as pd
@@ -14,6 +15,10 @@ from opmodel.report.report import Report
 
 parser = argparse.ArgumentParser()
 parser.add_argument('local_olde_sheet_path')
+if len(sys.argv) < 2:
+  print("You will have to download the Olde Sheet (https://docs.google.com/spreadsheets/d/1L38oMdU5cK2OipHTn3ZFiKhYgDXYKc1mfjGudsFrRUc/edit#gid=1889898348) as an Excel file and pass the local path of the downloaded file to this script. _Or_ make the sheet public and ask me to modify the script.\n", file = sys.stderr)
+  parser.print_usage()
+  sys.exit(1)
 args = parser.parse_args()
 
 PARAMETER_TABLE_URL = 'https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/edit#gid=777689843'
