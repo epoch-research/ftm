@@ -3,8 +3,14 @@ import os
 import inspect
 import argparse
 import pandas as pd
-from openpyxl import load_workbook
 from opmodel.core.utils import *
+from opmodel.core.opmodel import *
+from openpyxl import load_workbook
+from opmodel.report.report import Report
+
+# -----------------------------------------------------------------------------
+# Command line arguments
+# -----------------------------------------------------------------------------
 
 parser = argparse.ArgumentParser()
 parser.add_argument('local_olde_sheet_path')
@@ -16,8 +22,6 @@ OLDE_SHEET_PATH = args.local_olde_sheet_path
 # -----------------------------------------------------------------------------
 # Modifify SimulateTakeOff
 # -----------------------------------------------------------------------------
-
-from opmodel.core.opmodel import *
 
 # Get source code
 code = inspect.getsource(SimulateTakeOff)
@@ -146,9 +150,8 @@ state_variables = {
   'Hardware performance': 'hardware_performance',
 }
 
+# Plain text output
 for label, var in year_variables.items():
-  #print(f'{label}: {olde[var]} - {modern[var]}')
-
   print(f'{label}')
   print(f'  {olde[var]}')
   print(f'  {modern[var]}')
@@ -157,8 +160,39 @@ for label, var in year_variables.items():
 for label, var in state_variables.items():
   print(label)
   for i, year in enumerate(model.timesteps):
-    #print(f'  {year}: {olde[var][i]} - {modern[var][i]}')
     print(f'  {year}: {olde[var][i]:.6e}')
     print(f'        {modern[var][i]:.6e}')
   print()
 
+# HTML output
+report = Report(report_file_path = 'excel_comparison.html')
+report.make_tables_scrollable = False
+
+year_variables_table = {label: [olde[var], modern[var]] for label, var in year_variables.items()}
+year_variables_table = pd.DataFrame(year_variables_table, index = ['Excel', 'Python'])
+report.add_data_frame(year_variables_table)
+
+for label, var in state_variables.items():
+  container = report.add_html('<div class="header-container"></div>')
+  header = report.add_header(label, level = 4, parent = container)
+  table = {year: [olde[var][i], modern[var][i]] for i, year in enumerate(model.timesteps)}
+  table = pd.DataFrame(table, index = ['Excel', 'Python'])
+  report.add_data_frame(table)
+
+report.add_html('''
+  <style>
+    .header-container {
+      width: 100%;
+    }
+
+    h4 {
+      position: sticky;
+      left: 1em;
+      display: inline-block;
+      margin-bottom: 2px;
+    }
+  </style>
+''', parent = report.head)
+
+report_path = report.write()
+print(f'Report stored in {report_path}')
