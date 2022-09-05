@@ -222,7 +222,7 @@ def write_mc_analysis_report(n_trials=100, max_retries=100, include_sample_table
   absolute_violin_metrics = {metric_id_to_human[id]: results.scalar_metrics[id] for id in ['rampup_start', 'agi_year']}
   relative_violin_metrics = {metric_id_to_human[id]: results.scalar_metrics[id] for id in ['billion_agis', 'full_automation']}
 
-  fig, ax = plt.subplots(1,2, num=1, figsize=(10, 6), dpi=80)
+  fig, ax = plt.subplots(1, 2, num = 1, figsize = (10, 6), dpi = 80)
 
   ax[0].set_ylabel('Year')
   sns.violinplot(data = pd.DataFrame(absolute_violin_metrics), ax = ax[0])

@@ -51,6 +51,7 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
   legend_fig = plt.figure()
   plt.figlegend(*ax.get_legend_handles_labels())
   report.add_figure(legend_fig)
+  plt.close() # Clear the current figure
 
   graph_container = report.add_html('<div style="display: flex; overflow-x: auto;"></div>')
 
