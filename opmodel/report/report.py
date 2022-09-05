@@ -503,6 +503,33 @@ class Report:
       </script>
     '''));
 
+    # Tippy plugins
+    self.head.append(et.fromstring('''
+      <script>
+        // See https://atomiks.github.io/tippyjs/v6/plugins/#hideonesc
+        const hideOnEsc = {
+          name: 'hideOnEsc',
+          defaultValue: true,
+          fn({hide}) {
+            function onKeyDown(event) {
+              if (event.keyCode === 27) {
+                hide();
+              }
+            }
+
+            return {
+              onShow() {
+                document.addEventListener('keydown', onKeyDown);
+              },
+              onHide() {
+                document.removeEventListener('keydown', onKeyDown);
+              },
+            };
+          },
+        };
+      </script>
+    '''));
+
     self.head.append(et.fromstring('''
       <script>
         window.addEventListener('load', () => {
@@ -588,6 +615,7 @@ class Report:
               interactive: true,
               placement: (node.parentElement.parentElement.tagName == 'THEAD') ? 'top' : 'right',
               appendTo: document.body,
+              plugins: [hideOnEsc],
               theme: 'light-border',
             });
 
@@ -707,8 +735,15 @@ class Report:
             content: tooltipContainer.dataset.tooltipContent,
             allowHTML: true,
             interactive: true,
+            trigger: tooltipContainer.dataset.tooltipTriggers,
             appendTo: document.body,
             theme: 'light-border',
+            plugins: [hideOnEsc],
+            onMount(instance) {
+              if (tooltipContainer.dataset.tooltipOnMount) {
+                eval(tooltipContainer.dataset.tooltipOnMount);
+              }
+            }
           });
         }
       </script>
@@ -843,11 +878,12 @@ class Report:
     element.set('class', 'banner ' + ' '.join(classes))
     self.body.insert(0, element)
 
-  def generate_tooltip_html(self, content):
-    return f'<i class="bi-info-circle super-info-icon" data-tooltip-content="{content}"></i>'
+  def generate_tooltip_html(self, content, on_mount = '', triggers = '', classes = ''):
+    if classes: classes = ' ' + classes
+    return f'''<i class="bi-info-circle super-info-icon{classes}" data-tooltip-triggers="{triggers}" data-tooltip-on-mount="{on_mount}" data-tooltip-content="{Report.escape(content)}"></i>'''
 
-  def generate_tooltip(self, content):
-    return et.fromstring(generate_tooltip_html(content))
+  def generate_tooltip(self, content, on_mount = '', triggers = '', classes = ''):
+    return et.fromstring(generate_tooltip_html(content, on_mount))
 
   # ---------------------------------------------------------------------------
   # Tabs

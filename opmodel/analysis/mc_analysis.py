@@ -5,6 +5,7 @@ Monte carlo analysis.
 from . import log
 from . import *
 
+import json
 import pickle
 import traceback
 import seaborn as sns
@@ -27,16 +28,16 @@ class TooManyRetries(Exception):
 
 def mc_analysis(n_trials = 100, max_retries = 100):
   scalar_metrics = ['rampup_start', 'agi_year']
-  state_metrics = ['biggest_training_run']
+  state_metrics = ['biggest_training_run', 'gwp']
 
   scalar_metrics = {
-      scalar_metric : [] for scalar_metric in scalar_metrics
+      metric : [] for metric in scalar_metrics
   }
   for takeoff_metric in SimulateTakeOff.takeoff_metrics:
     scalar_metrics[takeoff_metric] = []
 
   state_metrics = {
-      state_metric : [] for state_metric in state_metrics
+      metric : [] for metric in state_metrics
   }
 
   slow_takeoff_count = 0
@@ -204,16 +205,83 @@ def write_mc_analysis_report(n_trials=100, max_retries=100, include_sample_table
   if new_report:
     report = Report(report_file_path=report_file_path, report_dir_path=report_dir_path)
 
-  description = 'Probability of a full 4 year doubling of GWP before a 1 year doubling of GWP starts'
-  report.add_paragraph(f"<span style='font-weight:bold'>Probability of slow takeoff</span>{report.generate_tooltip_html(description)}<span style='font-weight:bold'>:</span> {results.slow_takeoff_count/results.n_trials:.0%}")
+  #
+  # Add a mini-widget in a tooltip to let the user select the definition of "slow takeoff"
+  #
+
+  # Create the table
+  gwps = [results.state_metrics['gwp'][i][:results.last_valid_indices[i]] for i in range(results.n_trials)]
+  takeoff_probability_table = []
+  for n in range(1, 20):
+    row = []
+    for m in range(1, 20):
+      p = np.sum([n_year_doubling_before_m_year_doubling(gwp, results.t_step, n, m) for gwp in gwps])/results.n_trials if (n > m) else np.nan
+      row.append(p)
+    takeoff_probability_table.append(row)
+
+  # Add the tooltip
+  description = '''Probability of a full <input class='doubling-years-inputs' id='doubling-years-input-m' value='4' style='display:inline-block'> year doubling of GWP before a <input class='doubling-years-inputs' id='doubling-years-input-n' value='1'> year doubling of GWP starts'''
+  report.add_paragraph(f"<span style='font-weight:bold'>Probability of slow takeoff</span>{report.generate_tooltip_html(description, on_mount = 'initialize_takeoff_probability_mini_widget()', triggers = 'mouseenter click', classes = 'slow-takeoff-probability-tooltip-info')}<span style='font-weight:bold'>:</span> <span id='slow-takeoff-probability'>{results.slow_takeoff_count/results.n_trials:.0%}</span>")
+
+  # Style
+  report.head.append(et.fromstring('''
+    <style>
+      .doubling-years-inputs {
+        width: 2em;
+        text-align: center;
+        border: none;
+        border-bottom: 1px dashed black;
+      }
+
+      .slow-takeoff-probability-tooltip-info {
+        cursor: pointer;
+      }
+    </style>
+  '''))
+
+  # JS
+  report.body.append(et.fromstring('<script>' + Report.escape('''
+      let takeoff_probability_mini_widget_initialized = false;
+
+      function initialize_takeoff_probability_mini_widget() {
+        if (takeoff_probability_mini_widget_initialized) {
+          return;
+        }
+
+        // p(full <row + 1> year doubling before the start of a <col + 1> year doubling)
+        let p_table = ''' + json.dumps(takeoff_probability_table) + ''';
+
+        let n_input = document.getElementById('doubling-years-input-n');
+        let m_input = document.getElementById('doubling-years-input-m');
+        let probability = document.getElementById('slow-takeoff-probability');
+
+        function update_slow_takeoff_probability() {
+          let m = parseInt(m_input.value);
+          let n = parseInt(n_input.value);
+          let p = NaN;
+
+          if ((1 <= m && m <= p_table.length) && (1 <= n && n <= p_table[0].length)) {
+            p = p_table[m-1][n-1] * 100;
+          }
+
+          probability.innerHTML = Number.isNaN(p) ? '--' : `${p.toFixed()}%`;
+        }
+
+        m_input.addEventListener('input', update_slow_takeoff_probability);
+        n_input.addEventListener('input', update_slow_takeoff_probability);
+
+        takeoff_probability_mini_widget_initialized = true;
+      }
+  ''') + '</script>'))
 
   metrics_quantiles = pd.DataFrame(results.metrics_quantiles)
   report.add_data_frame(metrics_quantiles)
 
   # Plot trajectories
-  for state_metric in results.state_metrics:
-    results.state_metrics[state_metric] = np.stack(results.state_metrics[state_metric])
-    plot_quantiles(results.timesteps, results.state_metrics[state_metric], "Year", state_metric)
+  metrics = ['biggest_training_run']
+  for metric in metrics:
+    results.state_metrics[metric] = np.stack(results.state_metrics[metric])
+    plot_quantiles(results.timesteps, results.state_metrics[metric], "Year", metric)
     report.add_figure()
 
   # Add violin plots of scalar metrics
