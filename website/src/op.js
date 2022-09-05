@@ -677,8 +677,7 @@ function init_input_state(state, params) {
   state.goods.tfp = initial.tfp_goods;
   state.rnd.tfp = initial.tfp_rnd;
 
-
-  state.money_spent_training = params.initial.biggest_training_run / params.initial.buyable_hardware_performance;
+  state.money_spent_training = state.compute_investment * initial.biggest_training_run / (state.hardware * initial.software) / params.t_step;
 
 
   //

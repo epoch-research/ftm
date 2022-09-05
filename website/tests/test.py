@@ -132,7 +132,7 @@ def compare(params):
 
 params_dist = ParamsDistribution()
 
-for i in range(10):
+for i in range(100):
   sample = params_dist.rvs(1)
   params = {param: sample[param][0] for param in sample}
   params['t_step'] = 1
