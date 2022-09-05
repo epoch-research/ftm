@@ -12,8 +12,10 @@ import numbers
 import numpy as np
 import pandas as pd
 import urllib.request
+from zipfile import ZipFile
 from string import Template
 import matplotlib.pyplot as plt
+from bs4 import BeautifulSoup
 from openpyxl import load_workbook
 
 MODULE_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -116,7 +118,7 @@ def expand_string(string, context):
 # Cached parameter retrieval
 #--------------------------------------------------------------------------
 
-cached_input_workbook = None
+cached_input_workbooks = {}
 cached_ajeya_dist = None
 cached_param_table = None
 cached_metrics_table = None
@@ -125,7 +127,7 @@ cached_timelines_parameters = None
 
 def set_input_workbook(url):
   global input_workbook
-  global cached_input_workbook
+  global cached_input_workbooks
   global cached_param_table
   global cached_metrics_table
   global cached_rank_correlations
@@ -139,36 +141,43 @@ def set_input_workbook(url):
     url = f'https://docs.google.com/spreadsheets/d/{workbook_id}/export?format=xlsx'
 
   set_option('input_workbook', url)
-  cached_input_workbook = None
+  cached_input_workbooks = {}
   cached_param_table = None
   cached_metrics_table = None
   cached_rank_correlations = None
   cached_timelines_parameters = None
 
-def get_input_workbook():
-  global cached_input_workbook
-  if cached_input_workbook is None:
+def get_input_workbook(format = 'xlsx'):
+  global cached_input_workbooks
+  if format not in cached_input_workbooks:
     path = get_option('input_workbook')
     if re.match(r'^(http|https|file)://', path):
       gsheets_pattern = r'https://docs.google.com/spreadsheets/d/([a-zA-Z0-9-_]*)/?'
       m = re.match(gsheets_pattern, path)
       if m:
         workbook_id = m.group(1)
-        path = f'https://docs.google.com/spreadsheets/d/{workbook_id}/export?format=xlsx'
-
+        path = f'https://docs.google.com/spreadsheets/d/{workbook_id}/export?format={format}'
       response = urllib.request.urlopen(path)
-      cached_input_workbook = response.read()
+      cached_input_workbooks[format] = response.read()
     else:
       with open(path, 'rb') as f:
-        cached_input_workbook = f.read()
+        cached_input_workbooks[format] = f.read()
 
-    # Check it's a valid Excel file
-    try:
-      load_workbook(io.BytesIO(cached_input_workbook))
-    except Exception:
-      raise InvalidExcelError("Error reading the Excel file (you might want to check it's publicly accessible)")
+    if format == 'xlsx':
+      # Check it's a valid Excel file
+      try:
+        load_workbook(io.BytesIO(cached_input_workbooks[format]))
+      except Exception:
+        raise InvalidExcelError("Error reading the Excel file (you might want to check it's publicly accessible)")
 
-  return cached_input_workbook
+    if format == 'zip':
+      # Check it's a valid ZIP file
+      try:
+        ZipFile(io.BytesIO(cached_input_workbooks[format]))
+      except Exception:
+        raise InvalidZipError("Error reading the zipped HTML files (you might want to check the workbook is publicly accessible)")
+
+  return cached_input_workbooks[format]
 
 def get_parameter_table():
   global cached_param_table
@@ -182,6 +191,35 @@ def get_parameter_table():
     cached_param_table = cached_param_table.set_index("Parameter id")
     cached_param_table.fillna(np.nan, inplace = True)
   return cached_param_table.copy()
+
+def get_sheet_df_as_rich_text(sheet_name, workbook = None):
+  # Unfortunately, we can't just read the rich text of the cells from
+  # the standard excel file. We'll have to download all the sheets as
+  # HTML pages (zipped) and extract the rich text from the <td> elements.
+
+  if workbook is None:
+    workbook = get_input_workbook(format = 'zip')
+
+  zip_file = ZipFile(io.BytesIO(workbook))
+  sheet_html = zip_file.read(f'{sheet_name}.html')
+  zip_file.close()
+
+  page = BeautifulSoup(sheet_html, 'html.parser')
+  table = page.find('table')
+  tbody = table.find('tbody')
+
+  df_rows = []
+
+  for row in tbody.find_all('tr'):
+    df_row = []
+    for cell in row.find_all('td'):
+      cell_contents = cell.decode_contents()
+      df_row.append(cell_contents)
+    df_rows.append(df_row)
+
+  df = pd.DataFrame(df_rows[1:], columns = df_rows[0], index = [r[0] for r in df_rows[1:]])
+
+  return df
 
 def get_metrics_table():
   global cached_metrics_table
@@ -279,6 +317,10 @@ def get_metric_names():
     if pd.isnull(v): table[k] = snake_case_to_human(k)
   return table
 
+def get_parameter_justifications():
+  df = get_sheet_df_as_rich_text('Parameters')
+  return df['Justification for assumption'].to_dict()
+
 #--------------------------------------------------------------------------
 # Misc
 #--------------------------------------------------------------------------
@@ -288,6 +330,10 @@ class InvalidExcelError(Exception):
 
 class InvalidCsvError(Exception):
   pass
+
+class InvalidZipError(Exception):
+  pass
+
 
 def get_csv_from_sheet_url(url, usecols = None):
   pattern = r'https://docs.google.com/spreadsheets/d/([a-zA-Z0-9-_]*)/.*\bgid\b=([0-9]*)?.*'

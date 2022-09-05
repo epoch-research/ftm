@@ -39,7 +39,6 @@ class Report:
     self.body    = et.Element('body')
     self.content = et.Element('div', {'class': 'main'})
 
-
     # General styling
     self.head.append(et.fromstring('''
       <style>
@@ -571,6 +570,7 @@ class Report:
     self.body.append(script);
     script.text = '''
         let paramNotes = ''' + json.dumps(get_parameters_meanings()) + ''';
+        let paramJustifications = ''' + json.dumps(get_parameter_justifications()) + ''';
         let backgroundColors = ''' + json.dumps(get_parameters_colors()) + ''';
         let metricNotes = ''' + json.dumps(get_metrics_meanings()) + ''';
 
@@ -603,7 +603,12 @@ class Report:
 
         function injectMeaningTooltips() {
           for (let node of document.querySelectorAll('[data-param-id]')) {
-            injectMeaningTooltip(node, paramNotes[node.dataset.paramId]);
+            let paramId = node.dataset.paramId;
+            let content = paramNotes[paramId];
+            if (paramId in paramJustifications && paramJustifications[paramId].length > 0) {
+              content += '<br><br><span style="font-weight: bold">Justification for the value:</span> ' + paramJustifications[paramId];
+            }
+            injectMeaningTooltip(node, content);
           }
 
           for (let node of document.querySelectorAll('[data-metric-id]')) {
