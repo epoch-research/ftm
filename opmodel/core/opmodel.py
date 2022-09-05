@@ -145,6 +145,10 @@ class SimulateTakeOff():
 
     assert type(self.n_labour_tasks) is int, "n_labour_tasks must be an integer"
     assert self.n_labour_tasks > 0, "n_labour_tasks must be positive"
+
+    # Check that the ceilings are compatible
+    assert self.frac_labour_hardware_rnd_ceiling + self.frac_labour_software_rnd_ceiling < 1
+    assert self.frac_compute_hardware_rnd_ceiling + self.frac_compute_software_rnd_ceiling + self.frac_compute_training_ceiling < 1
   
   def process_input_parameters(self):
     # Labour tasks
