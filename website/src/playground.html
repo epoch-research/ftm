@@ -599,13 +599,15 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
         //plot_variable(sim, 'gwp', 'GWP growth over time', {plot_growth: true});
 
         add_multigraph(sim, [
-          { label: 'GWP',                  var: 'gwp'},
-          { label: 'Software',             var: 'software.v'},
-          { label: 'Hardware',             var: 'hardware'},
-          { label: 'Hardware efficiency',  var: 'hardware_performance.v'},
-          { label: 'Labour',               var: 'labour'},
-          { label: 'Capital',              var: 'capital'},
-          { label: 'Biggest training run', var: 'biggest_training_run'},
+          { label: 'GWP',                     var: 'gwp'},
+          { label: 'Software',                var: 'software.v'},
+          { label: 'Hardware',                var: 'hardware'},
+          { label: 'Hardware efficiency',     var: 'hardware_performance.v'},
+          { label: 'Labour',                  var: 'labour'},
+          { label: 'Capital',                 var: 'capital'},
+          { label: 'Compute',                 var: 'compute'},
+          { label: 'Biggest training run',    var: 'biggest_training_run'},
+          { label: 'Money spent on training', var: 'money_spent_training'},
           { label: 'Fraction of compute invested in training', var: 'frac_compute.training.v'},
         ], '#metrics-graph-container');
 
