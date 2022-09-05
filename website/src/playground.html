@@ -8,7 +8,11 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
     --sidebar-width: 325px;
   }
 
-  .graph-wrapper.interactive .graph-body {
+  #bioanchors-button {
+    vertical-align: top;
+  }
+
+  .graph-wrapper.with-side-panel {
     display: flex;
   }
 
@@ -18,13 +22,8 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
     border: 1px solid #aaa;
   }
 
-  .selector label.active {
+  .selector label.active, .selector label:hover {
     background-color: #295ea1 !important;
-    color: white;
-  }
-
-  .selector label:hover {
-    background-color: #6258ff;
     color: white;
   }
 
@@ -222,8 +221,17 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
     padding: 3px;
   }
 
-  .legend-item {
+  .legend-section:not(:last-child) {
     text-align: left;
+    margin-bottom: 10px;
+  }
+
+  .legend-section {
+    text-align: left;
+  }
+
+  .legend-section-header {
+    font-weight: bold;
   }
 
   .legend-item-line {
@@ -531,6 +539,10 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
 </script>
 
 <script>
+  let ui_state = {
+    show_bioanchors: false,
+  };
+
   function run_simulation(immediate) {
     let params = get_parameters();
     if (params) {
@@ -594,9 +606,7 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
           yscale: 'log',
         });
 
-        //plot_variable(sim, 'gwp', 'GWP over time');
-
-        //plot_variable(sim, 'gwp', 'GWP growth over time', {plot_growth: true});
+        plot_compute_decomposition(sim, '#compute-decomposition-graph-container');
 
         add_multigraph(sim, [
           { label: 'GWP',                     var: 'gwp'},
@@ -610,8 +620,6 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
           { label: 'Money spent on training', var: 'money_spent_training'},
           { label: 'Fraction of compute invested in training', var: 'frac_compute.training.v'},
         ], '#metrics-graph-container');
-
-        plot_compute_decomposition(sim, '#compute-decomposition-graph-container');
 
       }, immediate ? 1 : 500);
     }
@@ -807,8 +815,8 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
       this.nodes.wrapper.classList.add('graph-wrapper');
 
       this.dataset = [];
-      this.xAxis = {scale: options.xscale};
-      this.yAxis = {scale: options.yscale};
+      this.xAxis = {scale: options.xscale, lims: [null, null]};
+      this.yAxis = {scale: options.yscale, lims: [null, null]};
       this.axvlines = [];
       this.axhlines = [];
       this.current_color = 0;
@@ -859,6 +867,14 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
       this.yAxis.scale = scale;
     }
 
+    xlims(lims) {
+      this.xAxis.lims = lims;
+    }
+
+    ylims(lims) {
+      this.yAxis.lims = lims;
+    }
+
     axvline(x, options = {}) {
       this.axvlines.push({x, ...options});
     }
@@ -868,18 +884,27 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
     }
 
     update() {
+      if (!this.nodes.plot) {
+        // The graph hasn't been initialized yet. Exiting...
+        return;
+      }
+
       this.nodes.plot.innerHTML = "";
 
       // set the dimensions and margins of the graph
-      let margin = {top: 20, right: 10, bottom: 30, left: 40},
-          width = 760 - margin.left - margin.right,
-          height = 500 - margin.top - margin.bottom;
+      let margin = {top: 20, right: 10, bottom: 30, left: 40};
+      let width = 770 - margin.left - margin.right;
+      let height = 520 - margin.top - margin.bottom;
 
       // append the svg object to the body of the page
       let svg_container = d3.select(this.nodes.plot)
         .append('div')
         .attr('class', 'svg-container')
       ;
+
+      if (this.nodes.header) {
+        svg_container.node().append(this.nodes.header);
+      }
 
       let svg = svg_container
         .append("svg")
@@ -923,6 +948,11 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
         ylims[1] *= 10;
       }
 
+      if (this.xAxis.lims[0] != null) xlims[0] = this.xAxis.lims[0];
+      if (this.xAxis.lims[1] != null) xlims[1] = this.xAxis.lims[1];
+      if (this.yAxis.lims[0] != null) ylims[0] = this.yAxis.lims[0];
+      if (this.yAxis.lims[1] != null) ylims[1] = this.yAxis.lims[1];
+
       let xScale = this.nameToScale[this.xAxis.scale]();
       let yScale = this.nameToScale[this.yAxis.scale]();
 
@@ -939,24 +969,6 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
 
       let currentX = x;
       let currentY = y;
-
-      // Add the paths
-      for (let data of this.dataset) {
-        let datum = [];
-        for (let i = 0; i < data.x.length; i++) {
-          datum.push({x: data.x[i], y: data.y[i]});
-        }
-        content.append("path")
-          .datum(datum)
-          .attr("class", "data-path")
-          .attr("fill", "none")
-          .attr("stroke", data.color)
-          .attr("stroke-width", 2.5)
-          .attr("d", d3.line()
-            .x(d => x(d.x))
-            .y(d => y(d.y))
-          );
-      }
 
       // Vertical lines
       for (let axvline of this.axvlines) {
@@ -988,6 +1000,25 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
         ;
       }
 
+      // Add the paths
+      for (let data of this.dataset) {
+        let datum = [];
+        for (let i = 0; i < data.x.length; i++) {
+          datum.push({x: data.x[i], y: data.y[i]});
+        }
+        content.append("path")
+          .datum(datum)
+          .attr("class", "data-path")
+          .attr("fill", "none")
+          .attr("stroke", data.color)
+          .attr("stroke-width", 2.5)
+          .style("stroke-dasharray", this.get_dasharray(data.linestyle || '-'))
+          .attr("d", d3.line()
+            .x(d => x(d.x))
+            .y(d => y(d.y))
+          );
+      }
+
       let xAxis = svg.append("g")
         .attr("transform", "translate(0," + height + ")")
         .attr("stroke-width", 2)
@@ -1010,49 +1041,82 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
       }
 
       if (legend_objects.length > 0) {
-      let legend = svg_container
-          .append('div')
-            .style('top', margin.top + 20 + 'px')
-            .style('left', margin.left + 20 + 'px')
-            .attr('class', 'legend')
-            .style('position', 'absolute')
-        ;
-
-        for (let object of legend_objects) {
-          let item = legend.append('div')
-            .attr("class", "legend-item")
+        let legend = svg_container
+            .append('div')
+              .style('top', margin.top + 20 + 'px')
+              .style('left', margin.left + 20 + 'px')
+              .attr('class', 'legend')
+              .style('position', 'absolute')
           ;
 
-          item.append('svg')
-            .attr("width", 20)
-            .attr("height", 4)
-            .attr("class", "legend-item-line")
-            .append('line')
-              .attr('x1', 0)
-              .attr('x2', 20)
-              .attr('y1', 2)
-              .attr('y2', 2)
-              .attr('stroke', object.color)
-              .style("stroke-dasharray", object.linestyle ? this.get_dasharray(object.linestyle) : "")
-              .attr('stroke-width', 2)
+        let add_legend_section = (objects, name) => {
+          console.log(objects, name);
+
+          let section = legend.append('div')
+            .attr('class', 'legend-section')
           ;
 
-          item.append('span')
-            .text(object.label)
-          ;
+          if (name) {
+            let header = section.append('div')
+              .attr('class', 'legend-section-header')
+              .text(name)
+            ;
+          }
 
-          if (object.description) {
-            tippy(item.node(), {
-              content: object.description,
-              allowHTML: true,
-              interactive: true,
-              placement: 'left',
-              appendTo: document.body,
-              hideOnClick: false,
-              theme: 'light-border',
-            });
+          for (let object of objects) {
+            let item = section.append('div')
+              .attr("class", "legend-item")
+            ;
+
+            item.append('svg')
+              .attr("width", 20)
+              .attr("height", 4)
+              .attr("class", "legend-item-line")
+              .append('line')
+                .attr('x1', 0)
+                .attr('x2', 20)
+                .attr('y1', 2)
+                .attr('y2', 2)
+                .attr('stroke', object.color)
+                .style("stroke-dasharray", object.linestyle ? this.get_dasharray(object.linestyle) : "")
+                .attr('stroke-width', 2)
+            ;
+
+            item.append('span')
+              .text(object.label)
+            ;
+
+            if (object.description) {
+              tippy(item.node(), {
+                content: object.description,
+                allowHTML: true,
+                interactive: true,
+                placement: 'left',
+                appendTo: document.body,
+                hideOnClick: false,
+                theme: 'light-border',
+              });
+            }
           }
         }
+
+        let sections = {};
+        let misc_section = [];
+        for (let object of legend_objects) {
+          if (object.section) {
+            if (!(object.section in sections)) {
+              sections[object.section] = [];
+            }
+            sections[object.section].push(object);
+          } else {
+            misc_section.push(object);
+          }
+        }
+
+        for (let section in sections) {
+          add_legend_section(sections[section], section);
+        }
+        add_legend_section(misc_section);
       }
 
       if (this.graph_title) {
@@ -1198,17 +1262,19 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
       }
     }
 
+    add_header() {
+      this.nodes.header = document.createElement('div');
+      this.nodes.header.classList.add('graph-header');
+      return this.nodes.header;
+    }
+
     render() {
       let nodes = this.nodes;
-
-      nodes.body = document.createElement('div');
-      nodes.body.classList.add('graph-body');
 
       nodes.plot = document.createElement('div');
       nodes.plot.classList.add('graph-plot');
 
-      nodes.wrapper.append(nodes.body);
-      nodes.body.append(nodes.plot);
+      nodes.wrapper.append(nodes.plot);
 
       if (this.top_selections.length || this.side_selections.length) {
         // This is an interactive graph. Let the manager generate the first state.
@@ -1217,14 +1283,10 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
         this.selected_top = top;
         this.selected_side = side;
         this.on_select_callback(top, side, this);
-
-        nodes.wrapper.classList.add('interactive');
       }
 
       if (this.top_selections.length) {
-        nodes.header = document.createElement('div');
-        nodes.header.classList.add('graph-header');
-        nodes.wrapper.prepend(nodes.header);
+        this.add_header();
 
         let top_selector = document.createElement('div');
         top_selector.classList.add('selector');
@@ -1251,7 +1313,9 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
       if (this.side_selections.length) {
         nodes.side = document.createElement('div');
         nodes.side.classList.add('graph-side');
-        nodes.body.append(nodes.side);
+        nodes.wrapper.append(nodes.side);
+
+        nodes.wrapper.classList.add('with-side-panel');
 
         let side_selector = document.createElement('div');
         side_selector.classList.add('selector');
@@ -1384,10 +1448,46 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
       return np.div(x.slice(start_idx, end_idx), x[reference_idx]);
     }
 
-    plt.plot(t, normalized('compute_investment'),      {label: '$ on FLOP globally',               color: 'blue'})
-    plt.plot(t, normalized('hardware_performance.v'),  {label: 'Hardware (FLOP/$)',                color: 'orange'})
-    plt.plot(t, normalized('software.v'),              {label: 'Software (2020-FLOP per FLOP)',    color: 'green'})
-    plt.plot(t, normalized('frac_compute.training.v'), {label: 'Fraction global FLOP on training', color: 'red'})
+    let bioanchors = run_bioanchors_model(t_start = sim.t_start, t_end = sim.timesteps[end_idx-1]);
+
+    let graph = plt.graph;
+
+    let header = graph.add_header();
+    header.innerHTML = '<input type="checkbox" id="bioanchors-button"><label for="bioanchors-button">Compare with bioanchors</label>';
+
+    let show_bioanchors_button = header.querySelector('input');
+
+    if (ui_state.show_bioanchors) {
+      show_bioanchors_button.checked = true;
+    }
+
+    function update_graph() {
+      graph.clear_dataset();
+
+      let section = ui_state.show_bioanchors ? 'Our model' : null;
+
+      graph.add_data_xy(t, normalized('compute_investment'),      {label: '$ on FLOP globally',               color: 'blue', section});
+      graph.add_data_xy(t, normalized('hardware_performance.v'),  {label: 'Hardware (FLOP/$)',                color: 'orange', section});
+      graph.add_data_xy(t, normalized('software.v'),              {label: 'Software (2020-FLOP per FLOP)',    color: 'green', section});
+      graph.add_data_xy(t, normalized('frac_compute.training.v'), {label: 'Fraction global FLOP on training', color: 'red', section});
+
+      if (ui_state.show_bioanchors) {
+        let linestyle = 'dashed';
+        let section = 'Bioanchors';
+        graph.add_data_xy(bioanchors.timesteps, bioanchors.training_investment, {label: 'Training compute investment', color: 'blue', linestyle: linestyle, section});
+        graph.add_data_xy(bioanchors.timesteps, bioanchors.hardware,            {label: 'Hardware (FLOP/$)', color: 'orange', linestyle: linestyle, section});
+        graph.add_data_xy(bioanchors.software_timesteps, bioanchors.software,   {label: 'Software (2020-FLOP per FLOP)', color: 'green', linestyle: linestyle, section});
+      }
+
+      graph.update();
+    }
+
+    show_bioanchors_button.addEventListener('click', () => {
+      ui_state.show_bioanchors = show_bioanchors_button.checked;
+      update_graph();
+    });
+
+    update_graph();
 
     plot_vlines(sim)
 

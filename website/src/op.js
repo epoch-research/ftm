@@ -13,6 +13,7 @@ let np = {
   insert:   (a, i, x) => a.splice(i, 0, x),
   round:    (x) => Math.round(x),
   zeros:    (n) => new Array(n).fill(0),
+  concatenate: (a, b) => a.concat(b),
 
   even_round: (x) => {
     // This is Python's way of rounding (see https://docs.python.org/3/library/functions.html#round)
@@ -29,12 +30,24 @@ let np = {
     return Array(array_or_count);
   },
 
+  clip: (m, a) => np.unaop(a, x => Math.max(x, m)),
+
   log10:   (a)    => np.unaop(a, Math.log10),
   exp:     (a)    => np.unaop(a, Math.exp),
   maximum: (m, a) => np.unaop(a, x => Math.max(x, m)),
+  minimum: (m, a) => np.unaop(a, x => Math.min(x, m)),
+
+  arange: (start, stop, step) => {
+    let array = [];
+    for (let x = start; x < stop; x += step) {
+      array.push(x);
+    }
+    return array;
+  },
 
   /*
   add:     (a, b) => np.binop(a, b, (x, y) => x + y),
+  sub:     (a, b) => np.binop(a, b, (x, y) => x - y),
   mult:    (a, b) => np.binop(a, b, (x, y) => x * y),
   div:     (a, b) => np.binop(a, b, (x, y) => x / y),
   pow:     (a, b) => np.binop(a, b, (x, y) => (x == 0) ? 0 : x ** y),
@@ -59,6 +72,25 @@ let np = {
       for (let i = 0; i < c.length; i++) c[i] = a + b[i];
     } else {
       c = a + b;
+    }
+
+    return c;
+  },
+
+  sub: (a, b) => {
+    let c;
+
+    if (Array.isArray(a) && Array.isArray(b)) {
+      c = np.array(a.length);
+      for (let i = 0; i < c.length; i++) c[i] = a[i] - b[i];
+    } else if (Array.isArray(a)) {
+      c = np.array(a.length);
+      for (let i = 0; i < c.length; i++) c[i] = a[i] - b;
+    } else if (Array.isArray(b)) {
+      c = np.array(b.length);
+      for (let i = 0; i < c.length; i++) c[i] = a - b[i];
+    } else {
+      c = a - b;
     }
 
     return c;
@@ -1702,3 +1734,49 @@ return {
   timesteps: timesteps,
 }
 }
+
+function run_bioanchors_model(
+    t_start                                = 2022,
+    t_end                                  = 2100,
+    t_step                                 = 0.1,   // Step duration, in years
+
+    initial_hardware                       = 1.7/3, // Compared to our model
+    hardware_doubling_time                 = 2.5,   // In years
+
+    software_doubling_start                = 2025,  // When the software starts doubling
+    software_doubling_time                 = 2.5,   // In years
+    software_ceiling                       = 1e3,   // Max software performance from 2022 levels
+
+    initial_training_investment            = 50,    // Compared to our model
+    fast_training_investment_duration      = 23,    // In years
+    fast_training_investment_doubling_time = 2.5,   // In years
+    slow_training_investment_growth        = 1.03,  // Per year
+  ) {
+
+  let hardware_growth = np.pow(2, 1/hardware_doubling_time);
+  let software_growth = np.pow(2, 1/software_doubling_time);
+  let fast_training_investment_growth = np.pow(2, 1/fast_training_investment_doubling_time);
+
+  let timesteps = np.arange(t_start, t_end, t_step);
+
+  let slow_training_investment_start_index = np.round(2022 + fast_training_investment_duration/t_step - t_start);
+
+  let fast_training_investment = np.mult(
+      initial_training_investment,
+      np.pow(fast_training_investment_growth, np.sub(timesteps.slice(0, slow_training_investment_start_index), t_start))
+  );
+  let slow_training_investment = np.mult(
+      fast_training_investment[fast_training_investment.length-1],
+      np.pow(slow_training_investment_growth, np.sub(timesteps.slice(slow_training_investment_start_index), timesteps[slow_training_investment_start_index-1]))
+  );
+  let training_investment = np.concatenate(fast_training_investment, slow_training_investment)
+
+  let hardware = np.mult(initial_hardware, np.pow(hardware_growth, np.sub(timesteps, t_start)));
+
+  let software_timesteps = np.arange(software_doubling_start, t_end, t_step);
+  let software = np.pow(software_growth, np.sub(software_timesteps, software_doubling_start));
+  software = np.minimum(software_ceiling, software);
+
+  return {timesteps, training_investment, hardware, software_timesteps, software};
+}
+
