@@ -63,10 +63,6 @@ class Report:
           text-align: left;
         }
 
-        .tippy-content a {
-          color: white;
-        }
-
         .banner {
           background-color: #ddd;
           padding: 8px;
@@ -494,6 +490,7 @@ class Report:
     '''))
 
     self.head.append(et.fromstring('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.9.0/font/bootstrap-icons.css"></link>'))
+    self.head.append(et.fromstring('<link rel="stylesheet" href="https://unpkg.com/tippy.js@6/themes/light-border.css" />'))
     self.head.append(et.fromstring('<script defer="true" src="https://cdn.jsdelivr.net/npm/clipboard@2.0.10/dist/clipboard.min.js"></script>'))
     self.head.append(et.fromstring('<script defer="true" src="https://unpkg.com/micromodal/dist/micromodal.min.js"></script>'))
     self.head.append(et.fromstring('<script defer="true" src="https://unpkg.com/panzoom@9.4.0/dist/panzoom.min.js"></script>'))
@@ -590,6 +587,8 @@ class Report:
               allowHTML: true,
               interactive: true,
               placement: (node.parentElement.parentElement.tagName == 'THEAD') ? 'top' : 'right',
+              appendTo: document.body,
+              theme: 'light-border',
             });
 
             node._meaningInjected = true;
@@ -703,6 +702,8 @@ class Report:
             content: tooltipContainer.dataset.tooltipContent,
             allowHTML: true,
             interactive: true,
+            appendTo: document.body,
+            theme: 'light-border',
           });
         }
       </script>
