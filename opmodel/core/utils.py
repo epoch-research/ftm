@@ -188,6 +188,21 @@ def get_parameter_table():
     else:
       # By default we read the table from the omni workbook
       cached_param_table = pd.read_excel(get_input_workbook(), sheet_name = 'Parameters')
+
+    def floatify_series(series):
+      def floatify(x):
+        if isinstance(x, str):
+          if x.endswith('%'):
+            x = float(x[:-1])/100
+          else:
+            x = float(x)
+        return x
+      return series.apply(floatify)
+
+    cached_param_table['Conservative'] = floatify_series(cached_param_table['Conservative'])
+    cached_param_table['Best guess']   = floatify_series(cached_param_table['Best guess'])
+    cached_param_table['Aggressive']   = floatify_series(cached_param_table['Aggressive'])
+
     cached_param_table = cached_param_table.set_index("Parameter id")
     cached_param_table.fillna(np.nan, inplace = True)
   return cached_param_table.copy()
