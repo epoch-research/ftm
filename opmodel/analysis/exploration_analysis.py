@@ -144,7 +144,7 @@ def explore(exploration_target='compare', report_file_path=None, report_dir_path
     [low_params, med_params, high_params],
     index = ['Conservative', 'Best guess', 'Aggressive']
   ).transpose()
-  report.add_data_frame(input_parameters)
+  report.add_data_frame(input_parameters, show_justifications = True)
 
   if new_report:
     report_path = report.write()

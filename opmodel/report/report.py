@@ -633,8 +633,8 @@ class Report:
           for (let node of document.querySelectorAll('[data-param-id]')) {
             let paramId = node.dataset.paramId;
             let content = paramNotes[paramId];
-            if (paramId in paramJustifications && paramJustifications[paramId].length > 0) {
-              content += '<br><br><span style="font-weight: bold">Justification for the value:</span> ' + paramJustifications[paramId];
+            if (node.dataset.showJustification && paramId in paramJustifications && paramJustifications[paramId].length > 0) {
+              content += '<br><br><span style="font-weight: bold">Justification for the best guess value:</span> ' + paramJustifications[paramId];
             }
             injectMeaningTooltip(node, content);
           }
@@ -807,7 +807,7 @@ class Report:
 
     return container
 
-  def add_data_frame_modal(self, df, modal_id, index = None, show_index = True, show_index_header = False, use_render = False, parent=None, **to_html_args):
+  def add_data_frame_modal(self, df, modal_id, index = None, show_index = True, show_index_header = False, use_render = False, parent=None, show_justifications=False, **to_html_args):
     if parent is None: parent = self.default_parent
 
     modal             = et.Element('div', {'class': 'modal micromodal-slide dataframe-modal', 'id': modal_id, 'aria-hidden': 'true'})
@@ -820,7 +820,7 @@ class Report:
     content_container.append(content)
     parent.append(modal)
 
-  def add_data_frame(self, df, index = None, show_index = True, show_index_header = False, use_render = False, parent=None, **to_html_args):
+  def add_data_frame(self, df, index = None, show_index = True, show_index_header = False, use_render = False, parent=None, show_justifications=False, **to_html_args):
     if parent is None: parent = self.default_parent
 
     if isinstance(df, dict):
@@ -835,7 +835,7 @@ class Report:
 
     dataframe_wrapper = et.fromstring(f'<div class="dataframe-container">{html}</div>')
 
-    self.process_table(dataframe_wrapper)
+    self.process_table(dataframe_wrapper, show_justifications)
 
     container = et.Element('div', {'class': 'table-container'})
     container.append(dataframe_wrapper)
@@ -851,11 +851,13 @@ class Report:
     parent.append(container)
     return container
 
-  def process_table(self, table):
+  def process_table(self, table, show_justifications = False):
     # Add data attributes
     for th in table.findall('.//th'):
       if th.text in self.param_names:
         th.attrib['data-param-id'] = th.text
+        if show_justifications:
+          th.attrib['data-show-justification'] = "true"
       if th.text in self.metric_names:
         th.attrib['data-metric-id'] = th.text
 
@@ -865,12 +867,10 @@ class Report:
       for th in table.findall('.//th'):
         if th.text in self.param_names:
           human_name = self.param_names[th.text]
-          th.attrib['data-param-id'] = th.text
           th.text = human_name
 
         if th.text in self.metric_names:
           human_name = self.metric_names[th.text]
-          th.attrib['data-metric-id'] = th.text
           th.text = human_name
 
   def add_banner_message(self, message, classes = []):

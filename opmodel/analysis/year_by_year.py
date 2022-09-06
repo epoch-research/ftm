@@ -116,7 +116,7 @@ def explore_year(report_file_path=None, report_dir_path=None):
   #-------------------------------------
 
   report.add_header("Inputs", level = 3)
-  report.add_data_frame(best_guess_parameters, index = 'Best guess')
+  report.add_data_frame(best_guess_parameters, index = 'Best guess', show_justifications = True)
 
   #-------------------------------------
   # Javascript

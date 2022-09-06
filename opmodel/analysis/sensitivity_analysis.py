@@ -152,7 +152,7 @@ def write_sensitivity_analysis_report(quick_test_mode=False, report_file_path=No
   tfoot.append(et.fromstring(f'<th colspan="{len(columns) - current_col}"></th>'))
 
   report.add_header("Inputs", level = 3)
-  report.add_data_frame(results.parameter_table)
+  report.add_data_frame(results.parameter_table, show_justifications = True)
 
   if new_report:
     report_path = report.write()

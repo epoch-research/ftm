@@ -328,7 +328,7 @@ def write_mc_analysis_report(n_trials=100, max_retries=100, include_sample_table
   report.add_data_frame_modal(results.ajeya_cdf, 'ajeya-modal', show_index = False)
 
   # the parameter full_automation_requirements_training is special (we are sampling from Ajeya's distribution)
-  table = report.add_data_frame(results.parameter_table.drop(index = 'full_automation_requirements_training', columns = 'Type'))
+  table = report.add_data_frame(results.parameter_table.drop(index = 'full_automation_requirements_training', columns = 'Type'), show_justifications = True)
   tbody = None
   for element in table.iter():
     if element.tag == 'tbody':
