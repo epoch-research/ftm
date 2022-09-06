@@ -32,14 +32,6 @@ def compare(
     if re.match(r'^\s*assert', line):
       line = re.sub(r'(^\s*)', r'\1if False: ', line)
 
-    # Allow infinite ceilings
-    if re.match(r'^\s*def _update_rnd\(', line):
-      # Find our target line
-      while not re.match('^\s*ceiling_penalty =', line):
-        modified_code.append(line)
-        line = next(lines)
-      line = re.sub(r'(\s*ceiling_penalty =)', r'\1 1 if performance_ceiling == np.inf else ', line)
-
     modified_code.append(line)
 
   modified_code = '\n'.join(modified_code)
