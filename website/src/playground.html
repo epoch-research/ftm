@@ -662,7 +662,7 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
       label_to_var[o.label] = o.var;
     }
 
-    plt.set_top_selections(['raw metric (log)', 'growth per year (linear)']);
+    plt.set_top_selections(['raw metric', 'growth per year']);
     plt.set_side_selections(labels);
     plt.on_select((top, side, graph) => {
       graph.clear_dataset();
@@ -670,7 +670,7 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
       let x;
       let y;
 
-      let show_growth = (top == 'growth per year (linear)');
+      let show_growth = (top == 'growth per year');
 
       if (show_growth) {
         let r = sim.get_growth(label_to_var[side]);
