@@ -924,6 +924,9 @@ class SimulateTakeOff():
         new_cumulative_adjusted_input / \
         cumulative_adjusted_input
       ceiling_penalty = \
+        1 \
+        if performance_ceiling == np.inf \
+        else \
         (np.log10(performance_ceiling) - np.log10(current_performance)) /\
         (np.log10(performance_ceiling) - np.log10(initial_performance))
       performance_growth_rate = \
