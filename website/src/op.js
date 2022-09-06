@@ -1606,7 +1606,7 @@ function get_takeoff_metrics() {
   }
   takeoff_metrics["gwp_growth"] = length_between_thresholds(np.gt(gwp_growth, 0.05), np.gt(gwp_growth, 0.15));
 
-  takeoff_metrics['doubling times'] = doubling_times;
+  takeoff_metrics['doubling_times'] = doubling_times;
 
   for (let k in takeoff_metrics) {
     takeoff_metrics[k] = [takeoff_metrics[k]];
