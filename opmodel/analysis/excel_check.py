@@ -120,23 +120,29 @@ def write_excel_report(olde_sheet_url, report_file_path=None, report_dir_path=No
     'software'                   : clip(load_sheet_range('AM')),
     'biggest_training_run'       : clip(10**load_sheet_range('BT')),
     'hardware_performance'       : clip(10**load_sheet_range(f'AD53:AD{last_row-1}')),
+
+    'frac_tasks_automated_goods' : clip(load_sheet_range('L')/load_sheet_range('K8')) * 100,
+    'frac_tasks_automated_rnd'   : clip(load_sheet_range('N')/load_sheet_range('M8')) * 100,
   }
 
   olde['compute_investment'] = olde['gwp'] * olde['frac_gwp_compute'] * t_step
 
   modern = {
-    'agi_year'                  : float(model.index_to_time(np.argmax(clip(model.frac_tasks_automated_goods)))),
-    'full_rnd_automation_year'  : float(model.index_to_time(np.argmax(clip(model.frac_tasks_automated_rnd)))),
-    'fast_growth_year'          : float(model.index_to_time((np.argmax(np.log(clip(model.gwp)[1:]/clip(model.gwp)[:-1]) > 0.20)))),
+    'agi_year'                   : float(model.index_to_time(np.argmax(clip(model.frac_tasks_automated_goods)))),
+    'full_rnd_automation_year'   : float(model.index_to_time(np.argmax(clip(model.frac_tasks_automated_rnd)))),
+    'fast_growth_year'           : float(model.index_to_time((np.argmax(np.log(clip(model.gwp)[1:]/clip(model.gwp)[:-1]) > 0.20)))),
 
-    'timesteps'                 : clip(model.timesteps),
-    'gwp'                       : clip(model.gwp),
-    'frac_gwp_compute'          : clip(model.frac_gwp_compute),
-    'frac_compute_training'     : clip(model.frac_compute_training),
-    'compute'                   : clip(model.compute),
-    'software'                  : clip(model.software),
-    'biggest_training_run'      : clip(model.biggest_training_run),
-    'hardware_performance'      : clip(model.hardware_performance),
+    'timesteps'                  : clip(model.timesteps),
+    'gwp'                        : clip(model.gwp),
+    'frac_gwp_compute'           : clip(model.frac_gwp_compute),
+    'frac_compute_training'      : clip(model.frac_compute_training),
+    'compute'                    : clip(model.compute),
+    'software'                   : clip(model.software),
+    'biggest_training_run'       : clip(model.biggest_training_run),
+    'hardware_performance'       : clip(model.hardware_performance),
+
+    'frac_tasks_automated_goods' : clip(model.frac_tasks_automated_goods) * 100,
+    'frac_tasks_automated_rnd'   : clip(model.frac_tasks_automated_rnd) * 100,
   }
 
   modern['compute_investment'] = modern['gwp'] * modern['frac_gwp_compute'] * t_step
@@ -158,6 +164,9 @@ def write_excel_report(olde_sheet_url, report_file_path=None, report_dir_path=No
     'Biggest training run': 'biggest_training_run',
     'Hardware performance': 'hardware_performance',
     'Compute investment': 'compute_investment',
+
+    'Frac tasks automated goods' : 'frac_tasks_automated_goods',
+    'Frac tasks automated R&D'   : 'frac_tasks_automated_rnd',
 
     'Yearly software growth (%)': 'software_growth',
     'Yearly hardware performance growth (%)': 'hardware_performance_growth',
