@@ -158,9 +158,6 @@ class SimulateTakeOff():
     # Process training and runtime flops
     self.process_automation_costs()
 
-    # Define rampup triggers
-    self.rampup_trigger = self.rampup_trigger
-
     # Define initial quantities
     self.initial_software = 1
     self.initial_tfp_goods = 1
