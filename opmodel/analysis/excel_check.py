@@ -35,7 +35,7 @@ def write_excel_report(olde_sheet_url, report_file_path=None, report_dir_path=No
 
   # Optionally save the modified code
   if True:
-    with open(os.path.join(get_option('report_dir'), 'ModifiedSimulateTakeOff.py'), 'w') as f:
+    with open(os.path.join(get_option('report_dir'), 'ModifiedSimulateTakeOff.py'), 'w', encoding = 'utf-8') as f:
       f.write(modified_code)
 
   # Load the modified code
