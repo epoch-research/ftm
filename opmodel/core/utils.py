@@ -133,12 +133,10 @@ def set_input_workbook(url):
   global cached_rank_correlations
   global cached_timelines_parameters
 
-  # If it's a Google sheet url, we'll add the 'export?format=xlsx' ourselves
-  pattern = r'https://docs.google.com/spreadsheets/d/([a-zA-Z0-9-_]*)/?.*'
-  m = re.match(pattern, url)
-  if m:
-    workbook_id = m.group(1)
-    url = f'https://docs.google.com/spreadsheets/d/{workbook_id}/export?format=xlsx'
+  # If it's a Google sheet url, convert it into an excel export
+  export_url = get_export_url_from_gsheet(url)
+  if export_url:
+    url = export_url
 
   set_option('input_workbook', url)
   cached_input_workbooks = {}
@@ -147,36 +145,45 @@ def set_input_workbook(url):
   cached_rank_correlations = None
   cached_timelines_parameters = None
 
+def get_export_url_from_gsheet(gsheet_url, format = 'xlsx'):
+  """Returns and "export" URL from a Google Sheets url"""
+  if re.match(r'^(http|https|file)://', gsheet_url):
+    gsheets_pattern = r'https://docs.google.com/spreadsheets/d/([a-zA-Z0-9-_]*)/?'
+    m = re.match(gsheets_pattern, gsheet_url)
+    if m:
+      workbook_id = m.group(1)
+      gsheet_url = f'https://docs.google.com/spreadsheets/d/{workbook_id}/export?format={format}'
+      return gsheet_url
+  return None
+
+def get_workbook(path, format = 'xlsx', data_only = False):
+  if re.match(r'^(http|https|file)://', path):
+    response = urllib.request.urlopen(get_export_url_from_gsheet(path, format = format))
+    workbook = response.read()
+  else:
+    with open(path, 'rb') as f:
+      workbook = f.read()
+
+  if format == 'xlsx':
+    # Check it's a valid Excel file
+    try:
+      load_workbook(io.BytesIO(workbook))
+    except Exception:
+      raise InvalidExcelError("Error reading the Excel file (you might want to check it's publicly accessible)")
+
+  if format == 'zip':
+    # Check it's a valid ZIP file
+    try:
+      ZipFile(io.BytesIO(workbook))
+    except Exception:
+      raise InvalidZipError("Error reading the zipped HTML files (you might want to check the workbook is publicly accessible)")
+
+  return workbook
+
 def get_input_workbook(format = 'xlsx'):
   global cached_input_workbooks
   if format not in cached_input_workbooks:
-    path = get_option('input_workbook')
-    if re.match(r'^(http|https|file)://', path):
-      gsheets_pattern = r'https://docs.google.com/spreadsheets/d/([a-zA-Z0-9-_]*)/?'
-      m = re.match(gsheets_pattern, path)
-      if m:
-        workbook_id = m.group(1)
-        path = f'https://docs.google.com/spreadsheets/d/{workbook_id}/export?format={format}'
-      response = urllib.request.urlopen(path)
-      cached_input_workbooks[format] = response.read()
-    else:
-      with open(path, 'rb') as f:
-        cached_input_workbooks[format] = f.read()
-
-    if format == 'xlsx':
-      # Check it's a valid Excel file
-      try:
-        load_workbook(io.BytesIO(cached_input_workbooks[format]))
-      except Exception:
-        raise InvalidExcelError("Error reading the Excel file (you might want to check it's publicly accessible)")
-
-    if format == 'zip':
-      # Check it's a valid ZIP file
-      try:
-        ZipFile(io.BytesIO(cached_input_workbooks[format]))
-      except Exception:
-        raise InvalidZipError("Error reading the zipped HTML files (you might want to check the workbook is publicly accessible)")
-
+    cached_input_workbooks[format] = get_workbook(get_option('input_workbook'), format)
   return cached_input_workbooks[format]
 
 def get_parameter_table():

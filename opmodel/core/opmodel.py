@@ -1623,6 +1623,13 @@ class SimulateTakeOff():
       plt.legend(bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0);
       plt.tight_layout();
 
+    # Super hacky
+    return {
+      'start_idx': start_idx,
+      'reference_idx': reference_idx,
+      'end_idx': end_idx,
+    }
+
   def plot_compute_decomposition_bioanchors_style(self, new_figure = True):
     """ Show the growth of the factors that drive compute in the style of the Bio Anchors report
     """
