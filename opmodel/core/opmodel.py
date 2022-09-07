@@ -3,7 +3,6 @@ import inspect
 import matplotlib.pyplot as plt
 import pandas as pd
 import math
-import traceback
 
 from . import utils
 from .utils import display, get_option, get_parameter_table
@@ -429,6 +428,8 @@ class SimulateTakeOff():
         self.production(t_idx)
       
     except FloatingPointError as e: 
+      import traceback
+
       print("An overflow has happened and the simulation has stopped.")
       print(e)
       print(traceback.format_exc(), end = '')

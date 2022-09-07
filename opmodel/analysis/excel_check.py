@@ -67,7 +67,7 @@ def write_excel_report(olde_sheet_url, report_file_path=None, report_dir_path=No
   parameters = {parameter : row['Best guess'] for parameter, row in parameter_table.iterrows()}
 
   parameters['n_labour_tasks'] = n_labour_tasks
-  parameters['t_end'] = last_year + 1
+  parameters['t_end'] = last_year + t_step
 
   model = ModifiedSimulateTakeOff(**parameters, t_step=t_step)
 
