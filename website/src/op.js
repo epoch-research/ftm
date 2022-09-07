@@ -1735,23 +1735,26 @@ return {
 }
 }
 
-function run_bioanchors_model(
+function run_bioanchors_model({
     t_start                                = 2022,
     t_end                                  = 2100,
     t_step                                 = 0.1,   // Step duration, in years
 
-    initial_hardware                       = 1.7/3, // Compared to our model
+    t_initial                              = 2022,  // All "initial" values refer to this year
+
+    initial_hardware                       = 1,
+    initial_software                       = 1,
     hardware_doubling_time                 = 2.5,   // In years
 
     software_doubling_start                = 2025,  // When the software starts doubling
     software_doubling_time                 = 2.5,   // In years
-    software_ceiling                       = 1e3,   // Max software performance from 2022 levels
+    software_ceiling                       = 1e3,   // Max software performance from t_initial levels
 
-    initial_training_investment            = 50,    // Compared to our model
-    fast_training_investment_duration      = 23,    // In years
+    initial_training_investment            = 1,
+    fast_training_investment_duration      = 23,    // In years from t_initial
     fast_training_investment_doubling_time = 2.5,   // In years
     slow_training_investment_growth        = 1.03,  // Per year
-  ) {
+  }) {
 
   let hardware_growth = np.pow(2, 1/hardware_doubling_time);
   let software_growth = np.pow(2, 1/software_doubling_time);
@@ -1759,11 +1762,11 @@ function run_bioanchors_model(
 
   let timesteps = np.arange(t_start, t_end, t_step);
 
-  let slow_training_investment_start_index = np.round(2022 + fast_training_investment_duration/t_step - t_start);
+  let slow_training_investment_start_index = np.round((t_initial + fast_training_investment_duration)/t_step - t_start);
 
   let fast_training_investment = np.mult(
       initial_training_investment,
-      np.pow(fast_training_investment_growth, np.sub(timesteps.slice(0, slow_training_investment_start_index), t_start))
+      np.pow(fast_training_investment_growth, np.sub(timesteps.slice(0, slow_training_investment_start_index), t_initial))
   );
   let slow_training_investment = np.mult(
       fast_training_investment[fast_training_investment.length-1],
@@ -1771,12 +1774,16 @@ function run_bioanchors_model(
   );
   let training_investment = np.concatenate(fast_training_investment, slow_training_investment)
 
-  let hardware = np.mult(initial_hardware, np.pow(hardware_growth, np.sub(timesteps, t_start)));
+  let hardware = np.mult(initial_hardware, np.pow(hardware_growth, np.sub(timesteps, t_initial)));
 
   let software_timesteps = np.arange(software_doubling_start, t_end, t_step);
-  let software = np.pow(software_growth, np.sub(software_timesteps, software_doubling_start));
+  let software = np.mult(
+     initial_software,
+     np.pow(software_growth, np.sub(software_timesteps, software_doubling_start))
+  );
   software = np.minimum(software_ceiling, software);
 
+console.log({timesteps, training_investment, hardware, software_timesteps, software});
   return {timesteps, training_investment, hardware, software_timesteps, software};
 }
 

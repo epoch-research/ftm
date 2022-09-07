@@ -405,6 +405,11 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
   </div>
   <div class="inner-content">
     <h2>Compute decomposition</h2>
+    <p style="font-size: 0.8em">TODO:</p>
+    <ul style="font-size: 0.8em">
+      <li>Move legend</li>
+      <li>Better checkbox style</li>
+    </ul>
     <div id="compute-decomposition-graph-container" class="graph-container"></div>
     <h2>Takeoff metrics</h2>
     <div id="takeoff-metrics-table-container"></div>
@@ -568,17 +573,25 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
 </script>
 
 <script>
+  let best_guess_sim = null;
+
   let ui_state = {
     show_bioanchors: false,
+    show_normalized_decomposition: false,
   };
 
-  function run_simulation(immediate) {
+  function run_simulation(immediate, callback) {
     let params = get_parameters();
     if (params) {
       cancelBackgroundProcesses();
       dispatchBackgroundProcess(() => {
         let js_params = transform_python_to_js_params(params);
         let sim = run_model(js_params);
+
+        if (callback) {
+          callback(sim);
+        }
+
         let takeoff_metrics = sim.get_takeoff_metrics();
 
         let t = sim.get_thread('t_year');
@@ -649,7 +662,6 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
           { label: 'Money spent on training', var: 'money_spent_training'},
           { label: 'Fraction of compute invested in training', var: 'frac_compute.training.v'},
         ], '#metrics-graph-container');
-
       }, immediate ? 1 : 500);
     }
   }
@@ -799,8 +811,7 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
       plt.axvline(sim.rampup_start, {
         linestyle: 'dotted',
         color: line_color,
-        label: 'Wake up',
-        //description: 'Wake up, folks!',
+        label: 'Wake-up',
       });
     }
                 
@@ -809,7 +820,6 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
         linestyle: '-.',
         color: line_color,
         label: '30% automation',
-        //description: '30% automation my ass',
       });
     }
                 
@@ -818,7 +828,6 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
         linestyle: 'dashed',
         color: line_color,
         label: 'Full automation',
-        //description: 'Yeah!',
       });
     }
   }
@@ -1035,7 +1044,8 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
         for (let i = 0; i < data.x.length; i++) {
           datum.push({x: data.x[i], y: data.y[i]});
         }
-        content.append("path")
+
+        let path = content.append("path")
           .datum(datum)
           .attr("class", "data-path")
           .attr("fill", "none")
@@ -1044,8 +1054,12 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
           .style("stroke-dasharray", this.get_dasharray(data.linestyle || '-'))
           .attr("d", d3.line()
             .x(d => x(d.x))
-            .y(d => y(d.y))
+            .y(d => y(d.y) - (parseFloat(this.dataset.displacement) || 0))
           );
+
+        if (data.displacement) {
+          path.node().dataset.displacement = data.displacement;
+        }
       }
 
       let xAxis = svg.append("g")
@@ -1079,8 +1093,6 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
           ;
 
         let add_legend_section = (objects, name) => {
-          console.log(objects, name);
-
           let section = legend.append('div')
             .attr('class', 'legend-section')
           ;
@@ -1271,10 +1283,15 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
 
         content
           .selectAll('.data-path')
-          .attr("d", d3.line()
-            .x(d => currentX(d.x))
-            .y(d => currentY(d.y))
-          );
+          .select(function() {
+            // Sigh
+            d3.select(this).attr("d", d3.line()
+              .x(d => currentX(d.x))
+              .y(d => {
+                return currentY(d.y) - (parseFloat(this.dataset.displacement) || 0)
+              })
+            );
+          })
         ;
 
         content
@@ -1466,28 +1483,48 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
   }
 
   function plot_compute_decomposition(sim, container, crop_after_agi = true) {
-    let start_idx = 0;
-    let reference_idx = (sim.rampup_start != null) ? sim.time_to_index(sim.rampup_start) : 0;
-    let end_idx = (crop_after_agi && sim.agi_year != null) ? Math.min(sim.time_to_index(sim.agi_year + 5), sim.states.length) : sim.states.length;
+    let t = sim.timesteps;
 
-    let t = sim.timesteps.slice(start_idx, end_idx);
+    let bioanchors = run_bioanchors_model({
+      t_start: sim.t_start,
+      t_end: sim.timesteps[sim.timesteps.length-1],
 
-    function normalized(path) {
-      let x = sim.get_thread(path);
-      return np.div(x.slice(start_idx, end_idx), x[reference_idx]);
-    }
-
-    let bioanchors = run_bioanchors_model(t_start = sim.t_start, t_end = sim.timesteps[end_idx-1]);
+      t_step: best_guess_sim.params.t_step,
+      initial_software: best_guess_sim.states[0].software.v,
+      initial_hardware: best_guess_sim.states[0].hardware_performance.v,
+      initial_training_investment: 50 * best_guess_sim.states[0].compute_investment * best_guess_sim.states[0].frac_compute.training.v
+    });
 
     let graph = plt.graph;
 
     let header = graph.add_header();
-    header.innerHTML = '<input type="checkbox" id="bioanchors-button"><label for="bioanchors-button">Compare with bioanchors</label>';
+    header.innerHTML =
+      '<input type="checkbox" id="bioanchors-button"><label for="bioanchors-button">Compare with bioanchors</label>' +
+      '<input type="checkbox" id="normalized-button" style="margin-left: 2em"><label for="normalized-button">Normalized at wake-up year</label>';
 
-    let show_bioanchors_button = header.querySelector('input');
+    let show_bioanchors_button = header.querySelector('#bioanchors-button');
+    let show_normalized_button = header.querySelector('#normalized-button');
 
     if (ui_state.show_bioanchors) {
       show_bioanchors_button.checked = true;
+    }
+
+    if (ui_state.show_normalized_decomposition) {
+      show_normalized_button.checked = true;
+    }
+
+    function add_data(t, v, line_options) {
+      let start_idx = 0;
+      let reference_idx = (sim.rampup_start != null) ? np.argmax(np.gte(t, sim.rampup_start)) : 0;
+      let end_idx = (crop_after_agi && sim.agi_year != null) ? np.argmax(np.gte(t, sim.agi_year + 5)) : t.length;
+
+      t = t.slice(start_idx, end_idx);
+      v = v.slice(start_idx, end_idx);
+      if (ui_state.show_normalized_decomposition) {
+        v = np.div(v, v[reference_idx]);
+      }
+
+      graph.add_data_xy(t, v, line_options);
     }
 
     function update_graph() {
@@ -1495,17 +1532,34 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
 
       let section = ui_state.show_bioanchors ? 'Our model' : null;
 
-      graph.add_data_xy(t, normalized('compute_investment'),      {label: '$ on FLOP globally',               color: 'blue', section});
-      graph.add_data_xy(t, normalized('hardware_performance.v'),  {label: 'Hardware (FLOP/$)',                color: 'orange', section});
-      graph.add_data_xy(t, normalized('software.v'),              {label: 'Software (2020-FLOP per FLOP)',    color: 'green', section});
-      graph.add_data_xy(t, normalized('frac_compute.training.v'), {label: 'Fraction global FLOP on training', color: 'red', section});
+      if (!ui_state.show_bioanchors) {
+        add_data(t, sim.get_thread('compute_investment'), {label: '$ on FLOP globally', color: 'blue', section});
+      } else {
+        add_data(
+          bioanchors.timesteps,
+          np.mult(sim.get_thread('compute_investment'), sim.get_thread('frac_compute.training.v')),
+          {label: 'Training compute investment', color: 'purple', section}
+        );
+      }
+
+      add_data(t, sim.get_thread('hardware_performance.v'), {label: 'Hardware (FLOP/$)', color: 'orange', section});
+      add_data(t, sim.get_thread('software.v'), {label: 'Software (2022-FLOP per FLOP)', color: 'green', section});
+
+      if (!ui_state.show_bioanchors) {
+        add_data(t, sim.get_thread('frac_compute.training.v'), {label: 'Fraction global FLOP on training', color: 'red', section});
+      }
 
       if (ui_state.show_bioanchors) {
         let linestyle = 'dashed';
         let section = 'Bioanchors';
-        graph.add_data_xy(bioanchors.timesteps, bioanchors.training_investment, {label: 'Training compute investment', color: 'blue', linestyle: linestyle, section});
-        graph.add_data_xy(bioanchors.timesteps, bioanchors.hardware,            {label: 'Hardware (FLOP/$)', color: 'orange', linestyle: linestyle, section});
-        graph.add_data_xy(bioanchors.software_timesteps, bioanchors.software,   {label: 'Software (2020-FLOP per FLOP)', color: 'green', linestyle: linestyle, section});
+
+        // Every bioanchor line has the same slope. We have to displace them
+        // when showing the normalized decomposition.
+        let displacement = ui_state.show_normalized_decomposition ? 5 : 0;
+
+        add_data(bioanchors.timesteps, bioanchors.training_investment, {displacement: +displacement, label: 'Training compute investment', color: 'purple', linestyle: linestyle, section});
+        add_data(bioanchors.timesteps, bioanchors.hardware,            {displacement: 0, label: 'Hardware (FLOP/$)', color: 'orange', linestyle: linestyle, section});
+        add_data(bioanchors.software_timesteps, bioanchors.software,   {displacement: -displacement, label: 'Software (2022-FLOP per FLOP)', color: 'green', linestyle: linestyle, section});
       }
 
       graph.update();
@@ -1513,6 +1567,11 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
 
     show_bioanchors_button.addEventListener('click', () => {
       ui_state.show_bioanchors = show_bioanchors_button.checked;
+      update_graph();
+    });
+
+    show_normalized_button.addEventListener('click', () => {
+      ui_state.show_normalized_decomposition = show_normalized_button.checked;
       update_graph();
     });
 
@@ -1735,5 +1794,5 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
   // Run
   //////////////////////////////////////////////////////////////////////////////
 
-  run_simulation(true);
+  run_simulation(true, sim => {best_guess_sim = sim;});
 </script>
