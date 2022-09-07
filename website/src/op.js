@@ -1137,11 +1137,11 @@ update_rnd_state = block({
       );
 
       let improved_hardware_performance = result[0];
-        
+
       let initial_hardware_improvement_rate = improved_hardware_performance / params.initial.buyable_hardware_performance;
-        
+
       params.initial.hardware_performance = params.initial.buyable_hardware_performance * initial_hardware_improvement_rate**params.hardware_delay_idx;
-      
+
       state.hardware_performance.v = params.initial.hardware_performance;
       states[0].hardware_performance.v = params.initial.hardware_performance;
     }
