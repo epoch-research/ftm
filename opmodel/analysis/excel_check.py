@@ -71,10 +71,6 @@ def write_excel_report(olde_sheet_url, report_file_path=None, report_dir_path=No
 
   model = ModifiedSimulateTakeOff(**parameters, t_step=t_step)
 
-  # Override the automation training FLOP for R&D
-  model.automation_training_flops_rnd = 10**np.array([float(c.value) for row in olde_sheet['DI7:EV7'] for c in row])
-  model.automation_training_flops_rnd = np.insert(model.automation_training_flops_rnd, 0, 1.0)
-
   log.info(f'Running the simulation...')
   model.run_simulation()
 
@@ -99,33 +95,55 @@ def write_excel_report(olde_sheet_url, report_file_path=None, report_dir_path=No
       # This is just a single cell
       return to_float(olde_sheet[range].value)
 
+  clip_idx = model.t_idx
+  clip_year = get_option('t_end')
+  if clip_year is not None:
+    clip_idx = min(clip_idx, model.time_to_index(clip_year))
+
+  def clip(array):
+    return array[:clip_idx]
+
+  def yearly_growth_rate(array):
+    steps_per_year = round(1/t_step)
+    return np.log(array[steps_per_year:]/array[:-steps_per_year])
+
   olde = {
     'agi_year'                   : load_sheet_range('BA54'),
     'full_rnd_automation_year'   : load_sheet_range('BB54'),
     'fast_growth_year'           : load_sheet_range('BC54'),
 
-    'timesteps'                  : load_sheet_range('A'),
-    'gwp'                        : load_sheet_range('P'),
-    'frac_gwp_compute'           : load_sheet_range('D'),
-    'frac_compute_training'      : load_sheet_range('BR'),
-    'compute'                    : 10**load_sheet_range('G'),
-    'software'                   : load_sheet_range('AM'),
-    'biggest_training_run'       : 10**load_sheet_range('BT'),
-    'hardware_performance'       : 10**load_sheet_range(f'AD53:AD{last_row-1}'),
+    'timesteps'                  : clip(load_sheet_range('A')),
+    'gwp'                        : clip(load_sheet_range('P')),
+    'frac_gwp_compute'           : clip(load_sheet_range('D')),
+    'frac_compute_training'      : clip(load_sheet_range('BR')),
+    'compute'                    : clip(10**load_sheet_range('G')),
+    'software'                   : clip(load_sheet_range('AM')),
+    'biggest_training_run'       : clip(10**load_sheet_range('BT')),
+    'hardware_performance'       : clip(10**load_sheet_range(f'AD53:AD{last_row-1}')),
   }
 
   olde['compute_investment'] = olde['gwp'] * olde['frac_gwp_compute'] * t_step
 
   modern = {
-    'agi_year'                  : float(model.index_to_time(np.argmax(model.frac_tasks_automated_goods))),
-    'full_rnd_automation_year'  : float(model.index_to_time(np.argmax(model.frac_tasks_automated_rnd))),
-    'fast_growth_year'          : float(model.index_to_time((np.argmax(np.log(model.gwp[1:]/model.gwp[:-1]) > 0.20)))),
-    'gwp'                       : model.gwp,
-    'compute'                   : model.compute,
-    'software'                  : model.software,
-    'biggest_training_run'      : model.biggest_training_run,
-    'hardware_performance'      : model.hardware_performance,
+    'agi_year'                  : float(model.index_to_time(np.argmax(clip(model.frac_tasks_automated_goods)))),
+    'full_rnd_automation_year'  : float(model.index_to_time(np.argmax(clip(model.frac_tasks_automated_rnd)))),
+    'fast_growth_year'          : float(model.index_to_time((np.argmax(np.log(clip(model.gwp)[1:]/clip(model.gwp)[:-1]) > 0.20)))),
+
+    'timesteps'                 : clip(model.timesteps),
+    'gwp'                       : clip(model.gwp),
+    'frac_gwp_compute'          : clip(model.frac_gwp_compute),
+    'frac_compute_training'     : clip(model.frac_compute_training),
+    'compute'                   : clip(model.compute),
+    'software'                  : clip(model.software),
+    'biggest_training_run'      : clip(model.biggest_training_run),
+    'hardware_performance'      : clip(model.hardware_performance),
   }
+
+  modern['compute_investment'] = modern['gwp'] * modern['frac_gwp_compute'] * t_step
+
+  for key in ['software', 'hardware_performance', 'gwp']:
+    olde[f'{key}_growth'] = yearly_growth_rate(olde[key]) * 100
+    modern[f'{key}_growth'] = yearly_growth_rate(modern[key]) * 100
 
   year_variables = {
     'AGI': 'agi_year',
@@ -136,8 +154,14 @@ def write_excel_report(olde_sheet_url, report_file_path=None, report_dir_path=No
   state_variables = {
     'GWP': 'gwp',
     'Compute': 'compute',
+    'Frac compute training': 'frac_compute_training',
     'Biggest training run': 'biggest_training_run',
     'Hardware performance': 'hardware_performance',
+    'Compute investment': 'compute_investment',
+
+    'Yearly software growth (%)': 'software_growth',
+    'Yearly hardware performance growth (%)': 'hardware_performance_growth',
+    'Yearly GWP growth (%)': 'gwp_growth',
   }
 
   # Write report
@@ -151,12 +175,25 @@ def write_excel_report(olde_sheet_url, report_file_path=None, report_dir_path=No
   plt.figure(figsize=(14, 8), dpi=80)
 
   # Our model
-  decomposition_data = model.plot_compute_decomposition(new_figure = False) # super hacky
+  start_idx = 0
+  reference_idx = model.time_to_index(model.rampup_start) if model.rampup_start is not None else 0
+  end_idx = clip_idx
+
+  ylim = [1e0, 1e4]
+
+  plot_compute_decomposition(
+      start_idx, end_idx, reference_idx,
+      modern['timesteps'], modern['compute_investment'], modern['hardware_performance'], modern['software'], modern['frac_compute_training'],
+      linestyle = '-', ylim = ylim,
+  )
+
+  model._plot_vlines()
 
   # Excel
   plot_compute_decomposition(
-      decomposition_data['start_idx'], decomposition_data['end_idx'], decomposition_data['reference_idx'],
-      olde['timesteps'], olde['compute_investment'], olde['hardware_performance'], olde['software'], olde['frac_compute_training']
+      start_idx, end_idx, reference_idx,
+      olde['timesteps'], olde['compute_investment'], olde['hardware_performance'], olde['software'], olde['frac_compute_training'],
+      linestyle = '--', ylim = ylim,
   )
 
   # Hacky legend
@@ -199,7 +236,7 @@ def write_excel_report(olde_sheet_url, report_file_path=None, report_dir_path=No
   for label, var in state_variables.items():
     container = report.add_html('<div class="header-container"></div>')
     header = report.add_header(label, level = 4, parent = container)
-    table = {year: [olde[var][i], modern[var][i]] for i, year in enumerate(model.timesteps)}
+    table = {f'{year:.1f}': [olde[var][i], modern[var][i]] for i, year in enumerate(clip(model.timesteps)[:len(modern[var])])}
     table = pd.DataFrame(table, index = ['Excel', 'Python'])
     report.add_data_frame(table)
 
@@ -223,9 +260,7 @@ def write_excel_report(olde_sheet_url, report_file_path=None, report_dir_path=No
 
   return model
 
-def plot_compute_decomposition(start_idx, end_idx, reference_idx, timesteps, compute_investment, hardware_performance, software, frac_compute_training):
-  linestyle = '--'
-
+def plot_compute_decomposition(start_idx, end_idx, reference_idx, timesteps, compute_investment, hardware_performance, software, frac_compute_training, linestyle = '-', ylim = [None, None]):
   clip = lambda x: x[start_idx:end_idx]
   clip_and_normalize = lambda x: clip(x)/x[reference_idx]
 
@@ -234,6 +269,8 @@ def plot_compute_decomposition(start_idx, end_idx, reference_idx, timesteps, com
   plt.plot(clip(timesteps), clip_and_normalize(software), label = 'Software', color = 'green', linestyle = linestyle)
   plt.plot(clip(timesteps), clip_and_normalize(frac_compute_training), label = 'Fraction global FLOP on training', color = 'red', linestyle = linestyle)
   plt.yscale('log')
+
+  plt.ylim(ylim)
 
   draw_oom_lines()
 
