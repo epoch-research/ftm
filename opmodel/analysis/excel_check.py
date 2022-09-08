@@ -117,7 +117,7 @@ def write_excel_report(olde_sheet_url, report_file_path=None, report_dir_path=No
     'frac_gwp_compute'           : clip(load_sheet_range('D')),
     'frac_compute_training'      : clip(load_sheet_range('BR')),
     'compute'                    : clip(10**load_sheet_range('G')),
-    'software'                   : clip(load_sheet_range('AM')),
+    'software'                   : clip(load_sheet_range('F')),
     'biggest_training_run'       : clip(10**load_sheet_range('BT')),
     'hardware_performance'       : clip(10**load_sheet_range(f'AD53:AD{last_row-1}')),
 
