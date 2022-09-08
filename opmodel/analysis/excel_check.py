@@ -165,8 +165,8 @@ def write_excel_report(olde_sheet_url, report_file_path=None, report_dir_path=No
     'Hardware performance': 'hardware_performance',
     'Compute investment': 'compute_investment',
 
-    'Frac tasks automated goods' : 'frac_tasks_automated_goods',
-    'Frac tasks automated R&D'   : 'frac_tasks_automated_rnd',
+    'Frac tasks automated goods': 'frac_tasks_automated_goods',
+    'Frac tasks automated R&D' : 'frac_tasks_automated_rnd',
 
     'Yearly software growth (%)': 'software_growth',
     'Yearly hardware performance growth (%)': 'hardware_performance_growth',
@@ -181,9 +181,9 @@ def write_excel_report(olde_sheet_url, report_file_path=None, report_dir_path=No
   report = Report(report_file_path=report_file_path, report_dir_path=report_dir_path)
   report.make_tables_scrollable = False
 
+  # Plot compute decomposition
   plt.figure(figsize=(14, 8), dpi=80)
 
-  # Our model
   start_idx = 0
   reference_idx = model.time_to_index(model.rampup_start) if model.rampup_start is not None else 0
   end_idx = clip_idx
@@ -198,15 +198,13 @@ def write_excel_report(olde_sheet_url, report_file_path=None, report_dir_path=No
 
   model._plot_vlines()
 
-  # Excel
   plot_compute_decomposition(
       start_idx, end_idx, reference_idx,
       olde['timesteps'], olde['compute_investment'], olde['hardware_performance'], olde['software'], olde['frac_compute_training'],
       linestyle = '--', ylim = ylim,
   )
 
-  # Hacky legend
-  handles, labels = plt.gca().get_legend_handles_labels()
+  handles, labels = plt.gca().get_legend_handles_labels() # Hacky legend
 
   vline_count = 0
   if model.rampup_start: vline_count += 1
@@ -223,6 +221,7 @@ def write_excel_report(olde_sheet_url, report_file_path=None, report_dir_path=No
   old_legend = plt.legend(old_handles, old_labels, bbox_to_anchor = (1.02, 1), borderaxespad = 0, title = 'Olde model')
   new_legend = plt.legend(new_handles, new_labels, bbox_to_anchor = (1.02, 0.80), borderaxespad = 0, title = 'New model')
   vline_legend = plt.legend(vline_handles, vline_labels, bbox_to_anchor = (1.02, 0.60), borderaxespad = 0)
+  plt.legend().remove()
 
   old_legend.set_frame_on(False)
   new_legend.set_frame_on(False)
@@ -238,6 +237,7 @@ def write_excel_report(olde_sheet_url, report_file_path=None, report_dir_path=No
 
   report.add_figure()
 
+  # Add tables
   year_variables_table = {label: [olde[var], modern[var]] for label, var in year_variables.items()}
   year_variables_table = pd.DataFrame(year_variables_table, index = ['Excel', 'Python'])
   report.add_data_frame(year_variables_table)
@@ -247,7 +247,13 @@ def write_excel_report(olde_sheet_url, report_file_path=None, report_dir_path=No
     header = report.add_header(label, level = 4, parent = container)
     table = {f'{year:.1f}': [olde[var][i], modern[var][i]] for i, year in enumerate(clip(model.timesteps)[:len(modern[var])])}
     table = pd.DataFrame(table, index = ['Excel', 'Python'])
-    report.add_data_frame(table)
+    html_table = report.add_data_frame(table)
+
+    # Make all columns the same width in the most horribly hacky way
+    col_width = 100
+    html_table.find('.//table').attrib['style'] = f'table-layout: fixed; width: {col_width * len(modern[var])}px'
+    for th in html_table.findall('.//th'):
+      th.attrib['style'] = f'width: {col_width}px'
 
   report.add_html('''
     <style>
