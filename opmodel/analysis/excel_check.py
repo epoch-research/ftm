@@ -121,8 +121,8 @@ def write_excel_report(olde_sheet_url, report_file_path=None, report_dir_path=No
     'biggest_training_run'       : clip(10**load_sheet_range('BT')),
     'hardware_performance'       : clip(10**load_sheet_range(f'AD53:AD{last_row-1}')),
 
-    'frac_tasks_automated_goods' : clip(load_sheet_range('L')/load_sheet_range('K8')) * 100,
-    'frac_tasks_automated_rnd'   : clip(load_sheet_range('N')/load_sheet_range('M8')) * 100,
+    'frac_tasks_automated_goods' : clip((load_sheet_range('L') - load_sheet_range('L')[0])/load_sheet_range('K8')) * 100,
+    'frac_tasks_automated_rnd'   : clip((load_sheet_range('N') - load_sheet_range('N')[0])/load_sheet_range('M8')) * 100,
   }
 
   olde['compute_investment'] = olde['gwp'] * olde['frac_gwp_compute'] * t_step
