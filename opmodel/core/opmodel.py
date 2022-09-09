@@ -1109,32 +1109,17 @@ class SimulateTakeOff():
         Returns a numpy array of size n_items whose quantiles match the dictionary
         The rest of entries are geometrically interpolated
     """
-    values = []
-    
-    for q in np.linspace(0, 1, n_items):
-      
-      prev_quantile = \
-        np.max([quantile for quantile in quantile_dict.keys() if q >= quantile])
-      next_quantile = \
-        np.min([quantile for quantile in quantile_dict.keys() if q <= quantile])
-      prev_value = quantile_dict[prev_quantile]
-      next_value = quantile_dict[next_quantile]
 
-      if prev_quantile == next_quantile:
-        value = prev_value
-      else:
-        value = prev_value*((next_value/prev_value)**((q-prev_quantile)/(next_quantile-prev_quantile)))
+    q = np.linspace(0, 1, n_items)
 
-      values.append(value)
-    values = np.array(values)
+    keys = list(quantile_dict.keys())
+    values = list(quantile_dict.values())
 
-    # Check that the quantiles of the result approximately match the input dict
-    for quantile, expected_value in quantile_dict.items():
-      actual_value = np.quantile(values, quantile)
-      assert np.abs(np.log10(actual_value / expected_value)) < 1
-    
+    # Logarithmic interpolation
+    values = 10**np.interp(q, keys, np.log10(values))
+
     return values
-  
+
   @staticmethod
   def solve_allocation(L, C, β, ρ, η, AT):
     """

@@ -493,3 +493,52 @@ class TestParamsDistribution(unittest.TestCase):
   def eppf(self, samples):
     cdf = self.ecdf(samples)
     return interp1d(cdf[1], cdf[0])
+
+class MiscTests(unittest.TestCase):
+  def test_process_quantiles(self):
+    np.random.seed(0)
+
+    for i in range(1000):
+      n_quantiles = 100
+
+      quantiles = np.random.uniform(high = 1, size = n_quantiles - 2)
+      quantiles = np.insert(quantiles, 0, 0)
+      quantiles = np.append(quantiles, 1)
+      quantiles.sort()
+
+      values = 10**np.random.uniform(high = 40, size = n_quantiles)
+      values.sort()
+
+      quantile_dict = {quantiles[i]: values[i] for i in range(n_quantiles)}
+
+      result = SimulateTakeOff.process_quantiles(quantile_dict, 100)
+      expected_result = MiscTests.process_quantiles_old(quantile_dict, 100)
+
+      self.assertTrue(np.all(np.abs(np.log10(result / expected_result)) < 1e-8))
+
+  @staticmethod
+  def process_quantiles_old(quantile_dict, n_items):
+    """ Input is a dictionary of quantiles {q1:v1, ..., qn:vn}
+        Returns a numpy array of size n_items whose quantiles match the dictionary
+        The rest of entries are geometrically interpolated
+    """
+    values = []
+
+    for q in np.linspace(0, 1, n_items):
+
+      prev_quantile = \
+        np.max([quantile for quantile in quantile_dict.keys() if q >= quantile])
+      next_quantile = \
+        np.min([quantile for quantile in quantile_dict.keys() if q <= quantile])
+      prev_value = quantile_dict[prev_quantile]
+      next_value = quantile_dict[next_quantile]
+
+      if prev_quantile == next_quantile:
+        value = prev_value
+      else:
+        value = prev_value*((next_value/prev_value)**((q-prev_quantile)/(next_quantile-prev_quantile)))
+
+      values.append(value)
+    values = np.array(values)
+
+    return values
