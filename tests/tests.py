@@ -505,9 +505,11 @@ class MiscTests(unittest.TestCase):
       quantiles = np.insert(quantiles, 0, 0)
       quantiles = np.append(quantiles, 1)
       quantiles.sort()
+      quantiles = quantiles[::-1]
 
       values = 10**np.random.uniform(high = 40, size = n_quantiles)
       values.sort()
+      values = values[::-1]
 
       quantile_dict = {quantiles[i]: values[i] for i in range(n_quantiles)}
 
