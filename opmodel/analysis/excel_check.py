@@ -111,6 +111,7 @@ def write_excel_report(olde_sheet_url, report_file_path=None, report_dir_path=No
     'agi_year'                   : load_sheet_range('BA54'),
     'full_rnd_automation_year'   : load_sheet_range('BB54'),
     'fast_growth_year'           : load_sheet_range('BC54'),
+    'wakeup_year'                : float(model.index_to_time(np.argmax(load_sheet_range('B')))),
 
     'timesteps'                  : clip(load_sheet_range('A')),
     'gwp'                        : clip(load_sheet_range('P')),
@@ -121,8 +122,8 @@ def write_excel_report(olde_sheet_url, report_file_path=None, report_dir_path=No
     'biggest_training_run'       : clip(10**load_sheet_range('BT')),
     'hardware_performance'       : clip(10**load_sheet_range(f'AD53:AD{last_row-1}')),
 
-    'frac_tasks_automated_goods' : clip((load_sheet_range('L') - load_sheet_range('L')[0])/load_sheet_range('K8')) * 100,
-    'frac_tasks_automated_rnd'   : clip((load_sheet_range('N') - load_sheet_range('N')[0])/load_sheet_range('M8')) * 100,
+    'frac_tasks_automated_goods' : clip((load_sheet_range('JQ') - load_sheet_range('JQ52'))/load_sheet_range('JT8')) * 100,
+    'frac_tasks_automated_rnd'   : clip((load_sheet_range('QH') - load_sheet_range('JQ52'))/load_sheet_range('JT8')) * 100,
   }
 
   olde['compute_investment'] = olde['gwp'] * olde['frac_gwp_compute'] * t_step
@@ -130,7 +131,8 @@ def write_excel_report(olde_sheet_url, report_file_path=None, report_dir_path=No
   modern = {
     'agi_year'                   : float(model.index_to_time(np.argmax(clip(model.frac_tasks_automated_goods)))),
     'full_rnd_automation_year'   : float(model.index_to_time(np.argmax(clip(model.frac_tasks_automated_rnd)))),
-    'fast_growth_year'           : float(model.index_to_time((np.argmax(np.log(clip(model.gwp)[1:]/clip(model.gwp)[:-1]) > 0.20)))),
+    'fast_growth_year'           : float(model.index_to_time(np.argmax(yearly_growth_rate(clip(model.gwp)) > 0.20))),
+    'wakeup_year'                : model.rampup_start,
 
     'timesteps'                  : clip(model.timesteps),
     'gwp'                        : clip(model.gwp),
@@ -153,6 +155,7 @@ def write_excel_report(olde_sheet_url, report_file_path=None, report_dir_path=No
 
   year_variables = {
     'AGI': 'agi_year',
+    'Wake-up': 'wakeup_year',
     'Full R&D automation': 'full_rnd_automation_year',
     'First 20% growth': 'fast_growth_year',
   }
@@ -188,7 +191,7 @@ def write_excel_report(olde_sheet_url, report_file_path=None, report_dir_path=No
   reference_idx = model.time_to_index(model.rampup_start) if model.rampup_start is not None else 0
   end_idx = clip_idx
 
-  ylim = [1e0, 1e4]
+  ylim = [1e-1, 1e4]
 
   plot_compute_decomposition(
       start_idx, end_idx, reference_idx,
@@ -285,7 +288,8 @@ def plot_compute_decomposition(start_idx, end_idx, reference_idx, timesteps, com
   plt.plot(clip(timesteps), clip_and_normalize(frac_compute_training), label = 'Fraction global FLOP on training', color = 'red', linestyle = linestyle)
   plt.yscale('log')
 
-  plt.ylim(ylim)
+  if ylim[0] is not None: plt.ylim(bottom = ylim[0])
+  if ylim[1] is not None: plt.ylim(top = ylim[1])
 
   draw_oom_lines()
 
