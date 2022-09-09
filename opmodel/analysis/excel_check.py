@@ -75,7 +75,7 @@ def write_excel_report(olde_sheet_url, report_file_path=None, report_dir_path=No
   model.run_simulation()
 
   # -----------------------------------------------------------------------------
-  # Compare the results and write report
+  # Compare the results and write the report
   # -----------------------------------------------------------------------------
   def load_sheet_range(range):
     to_float = lambda x: np.nan if (x is None or x == '#REF!') else float(x)
@@ -185,18 +185,84 @@ def write_excel_report(olde_sheet_url, report_file_path=None, report_dir_path=No
   report.make_tables_scrollable = False
 
   # Plot compute decomposition
+  plot_compute_decomposition_comparison(0, clip_idx, model, olde, modern, normalize = True)
+  report.add_figure()
+
+  # Add tables
+  year_variables_table = {label: [olde[var], modern[var]] for label, var in year_variables.items()}
+  year_variables_table = pd.DataFrame(year_variables_table, index = ['Excel', 'Python'])
+  report.add_data_frame(year_variables_table)
+
+  for label, var in state_variables.items():
+    container = report.add_html('<div class="header-container"></div>')
+    header = report.add_header(label, level = 4, parent = container)
+    table = {f'{year:.1f}': [olde[var][i], modern[var][i]] for i, year in enumerate(clip(model.timesteps)[:len(modern[var])])}
+    table = pd.DataFrame(table, index = ['Excel', 'Python'])
+    html_table = report.add_data_frame(table)
+
+    # Make all columns the same width in the most horribly hacky way
+    col_width = 100
+    html_table.find('.//table').attrib['style'] = f'table-layout: fixed; width: {col_width * len(modern[var])}px'
+    for th in html_table.findall('.//th'):
+      th.attrib['style'] = f'width: {col_width}px'
+
+  # Add inputs
+  report.add_header("Inputs", level = 3)
+  report.add_paragraph(f"Olde sheet: <a href='{olde_sheet_url}'>{olde_sheet_url}</a>")
+  report.add_paragraph(f"Python: <a href='{get_option('param_table_url')}'>{get_option('param_table_url')}</a>")
+  report.add_data_frame(pd.DataFrame(parameters, index = ['Best guess']).transpose())
+
+  report.add_html('''
+    <style>
+      .header-container {
+        width: 100%;
+      }
+
+      h4 {
+        position: sticky;
+        left: 1em;
+        display: inline-block;
+        margin-bottom: 2px;
+      }
+    </style>
+  ''', parent = report.head)
+
+  report_path = report.write()
+  log.info(f'Report stored in {report_path}')
+
+  return model
+
+def plot_compute_decomposition(
+    start_idx, end_idx, reference_idx,
+    timesteps, compute_investment, hardware_performance, software, frac_compute_training,
+    linestyle = '-', ylim = [None, None], normalize = False):
+
+  clip = lambda x: x[start_idx:end_idx]
+  clip_and_normalize = lambda x: clip(x)/x[reference_idx]
+
+  transform = clip_and_normalize if normalize else clip
+
+  plt.plot(clip(timesteps), transform(compute_investment), label = '$ on FLOP globally', color = 'blue', linestyle = linestyle)
+  plt.plot(clip(timesteps), transform(hardware_performance), label = 'Hardware quality', color = 'orange', linestyle = linestyle)
+  plt.plot(clip(timesteps), transform(software), label = 'Software', color = 'green', linestyle = linestyle)
+  plt.plot(clip(timesteps), transform(frac_compute_training), label = 'Fraction global FLOP on training', color = 'red', linestyle = linestyle)
+  plt.yscale('log')
+
+  if ylim[0] is not None: plt.ylim(bottom = ylim[0])
+  if ylim[1] is not None: plt.ylim(top = ylim[1])
+
+def plot_compute_decomposition_comparison(start_idx, end_idx, model, olde, modern, normalize = False):
   plt.figure(figsize=(14, 8), dpi=80)
 
-  start_idx = 0
-  reference_idx = model.time_to_index(model.rampup_start) if model.rampup_start is not None else 0
-  end_idx = clip_idx
+  #reference_idx = model.time_to_index(model.rampup_start) if model.rampup_start is not None else start_idx
+  reference_idx = 0
 
-  ylim = [1e-1, 1e4]
+  ylim = [1e-1, 1e4] if normalize else [None, 1e21]
 
   plot_compute_decomposition(
       start_idx, end_idx, reference_idx,
       modern['timesteps'], modern['compute_investment'], modern['hardware_performance'], modern['software'], modern['frac_compute_training'],
-      linestyle = '-', ylim = ylim,
+      linestyle = '-', ylim = ylim, normalize = normalize,
   )
 
   model._plot_vlines()
@@ -204,10 +270,14 @@ def write_excel_report(olde_sheet_url, report_file_path=None, report_dir_path=No
   plot_compute_decomposition(
       start_idx, end_idx, reference_idx,
       olde['timesteps'], olde['compute_investment'], olde['hardware_performance'], olde['software'], olde['frac_compute_training'],
-      linestyle = '--', ylim = ylim,
+      linestyle = '--', ylim = ylim, normalize = normalize,
   )
 
   handles, labels = plt.gca().get_legend_handles_labels() # Hacky legend
+
+  draw_oom_lines()
+
+  # Plot the legend
 
   vline_count = 0
   if model.rampup_start: vline_count += 1
@@ -237,61 +307,6 @@ def write_excel_report(olde_sheet_url, report_file_path=None, report_dir_path=No
   plt.gcf().add_artist(old_legend)
   plt.gcf().add_artist(new_legend)
   plt.gcf().add_artist(vline_legend)
-
-  report.add_figure()
-
-  # Add tables
-  year_variables_table = {label: [olde[var], modern[var]] for label, var in year_variables.items()}
-  year_variables_table = pd.DataFrame(year_variables_table, index = ['Excel', 'Python'])
-  report.add_data_frame(year_variables_table)
-
-  for label, var in state_variables.items():
-    container = report.add_html('<div class="header-container"></div>')
-    header = report.add_header(label, level = 4, parent = container)
-    table = {f'{year:.1f}': [olde[var][i], modern[var][i]] for i, year in enumerate(clip(model.timesteps)[:len(modern[var])])}
-    table = pd.DataFrame(table, index = ['Excel', 'Python'])
-    html_table = report.add_data_frame(table)
-
-    # Make all columns the same width in the most horribly hacky way
-    col_width = 100
-    html_table.find('.//table').attrib['style'] = f'table-layout: fixed; width: {col_width * len(modern[var])}px'
-    for th in html_table.findall('.//th'):
-      th.attrib['style'] = f'width: {col_width}px'
-
-  report.add_html('''
-    <style>
-      .header-container {
-        width: 100%;
-      }
-
-      h4 {
-        position: sticky;
-        left: 1em;
-        display: inline-block;
-        margin-bottom: 2px;
-      }
-    </style>
-  ''', parent = report.head)
-
-  report_path = report.write()
-  log.info(f'Report stored in {report_path}')
-
-  return model
-
-def plot_compute_decomposition(start_idx, end_idx, reference_idx, timesteps, compute_investment, hardware_performance, software, frac_compute_training, linestyle = '-', ylim = [None, None]):
-  clip = lambda x: x[start_idx:end_idx]
-  clip_and_normalize = lambda x: clip(x)/x[reference_idx]
-
-  plt.plot(clip(timesteps), clip_and_normalize(compute_investment), label = '$ on FLOP globally', color = 'blue', linestyle = linestyle)
-  plt.plot(clip(timesteps), clip_and_normalize(hardware_performance), label = 'Hardware quality', color = 'orange', linestyle = linestyle)
-  plt.plot(clip(timesteps), clip_and_normalize(software), label = 'Software', color = 'green', linestyle = linestyle)
-  plt.plot(clip(timesteps), clip_and_normalize(frac_compute_training), label = 'Fraction global FLOP on training', color = 'red', linestyle = linestyle)
-  plt.yscale('log')
-
-  if ylim[0] is not None: plt.ylim(bottom = ylim[0])
-  if ylim[1] is not None: plt.ylim(top = ylim[1])
-
-  draw_oom_lines()
 
 
 if __name__ == '__main__':
