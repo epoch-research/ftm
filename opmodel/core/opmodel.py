@@ -1108,6 +1108,7 @@ class SimulateTakeOff():
     """ Input is a dictionary of quantiles {q1:v1, ..., qn:vn}
         Returns a numpy array of size n_items whose quantiles match the dictionary
         The rest of entries are geometrically interpolated
+        Assumes vi > vj when qi > qj.
     """
 
     q = np.linspace(0, 1, n_items)
