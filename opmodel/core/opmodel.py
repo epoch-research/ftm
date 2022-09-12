@@ -1536,14 +1536,14 @@ class SimulateTakeOff():
       y = np.log(y[delta:] / y[:-delta])
     
     if new_figure:
-      plt.figure(figsize=(14, 8), dpi=80);
+      plt.figure(figsize=(14, 8), dpi=80)
     #if not plot_growth:
     plt.yscale('log')
-    plt.plot(x, y, color = line_color);
+    plt.plot(x, y, color = line_color)
     if plot_growth:
-      plt.title(f"{metric} growth over time");
+      plt.title(f"{metric} growth over time")
     else:
-      plt.title(f"{metric} over time");
+      plt.title(f"{metric} over time")
 
     self._plot_vlines(line_color = line_color)
   
@@ -1553,19 +1553,19 @@ class SimulateTakeOff():
       plt.axvline(self.rampup_start, 
                 linestyle='dotted',
                 color=line_color,
-                label='Wake up');
+                label='Wake up')
                 
     if self.rampup_mid:
       plt.axvline(self.rampup_mid, 
                 linestyle='-.',
                 color=line_color,
-                label='30% automation');
+                label='30% automation')
                 
     if self.agi_year:
       plt.axvline(self.agi_year, 
                 linestyle='dashed',
                 color=line_color,
-                label='Full automation');
+                label='Full automation')
 
       
   
@@ -1574,7 +1574,7 @@ class SimulateTakeOff():
     """
     
     if new_figure:
-      plt.figure(figsize=(14, 8), dpi=80);
+      plt.figure(figsize=(14, 8), dpi=80)
 
     start_idx = 0
     reference_idx = self.time_to_index(self.rampup_start) if self.rampup_start is not None else 0
@@ -1606,9 +1606,9 @@ class SimulateTakeOff():
       plt.axhline(10**oom, linestyle='dotted', color='black',)
     
     if new_figure:
-      plt.title(f"Compute increase decomposition");
-      plt.legend(bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0);
-      plt.tight_layout();
+      plt.title(f"Compute increase decomposition")
+      plt.legend(bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0)
+      plt.tight_layout()
 
     # Super hacky
     return {
@@ -1622,7 +1622,7 @@ class SimulateTakeOff():
     """
     
     if new_figure:
-      plt.figure(figsize=(14, 8), dpi=80);
+      plt.figure(figsize=(14, 8), dpi=80)
 
     reference_idx = 0
 
