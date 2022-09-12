@@ -5,7 +5,7 @@ import pandas as pd
 import math
 
 from . import utils
-from .utils import display, get_option, get_parameter_table
+from .utils import display, get_option, get_parameter_table, init_cli_arguments, handle_cli_arguments
 
 class SimulateTakeOff():
   """ Class to run a simulation of how automation and the economy 
@@ -1720,6 +1720,10 @@ class SimulateTakeOff():
 
     
 if __name__ == "__main__":
+  # Handle CLI arguments
+  parser = init_cli_arguments()
+  args = handle_cli_arguments(parser)
+
   # Retrieve parameter estimates from spreadsheet
   parameter_table = get_parameter_table()
   best_guess_parameters = {parameter : row['Best guess'] for parameter, row in parameter_table.iterrows()}
@@ -1735,3 +1739,6 @@ if __name__ == "__main__":
   plt.show()
   model.display_summary_table()
   model.display_takeoff_metrics()
+
+  print(model.agi_year)
+  print(model.n_labour_tasks_rnd)
