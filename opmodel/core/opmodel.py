@@ -1674,10 +1674,14 @@ class SimulateTakeOff():
       t_end = t + 1
       idx_end = self.time_to_index(t_end)
 
+      # If the [idx, idx_end] interval falls outside our simulation, move it to the left
       if idx_end >= len(self.timesteps):
         diff = idx_end - (len(self.timesteps) - 1)
         idx -= diff
         idx_end -= diff
+
+        t = self.index_to_time(idx)
+        t_end = self.index_to_time(idx_end)
       
       summary_row = {
         'period' : period,
