@@ -670,7 +670,7 @@ class SimulateTakeOff():
       self.task_compute_to_labour_ratio_goods[t_idx]*self.compute_task_input_goods[t_idx, :]
     
     self.frac_tasks_automated_goods[t_idx] =\
-      (np.sum(self.compute_task_input_goods[t_idx, :] > 0) - 1) \
+      (np.sum(self.task_compute_to_labour_ratio_goods[t_idx]*self.compute_task_input_goods[t_idx] > 10 * self.labour_task_input_goods[t_idx]) - 1) \
       / self.n_labour_tasks_goods
     ## We substract 1 to account for the initial compute task
     
@@ -788,7 +788,7 @@ class SimulateTakeOff():
     
     # Note down fraction of tasks automated
     self.frac_tasks_automated_rnd[t_idx] =\
-      (np.sum(self.compute_task_input_hardware_rnd[t_idx, :] > 0) - 1) \
+      (np.sum(self.task_compute_to_labour_ratio_rnd[t_idx]*self.compute_task_input_hardware_rnd[t_idx] > 10 * self.labour_task_input_hardware_rnd[t_idx]) - 1) \
       / self.n_labour_tasks_rnd
     ## We substract 1 to account for the initial compute task
     
