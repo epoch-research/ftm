@@ -412,6 +412,13 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
     </ul>
     <div id="compute-decomposition-graph-container" class="graph-container"></div>
     <h2>Takeoff metrics</h2>
+    <p>
+      Show
+      <select id="metrics-to-show">
+        <option value="important-metrics">most important metrics</option>
+        <option value="all-metrics">all metrics</option>
+      </select>
+    </p>
     <div id="takeoff-metrics-table-container"></div>
     <h2>Summary</h2>
     <p>Click <span data-modal-trigger="year-by-year-modal"><i>here</i> for the detailed year by year table.</p>
@@ -574,15 +581,45 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
 
 <script>
   let best_guess_sim = null;
+  let sim;
 
   let ui_state = {
     show_bioanchors: false,
     show_normalized_decomposition: false,
 
+    metrics_to_show: 'important-metrics',
+
     // TODO Generalize these
     metrics_graph_top_selection: 'raw metric',
     metrics_graph_side_selection: 'GWP',
   };
+
+  let metrics_to_show = document.getElementById('metrics-to-show');
+  metrics_to_show.addEventListener('change',  () => {
+    ui_state.metrics_to_show = metrics_to_show.value;
+
+    let all_metrics_table = {
+      ...sim.takeoff_metrics,
+      'rampup_start': sim.rampup_start,
+      'agi_year': sim.agi_year,
+    };
+
+    let metrics_table;
+
+    if (ui_state.metrics_to_show == 'important-metrics') {
+      let important_metrics = [ 'billion_agis', 'full_automation', 'agi_year', 'rampup_start'];
+
+      metrics_table = {};
+      for (let key of important_metrics) {
+        metrics_table[key] = all_metrics_table[key];
+      }
+    } else {
+      metrics_table = all_metrics_table;
+    }
+
+    clear_tables('#takeoff-metrics-table-container');
+    add_table('#takeoff-metrics-table-container', metrics_table);
+  });
 
   function run_simulation(immediate, callback) {
     let params = get_parameters();
@@ -590,7 +627,7 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
       cancelBackgroundProcesses();
       dispatchBackgroundProcess(() => {
         let js_params = transform_python_to_js_params(params);
-        let sim = run_model(js_params);
+        sim = run_model(js_params);
 
         if (callback) {
           callback(sim);
@@ -603,17 +640,12 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
         //let b = sim.get_thread('biggest_training_run');
         let b = sim.get_thread('compute');
 
-        clear_tables('#takeoff-metrics-table-container');
+        metrics_to_show.value = ui_state.metrics_to_show;
+        metrics_to_show.dispatchEvent(new Event('change'));
+
         clear_tables('#summary-table-container');
         clear_tables('#year-by-year-table-container');
 
-        let metrics_table = {
-          ...sim.takeoff_metrics,
-          'rampup_start': sim.rampup_start,
-          'agi_year': sim.agi_year,
-        };
-
-        add_table('#takeoff-metrics-table-container', metrics_table);
         add_table('#summary-table-container', sim.get_summary_table());
 
         let detailed_table = {
