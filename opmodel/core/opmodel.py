@@ -1729,7 +1729,7 @@ if __name__ == "__main__":
   best_guess_parameters = {parameter : row['Best guess'] for parameter, row in parameter_table.iterrows()}
 
   # Run model
-  model = SimulateTakeOff(**best_guess_parameters, t_step=1)
+  model = SimulateTakeOff(**best_guess_parameters)
   model.run_simulation()
 
   # Plot things
@@ -1739,6 +1739,3 @@ if __name__ == "__main__":
   plt.show()
   model.display_summary_table()
   model.display_takeoff_metrics()
-
-  print(model.agi_year)
-  print(model.n_labour_tasks_rnd)
