@@ -121,9 +121,10 @@ def compare(params):
       else:
         assert_roughly_equal(v, w)
 
-  assert('doubling times' in js_takeoff_metrics)
+  assert('doubling_times' in js_takeoff_metrics)
 
-  js_takeoff_metrics['doubling times'] = [js_takeoff_metrics['doubling times'][0][:4]]
+  js_takeoff_metrics['doubling times'] = [js_takeoff_metrics['doubling_times'][0][:4]]
+  del js_takeoff_metrics['doubling_times']
 
   compare_tables(python_summary_table, js_summary_table)
   compare_tables(python_takeoff_metrics, js_takeoff_metrics)
