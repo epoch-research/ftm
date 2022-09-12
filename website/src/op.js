@@ -1082,8 +1082,11 @@ function compute_shares(
 }
 
 function get_automated_tasks_count(statex) {
-  // -1 to account for the initial task
-  return np.count_true(np.gt(statex.compute_task_input, 0)) - 1;
+  let count = np.count_true(np.gt(
+    np.mult(statex.task_compute_to_labour_ratio, statex.compute_task_input),
+    np.mult(10, statex.labour_task_input)
+  )) - 1; // -1 to account for the initial task
+  return count;
 }
 
 function get_frac_tasks_automated(statex, paramsx) {
@@ -1317,6 +1320,8 @@ automate_tasks = block({
 
     update_automatable_tasks(state.goods, params.goods, 'goods');
     update_automatable_tasks(state.rnd, params.rnd, 'rnd');
+    state.hardware_rnd.task_compute_to_labour_ratio = state.rnd.task_compute_to_labour_ratio; // TODO hack
+    state.software_rnd.task_compute_to_labour_ratio = state.rnd.task_compute_to_labour_ratio; // TODO hack
   },
 });
 
