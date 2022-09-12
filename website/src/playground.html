@@ -578,6 +578,10 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
   let ui_state = {
     show_bioanchors: false,
     show_normalized_decomposition: false,
+
+    // TODO Generalize these
+    metrics_graph_top_selection: 'raw metric',
+    metrics_graph_side_selection: 'GWP',
   };
 
   function run_simulation(immediate, callback) {
@@ -674,13 +678,16 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
       label_to_var[o.label] = o.var;
     }
 
-    plt.set_top_selections(['raw metric', 'growth per year']);
-    plt.set_side_selections(labels);
+    plt.set_top_selections(['raw metric', 'growth per year'], ui_state.metrics_graph_top_selection);
+    plt.set_side_selections(labels, ui_state.metrics_graph_side_selection);
     plt.on_select((top, side, graph) => {
       graph.clear_dataset();
 
       let x;
       let y;
+
+      ui_state.metrics_graph_top_selection = top;
+      ui_state.metrics_graph_side_selection = side;
 
       let show_growth = (top == 'growth per year');
 
@@ -1324,11 +1331,7 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
 
       if (this.top_selections.length || this.side_selections.length) {
         // This is an interactive graph. Let the manager generate the first state.
-        let top = (this.top_selections.length > 0) ? this.top_selections[0] : null;
-        let side = (this.side_selections.length > 0) ? this.side_selections[0] : null;
-        this.selected_top = top;
-        this.selected_side = side;
-        this.on_select_callback(top, side, this);
+        this.on_select_callback(this.selected_top, this.selected_side, this);
       }
 
       if (this.top_selections.length) {
@@ -1351,8 +1354,11 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
             this.update();
           });
           labels.push(label);
+
+          if (field == this.selected_top) {
+            label.classList.add('active');
+          }
         }
-        labels[0].classList.add('active');
         this.nodes.header.prepend(top_selector);
       }
 
@@ -1380,8 +1386,11 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
             this.update();
           });
           labels.push(label);
+
+          if (field == this.selected_side) {
+            label.classList.add('active');
+          }
         }
-        labels[0].classList.add('active');
         this.nodes.side.append(side_selector);
       }
 
@@ -1425,12 +1434,14 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
       this.graph.set_title(title);
     }
 
-    set_top_selections(fields) {
+    set_top_selections(fields, selection) {
       this.graph.top_selections = fields;
+      this.graph.selected_top = (typeof selection === 'undefined') ? fields[0] : selection;
     }
 
-    set_side_selections(fields) {
+    set_side_selections(fields, selection) {
       this.graph.side_selections = fields;
+      this.graph.selected_side = (typeof selection === 'undefined') ? fields[0] : selection;
     }
 
     on_select(callback) {
