@@ -10,7 +10,7 @@ from opmodel.core.opmodel import *
 
 important_params_and_metrics = pd.read_excel(
     get_input_workbook(),
-    sheet_name = re.sub(r'[\[\]]', '', '[tom] Most important parameters and metrics')[:31]
+    sheet_name = MOST_IMPORTANT_PARAMETERS_SHEET
 )
 important_params = important_params_and_metrics['Parameter id'].tolist()
 
@@ -61,6 +61,8 @@ def generate_dictionaries():
   print(f'let parameter_justifications = {json.dumps(get_parameter_justifications())};')
   print(f'let metric_names = {json.dumps(get_metric_names())};')
   print(f'let metric_meanings = {json.dumps(get_metrics_meanings())};')
+
+  print(f'let variable_names = {json.dumps(get_variable_names())};')
 
 def generate_arrays():
   print(f'let important_metrics = {json.dumps(important_params_and_metrics["Metric id"].tolist())};')

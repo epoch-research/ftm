@@ -27,6 +27,10 @@ CONFIG_FILES = [
   os.path.join(PROJECT_DIR, 'local_config.yml'),
 ]
 
+# Excel removes some characters from the sheet names and limits their length
+MOST_IMPORTANT_PARAMETERS_SHEET = re.sub(r'[\[\]]', '', '[tom] Most important parameters and metrics')[:31]
+AJEYA_SHEET = 'Ajeya distribution of automation FLOP'[:31]
+
 #--------------------------------------------------------------------------
 # Poor person's mini configuration system
 #--------------------------------------------------------------------------
@@ -245,11 +249,15 @@ def get_sheet_df_as_rich_text(sheet_name, workbook = None):
 
   return df
 
+def get_sheet_table(sheet_name):
+  table = pd.read_excel(get_input_workbook(), sheet_name = sheet_name)
+  table = table.set_index(table.columns[0])
+  return table
+
 def get_metrics_table():
   global cached_metrics_table
   if cached_metrics_table is None:
-    cached_metrics_table = pd.read_excel(get_input_workbook(), sheet_name = 'Output metrics')
-    cached_metrics_table = cached_metrics_table.set_index(cached_metrics_table.columns[0])
+    cached_metrics_table = get_sheet_table('Output metrics')
   return cached_metrics_table
 
 def set_parameter_table_url(url):
@@ -266,7 +274,7 @@ def get_ajeya_dist():
       cached_ajeya_dist = get_csv_from_sheet_url(url, usecols = cols)
     else:
       # By default we read the distibution from the omni workbook
-      cached_ajeya_dist = pd.read_excel(get_input_workbook(), sheet_name = 'Ajeya distribution of automation FLOP'[:31], usecols = cols)
+      cached_ajeya_dist = pd.read_excel(get_input_workbook(), sheet_name = AJEYA_SHEET, usecols = cols)
 
   return cached_ajeya_dist.copy()
 
@@ -337,6 +345,12 @@ def get_param_names():
 
 def get_metric_names():
   table = get_metrics_table()['Metric'].to_dict()
+  for k, v in table.items():
+    if pd.isnull(v): table[k] = snake_case_to_human(k)
+  return table
+
+def get_variable_names():
+  table = get_sheet_table('Variables')['Variable'].to_dict()
   for k, v in table.items():
     if pd.isnull(v): table[k] = snake_case_to_human(k)
   return table
