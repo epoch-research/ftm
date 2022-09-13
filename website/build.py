@@ -32,6 +32,9 @@ def build():
   cp('bridge.js')
   cp('op.js')
 
+  shutil.rmtree(os.path.join(BUILD_DIR, 'assets'))
+  shutil.copytree(os.path.join(SRC_DIR, 'assets'), os.path.join(BUILD_DIR, 'assets'))
+
   header = read('header.html')
 
   playground = read('playground.html')

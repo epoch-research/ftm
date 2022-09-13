@@ -1,4 +1,8 @@
 <!--
+Seriously, don't look at this right now
+-->
+
+<!--
 See https://d3-graph-gallery.com/
 See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom-events-to-a-D3-js-streamgraph-in-SAS/ta-p/513331
 -->
@@ -6,6 +10,14 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
 <style>
   :root {
     --sidebar-width: 325px;
+  }
+
+  .runtime_training_tradeoff_enabled {
+    width: initial !important;
+  }
+
+  #runtime_training_tradeoff, #runtime_training_max_tradeoff {
+    margin-left: 0;
   }
 
   #bioanchors-button {
@@ -93,6 +105,10 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
     box-sizing: border-box;
     overflow-y: auto;
     border-left: 1px solid #999;
+  }
+
+  .sidebar-content {
+    padding-top: 1em;
   }
 
   .sidebar-content-wrapper {
@@ -242,6 +258,44 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
     margin-right: 5px;
     vertical-align: middle;
   }
+
+  .additional-parameters {
+    border: none !important;
+  }
+
+  .additional-parameters .handorgel__header__button {
+    padding: 0;
+    //text-transform: uppercase;
+    font-size: 0.8em;
+    color: grey;
+    margin-top: 1em;
+    margin-bottom: 0.5em;
+  }
+
+  .additional-parameters .handorgel__header--open .handorgel__header__button {
+    color: black;
+  }
+
+  .additional-parameters .handorgel__content__inner {
+    padding: 0;
+  }
+
+  .basic-parameters {
+    border: none !important;
+    margin-top: 3em;
+  }
+
+  .basic-parameters .handorgel__header__button {
+    padding: 0;
+  }
+
+  .handorgel__header__button {
+    background-color: transparent !important;
+  }
+
+  .handorgel__header__button .icon {
+    float: right;
+  }
 </style>
 
 <style>
@@ -296,6 +350,11 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
   }
 </style>
 
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.9.0/font/bootstrap-icons.css">
+<link rel="stylesheet" href="assets/css/handorgel.css" />
+
+<script src="assets/js/handorgel.js"></script>
+
 <div class="playground">
 
 <div class="sidebar-wrapper">
@@ -308,6 +367,84 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
     </div>
     <div class="sidebar-content-wrapper">
       <div class="sidebar-content">
+
+
+<div class="input-parameter"><label for="full_automation_requirements_training">AGI training requirements</label> <input class="input" id="full_automation_requirements_training" value="1e+36"></div>
+<div class="input-parameter"><label for="flop_gap_training">FLOP gap (training)</label> <input class="input" id="flop_gap_training" value="100000.0"></div>
+<div class="input-parameter"><label for="full_automation_requirements_runtime">AGI runtime requirements</label> <input class="input" id="full_automation_requirements_runtime" value="1.66667e+16"></div>
+<div class="input-parameter disabled"><label for="runtime_training_tradeoff">Trade-off efficiency</label> <input class="runtime_training_tradeoff_enabled" type="checkbox"> <input class="input" id="runtime_training_tradeoff" value="-1.0"></div>
+<div class="input-parameter"><label for="labour_substitution_rnd">Labour substitution R&D</label> <input class="input" id="labour_substitution_rnd" value="-0.5"></div>
+<div class="input-parameter"><label for="hardware_returns">Returns to hardware</label> <input class="input" id="hardware_returns" value="5.2"></div>
+<div class="input-parameter"><label for="software_returns">Returns to software</label> <input class="input" id="software_returns" value="1.25"></div>
+<div class="input-parameter"><label for="frac_gwp_compute_growth">Growth rate fraction GWP compute</label> <input class="input" id="frac_gwp_compute_growth" value="0.19"></div>
+<div class="input-parameter"><label for="frac_compute_training_growth">Growth rate fraction compute training</label> <input class="input" id="frac_compute_training_growth" value="0.547528364331348"></div>
+<div class="input-parameter"><label for="frac_gwp_compute_growth_rampup">Wake-up growth rate fraction of GWP buying compute</label> <input class="input" id="frac_gwp_compute_growth_rampup" value="0.19"></div>
+<div class="input-parameter"><label for="frac_compute_training_growth_rampup">Wake-up growth rate fraction compute training AI models</label> <input class="input" id="frac_compute_training_growth_rampup" value="1.1"></div>
+<div class="input-parameter"><label for="frac_gwp_compute_ceiling">Max fraction GWP compute</label> <input class="input" id="frac_gwp_compute_ceiling" value="0.3"></div>
+<div class="input-parameter"><label for="frac_compute_training_ceiling">Max fraction compute training</label> <input class="input" id="frac_compute_training_ceiling" value="0.1"></div>
+<div class="input-parameter"><label for="initial_biggest_training_run">Initial biggest training run</label> <input class="input" id="initial_biggest_training_run" value="3e+24"></div>
+<div class="input-parameter"><label for="rampup_trigger">Wakeup trigger</label> <input class="input" id="rampup_trigger" value="0.03"></div>
+
+  <div class="handorgel additional-parameters">
+    <h3 class="handorgel__header">
+      <div class="handorgel__header__button" autofocus>
+        Show additional parameters
+        <span class="icon bi bi-plus-lg"></span>
+      </div>
+    </h3>
+    <div class="handorgel__content">
+      <div class="input-parameter"><label for="goods_vs_rnd_requirements_training">Training goods vs R&D</label> <input class="input" id="goods_vs_rnd_requirements_training" value="3.0"></div>
+<div class="input-parameter"><label for="flop_gap_runtime">FLOP gap (runtime)</label> <input class="input" id="flop_gap_runtime" value="100.0"></div>
+<div class="input-parameter"><label for="goods_vs_rnd_requirements_runtime">Runtime goods vs R&D</label> <input class="input" id="goods_vs_rnd_requirements_runtime" value="10.0"></div>
+<div class="input-parameter disabled"><label for="runtime_training_max_tradeoff">Maximum trade-off</label> <input class="runtime_training_tradeoff_enabled" type="checkbox"> <input class="input" id="runtime_training_max_tradeoff" value="1e+100"></div>
+<div class="input-parameter"><label for="labour_substitution_goods">Labour substitution goods</label> <input class="input" id="labour_substitution_goods" value="-0.5"></div>
+<div class="input-parameter"><label for="capital_substitution_goods">Substitution between capital and cognitive tasks for goods and services</label> <input class="input" id="capital_substitution_goods" value="-0.4"></div>
+<div class="input-parameter"><label for="capital_substitution_rnd">Substitution between capital and cognitive tasks for R&D</label> <input class="input" id="capital_substitution_rnd" value="-0.25"></div>
+<div class="input-parameter"><label for="hardware_performance_ceiling">Maximum hardware performance</label> <input class="input" id="hardware_performance_ceiling" value="1e+30"></div>
+<div class="input-parameter"><label for="software_ceiling">Maximum software performance</label> <input class="input" id="software_ceiling" value="10000000.0"></div>
+<div class="input-parameter"><label for="rnd_parallelization_penalty">R&D parallelization penalty</label> <input class="input" id="rnd_parallelization_penalty" value="0.7"></div>
+<div class="input-parameter"><label for="hardware_delay">Hardware adoption delay</label> <input class="input" id="hardware_delay" value="1.0"></div>
+<div class="input-parameter"><label for="frac_capital_hardware_rnd_growth">Growth rate fraction capital hardware R&D</label> <input class="input" id="frac_capital_hardware_rnd_growth" value="0.01"></div>
+<div class="input-parameter"><label for="frac_labour_hardware_rnd_growth">Growth rate fraction labour hardware R&D</label> <input class="input" id="frac_labour_hardware_rnd_growth" value="0.01"></div>
+<div class="input-parameter"><label for="frac_compute_hardware_rnd_growth">Growth rate fraction compute hardware R&D</label> <input class="input" id="frac_compute_hardware_rnd_growth" value="0.01"></div>
+<div class="input-parameter"><label for="frac_labour_software_rnd_growth">Growth rate fraction labour software R&D</label> <input class="input" id="frac_labour_software_rnd_growth" value="0.18"></div>
+<div class="input-parameter"><label for="frac_compute_software_rnd_growth">Growth rate fraction compute software R&D</label> <input class="input" id="frac_compute_software_rnd_growth" value="0.18"></div>
+<div class="input-parameter"><label for="frac_capital_hardware_rnd_growth_rampup">Wake-up growth rate fraction capital hardware R&D</label> <input class="input" id="frac_capital_hardware_rnd_growth_rampup" value="0.14"></div>
+<div class="input-parameter"><label for="frac_labour_hardware_rnd_growth_rampup">Wake-up growth rate fraction labour hardware R&D</label> <input class="input" id="frac_labour_hardware_rnd_growth_rampup" value="0.14"></div>
+<div class="input-parameter"><label for="frac_compute_hardware_rnd_growth_rampup">Wake-up growth rate fraction compute hardware R&D</label> <input class="input" id="frac_compute_hardware_rnd_growth_rampup" value="0.6699999999999999"></div>
+<div class="input-parameter"><label for="frac_labour_software_rnd_growth_rampup">Wake-up growth rate fraction labour software R&D</label> <input class="input" id="frac_labour_software_rnd_growth_rampup" value="0.22"></div>
+<div class="input-parameter"><label for="frac_compute_software_rnd_growth_rampup">Wake-up growth rate fraction of compute software R&D</label> <input class="input" id="frac_compute_software_rnd_growth_rampup" value="0.6699999999999999"></div>
+<div class="input-parameter"><label for="frac_capital_hardware_rnd_ceiling">Max fraction capital hardware R&D</label> <input class="input" id="frac_capital_hardware_rnd_ceiling" value="0.03"></div>
+<div class="input-parameter"><label for="frac_labour_hardware_rnd_ceiling">Max fraction of labour dedicated to hardware R&D</label> <input class="input" id="frac_labour_hardware_rnd_ceiling" value="0.03"></div>
+<div class="input-parameter"><label for="frac_compute_hardware_rnd_ceiling">Max fraction of compute dedicated to hardware R&D</label> <input class="input" id="frac_compute_hardware_rnd_ceiling" value="0.2"></div>
+<div class="input-parameter"><label for="frac_labour_software_rnd_ceiling">Max fraction labour software R&D</label> <input class="input" id="frac_labour_software_rnd_ceiling" value="0.03"></div>
+<div class="input-parameter"><label for="frac_compute_software_rnd_ceiling">Max fraction compute software R&D</label> <input class="input" id="frac_compute_software_rnd_ceiling" value="0.2"></div>
+<div class="input-parameter"><label for="initial_frac_capital_hardware_rnd">Initial fraction capital hardware R&D</label> <input class="input" id="initial_frac_capital_hardware_rnd" value="0.002"></div>
+<div class="input-parameter"><label for="initial_frac_labour_hardware_rnd">Initial fraction labour hardware R&D</label> <input class="input" id="initial_frac_labour_hardware_rnd" value="0.002"></div>
+<div class="input-parameter"><label for="initial_frac_compute_hardware_rnd">Initial fraction compute hardware R&D</label> <input class="input" id="initial_frac_compute_hardware_rnd" value="0.002"></div>
+<div class="input-parameter"><label for="initial_frac_labour_software_rnd">Initial fraction labour software R&D</label> <input class="input" id="initial_frac_labour_software_rnd" value="0.0002"></div>
+<div class="input-parameter"><label for="initial_frac_compute_software_rnd">Initial fraction compute software R&D</label> <input class="input" id="initial_frac_compute_software_rnd" value="0.0002"></div>
+<div class="input-parameter"><label for="ratio_initial_to_cumulative_input_hardware_rnd">Initial vs cumulative input - hardware R&D</label> <input class="input" id="ratio_initial_to_cumulative_input_hardware_rnd" value="0.047"></div>
+<div class="input-parameter"><label for="ratio_initial_to_cumulative_input_software_rnd">Initial vs cumulative input - software R&D</label> <input class="input" id="ratio_initial_to_cumulative_input_software_rnd" value="0.2"></div>
+<div class="input-parameter"><label for="initial_hardware_production">Initial hardware production</label> <input class="input" id="initial_hardware_production" value="1e+28"></div>
+<div class="input-parameter"><label for="ratio_hardware_to_initial_hardware_production">Accumulated hardware vs initial hardware production</label> <input class="input" id="ratio_hardware_to_initial_hardware_production" value="2.0"></div>
+<div class="input-parameter"><label for="initial_buyable_hardware_performance">Initial market hardware performance</label> <input class="input" id="initial_buyable_hardware_performance" value="1.5e+17"></div>
+<div class="input-parameter"><label for="initial_gwp">Initial GWP</label> <input class="input" id="initial_gwp" value="85000000000000.0"></div>
+<div class="input-parameter"><label for="initial_population">Initial population</label> <input class="input" id="initial_population" value="8000000000.0"></div>
+<div class="input-parameter"><label for="initial_cognitive_share_goods">Initial cognitive share goods</label> <input class="input" id="initial_cognitive_share_goods" value="0.5"></div>
+<div class="input-parameter"><label for="initial_cognitive_share_rnd">Initial cognitive share in R&D</label> <input class="input" id="initial_cognitive_share_rnd" value="0.7"></div>
+<div class="input-parameter"><label for="initial_compute_share_goods">Initial compute share goods</label> <input class="input" id="initial_compute_share_goods" value="0.01"></div>
+<div class="input-parameter"><label for="initial_compute_share_rnd">Initial compute share R&D</label> <input class="input" id="initial_compute_share_rnd" value="0.01"></div>
+<div class="input-parameter"><label for="initial_capital_growth">Initial capital growth rate</label> <input class="input" id="initial_capital_growth" value="0.0275"></div>
+<div class="input-parameter"><label for="labour_growth">Population growth rate</label> <input class="input" id="labour_growth" value="0.01"></div>
+<div class="input-parameter"><label for="tfp_growth">TFP growth rate</label> <input class="input" id="tfp_growth" value="0.01"></div>
+<div class="input-parameter"><label for="compute_depreciation">Compute depreciation rate</label> <input class="input" id="compute_depreciation" value="0.2"></div>
+<div class="input-parameter"><label for="money_cap_training_before_wakeup">Money cap training before wakeup</label> <input class="input" id="money_cap_training_before_wakeup" value="4000000000.0"></div>
+    </div>
+  </div>
+
+
+      <!--
         <div class="parameter-group">
           <div class="parameter-group-label">Time parameters</div>
           <div class="input-parameter"><label for="t_step">Step duration</label> <input id="t_step" value="0.1"></div>
@@ -324,75 +461,87 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
           <div class="input-parameter"><label for="goods_vs_rnd_requirements_runtime">Runtime goods vs. R&D</label> <input id="goods_vs_rnd_requirements_runtime" value="10.0"></div>
         </div>
 
-        <div class="parameter-group">
-          <div class="parameter-group-label">Runtime-training tradeoff</div>
-          <div class="input-parameter"><label for="runtime_training_tradeoff_enabled">Enable</label> <input id="runtime_training_tradeoff_enabled" type="checkbox"></div>
-          <div class="input-parameter disabled"><label for="runtime_training_tradeoff">Tradeoff</label> <input id="runtime_training_tradeoff" value="10"></div>
-          <div class="input-parameter disabled"><label for="runtime_training_max_tradeoff">Max tradeoff</label> <input id="runtime_training_max_tradeoff" value="100.0"></div>
-        </div>
+        <div class="handorgel additional-parameters">
+          <h3 class="handorgel__header">
+            <div class="handorgel__header__button" autofocus>
+              Show additional parameters
+              <span class="icon bi bi-plus-lg"></span>
+            </div>
+          </h3>
+          <div class="handorgel__content">
+            <div class="handorgel__content__inner">
+              <div class="parameter-group">
+                <div class="parameter-group-label">Runtime-training tradeoff</div>
+                <div class="input-parameter"><label for="runtime_training_tradeoff_enabled">Enable</label> <input id="runtime_training_tradeoff_enabled" type="checkbox"></div>
+                <div class="input-parameter disabled"><label for="runtime_training_tradeoff">Tradeoff</label> <input id="runtime_training_tradeoff" value="10"></div>
+                <div class="input-parameter disabled"><label for="runtime_training_max_tradeoff">Max tradeoff</label> <input id="runtime_training_max_tradeoff" value="100.0"></div>
+              </div>
 
-        <div class="parameter-group">
-          <div class="parameter-group-label">Initial values</div>
-          <div class="input-parameter"><label for="initial_frac_capital_hardware_rnd">initial_frac_c</label> <input id="initial_frac_capital_hardware_rnd" value="0.002"></div>
-          <div class="input-parameter"><label for="initial_frac_labour_hardware_rnd">initial_frac_l</label> <input id="initial_frac_labour_hardware_rnd" value="0.002"></div>
-          <div class="input-parameter"><label for="initial_frac_compute_hardware_rnd">initial_frac_c</label> <input id="initial_frac_compute_hardware_rnd" value="0.002"></div>
-          <div class="input-parameter"><label for="initial_frac_labour_software_rnd">initial_frac_l</label> <input id="initial_frac_labour_software_rnd" value="0.0002"></div>
-          <div class="input-parameter"><label for="initial_frac_compute_software_rnd">initial_frac_c</label> <input id="initial_frac_compute_software_rnd" value="0.0002"></div>
-          <div class="input-parameter"><label for="initial_biggest_training_run">Biggest training run</label> <input id="initial_biggest_training_run" value="3e+24"></div>
-          <div class="input-parameter"><label for="ratio_initial_to_cumulative_input_hardware_rnd">ratio_initial_</label> <input id="ratio_initial_to_cumulative_input_hardware_rnd" value="0.047"></div>
-          <div class="input-parameter"><label for="ratio_initial_to_cumulative_input_software_rnd">ratio_initial_</label> <input id="ratio_initial_to_cumulative_input_software_rnd" value="0.2"></div>
-          <div class="input-parameter"><label for="initial_hardware_production">Hardware production</label> <input id="initial_hardware_production" value="1e+28"></div>
-          <div class="input-parameter"><label for="ratio_hardware_to_initial_hardware_production">ratio_hardware</label> <input id="ratio_hardware_to_initial_hardware_production" value="2.0"></div>
-          <div class="input-parameter"><label for="initial_buyable_hardware_performance">Hardware performance</label> <input id="initial_buyable_hardware_performance" value="1.5e+17"></div>
-          <div class="input-parameter"><label for="initial_gwp">GWP</label> <input id="initial_gwp" value="85000000000000.0"></div>
-          <div class="input-parameter"><label for="initial_population">Population</label> <input id="initial_population" value="8e9"></div>
-          <div class="input-parameter"><label for="initial_cognitive_share_goods">Cognitive share goods</label> <input id="initial_cognitive_share_goods" value="0.5"></div>
-          <div class="input-parameter"><label for="initial_cognitive_share_rnd">Cognitive share R&D</label> <input id="initial_cognitive_share_rnd" value="0.7"></div>
-          <div class="input-parameter"><label for="initial_compute_share_goods">Compute share goods</label> <input id="initial_compute_share_goods" value="0.01"></div>
-          <div class="input-parameter"><label for="initial_compute_share_rnd">Compute share R&D</label> <input id="initial_compute_share_rnd" value="0.01"></div>
-        </div>
+              <div class="parameter-group">
+                <div class="parameter-group-label">Initial values</div>
+                <div class="input-parameter"><label for="initial_frac_capital_hardware_rnd">initial_frac_c</label> <input id="initial_frac_capital_hardware_rnd" value="0.002"></div>
+                <div class="input-parameter"><label for="initial_frac_labour_hardware_rnd">initial_frac_l</label> <input id="initial_frac_labour_hardware_rnd" value="0.002"></div>
+                <div class="input-parameter"><label for="initial_frac_compute_hardware_rnd">initial_frac_c</label> <input id="initial_frac_compute_hardware_rnd" value="0.002"></div>
+                <div class="input-parameter"><label for="initial_frac_labour_software_rnd">initial_frac_l</label> <input id="initial_frac_labour_software_rnd" value="0.0002"></div>
+                <div class="input-parameter"><label for="initial_frac_compute_software_rnd">initial_frac_c</label> <input id="initial_frac_compute_software_rnd" value="0.0002"></div>
+                <div class="input-parameter"><label for="initial_biggest_training_run">Biggest training run</label> <input id="initial_biggest_training_run" value="3e+24"></div>
+                <div class="input-parameter"><label for="ratio_initial_to_cumulative_input_hardware_rnd">ratio_initial_</label> <input id="ratio_initial_to_cumulative_input_hardware_rnd" value="0.047"></div>
+                <div class="input-parameter"><label for="ratio_initial_to_cumulative_input_software_rnd">ratio_initial_</label> <input id="ratio_initial_to_cumulative_input_software_rnd" value="0.2"></div>
+                <div class="input-parameter"><label for="initial_hardware_production">Hardware production</label> <input id="initial_hardware_production" value="1e+28"></div>
+                <div class="input-parameter"><label for="ratio_hardware_to_initial_hardware_production">ratio_hardware</label> <input id="ratio_hardware_to_initial_hardware_production" value="2.0"></div>
+                <div class="input-parameter"><label for="initial_buyable_hardware_performance">Hardware performance</label> <input id="initial_buyable_hardware_performance" value="1.5e+17"></div>
+                <div class="input-parameter"><label for="initial_gwp">GWP</label> <input id="initial_gwp" value="85000000000000.0"></div>
+                <div class="input-parameter"><label for="initial_population">Population</label> <input id="initial_population" value="8e9"></div>
+                <div class="input-parameter"><label for="initial_cognitive_share_goods">Cognitive share goods</label> <input id="initial_cognitive_share_goods" value="0.5"></div>
+                <div class="input-parameter"><label for="initial_cognitive_share_rnd">Cognitive share R&D</label> <input id="initial_cognitive_share_rnd" value="0.7"></div>
+                <div class="input-parameter"><label for="initial_compute_share_goods">Compute share goods</label> <input id="initial_compute_share_goods" value="0.01"></div>
+                <div class="input-parameter"><label for="initial_compute_share_rnd">Compute share R&D</label> <input id="initial_compute_share_rnd" value="0.01"></div>
+              </div>
+            </div>
 
-        <div class="parameter-group">
-          <div class="parameter-group-label">Misc</div>
-          <div class="input-parameter"><label for="n_labour_tasks">Number of tasks</label> <input id="n_labour_tasks" value="100"></div>
-          <div class="input-parameter"><label for="labour_substitution_goods">Labour substitution goods</label> <input id="labour_substitution_goods" value="-0.5"></div>
-          <div class="input-parameter"><label for="labour_substitution_rnd">Labour substitution R&D</label> <input id="labour_substitution_rnd" value="-0.5"></div>
-          <div class="input-parameter"><label for="capital_substitution_goods">Capital substitution goods</label> <input id="capital_substitution_goods" value="-0.4"></div>
-          <div class="input-parameter"><label for="capital_substitution_rnd">Capital substitution R&D</label> <input id="capital_substitution_rnd" value="-0.25"></div>
-          <div class="input-parameter"><label for="hardware_returns">Hardware returns</label> <input id="hardware_returns" value="5.1"></div>
-          <div class="input-parameter"><label for="software_returns">Software returns</label> <input id="software_returns" value="1.25"></div>
-          <div class="input-parameter"><label for="hardware_performance_ceiling">Hardware perf. ceiling</label> <input id="hardware_performance_ceiling" value="1e+30"></div>
-          <div class="input-parameter"><label for="software_ceiling">Software ceiling</label> <input id="software_ceiling" value="10000000.0"></div>
-          <div class="input-parameter"><label for="rnd_parallelization_penalty">R&D parallelization penalty</label> <input id="rnd_parallelization_penalty" value="0.7"></div>
-          <div class="input-parameter"><label for="hardware_delay">Hardware delay</label> <input id="hardware_delay" value="1.0"></div>
-          <div class="input-parameter"><label for="frac_capital_hardware_rnd_growth">frac_capital_h</label> <input id="frac_capital_hardware_rnd_growth" value="0.01"></div>
-          <div class="input-parameter"><label for="frac_labour_hardware_rnd_growth">frac_labour_ha</label> <input id="frac_labour_hardware_rnd_growth" value="0.01"></div>
-          <div class="input-parameter"><label for="frac_compute_hardware_rnd_growth">frac_compute_h</label> <input id="frac_compute_hardware_rnd_growth" value="0.01"></div>
-          <div class="input-parameter"><label for="frac_labour_software_rnd_growth">frac_labour_so</label> <input id="frac_labour_software_rnd_growth" value="0.18"></div>
-          <div class="input-parameter"><label for="frac_compute_software_rnd_growth">frac_compute_s</label> <input id="frac_compute_software_rnd_growth" value="0.18"></div>
-          <div class="input-parameter"><label for="frac_gwp_compute_growth">frac_gwp_compu</label> <input id="frac_gwp_compute_growth" value="0.19"></div>
-          <div class="input-parameter"><label for="frac_compute_training_growth">frac_compute_t</label> <input id="frac_compute_training_growth" value="0.547528364331348"></div>
-          <div class="input-parameter"><label for="frac_capital_hardware_rnd_growth_rampup">frac_capital_h</label> <input id="frac_capital_hardware_rnd_growth_rampup" value="0.14"></div>
-          <div class="input-parameter"><label for="frac_labour_hardware_rnd_growth_rampup">frac_labour_ha</label> <input id="frac_labour_hardware_rnd_growth_rampup" value="0.14"></div>
-          <div class="input-parameter"><label for="frac_compute_hardware_rnd_growth_rampup">frac_compute_h</label> <input id="frac_compute_hardware_rnd_growth_rampup" value="0.67"></div>
-          <div class="input-parameter"><label for="frac_labour_software_rnd_growth_rampup">frac_labour_so</label> <input id="frac_labour_software_rnd_growth_rampup" value="0.22"></div>
-          <div class="input-parameter"><label for="frac_compute_software_rnd_growth_rampup">frac_compute_s</label> <input id="frac_compute_software_rnd_growth_rampup" value="0.67"></div>
-          <div class="input-parameter"><label for="frac_gwp_compute_growth_rampup">frac_gwp_compu</label> <input id="frac_gwp_compute_growth_rampup" value="0.19"></div>
-          <div class="input-parameter"><label for="frac_compute_training_growth_rampup">frac_compute_t</label> <input id="frac_compute_training_growth_rampup" value="1.1"></div>
-          <div class="input-parameter"><label for="frac_capital_hardware_rnd_ceiling">frac_capital_h</label> <input id="frac_capital_hardware_rnd_ceiling" value="0.03"></div>
-          <div class="input-parameter"><label for="frac_labour_hardware_rnd_ceiling">frac_labour_ha</label> <input id="frac_labour_hardware_rnd_ceiling" value="0.03"></div>
-          <div class="input-parameter"><label for="frac_compute_hardware_rnd_ceiling">frac_compute_h</label> <input id="frac_compute_hardware_rnd_ceiling" value="0.2"></div>
-          <div class="input-parameter"><label for="frac_labour_software_rnd_ceiling">frac_labour_so</label> <input id="frac_labour_software_rnd_ceiling" value="0.03"></div>
-          <div class="input-parameter"><label for="frac_compute_software_rnd_ceiling">frac_compute_s</label> <input id="frac_compute_software_rnd_ceiling" value="0.2"></div>
-          <div class="input-parameter"><label for="frac_gwp_compute_ceiling">frac_gwp_compu</label> <input id="frac_gwp_compute_ceiling" value="0.3"></div>
-          <div class="input-parameter"><label for="frac_compute_training_ceiling">frac_compute_t</label> <input id="frac_compute_training_ceiling" value="0.1"></div>
-          <div class="input-parameter"><label for="rampup_trigger">Rampup trigger</label> <input id="rampup_trigger" value="0.03"></div>
-          <div class="input-parameter"><label for="initial_capital_growth">Capital growth</label> <input id="initial_capital_growth" value="0.0275"></div>
-          <div class="input-parameter"><label for="labour_growth">Labour growth</label> <input id="labour_growth" value="0.01"></div>
-          <div class="input-parameter"><label for="tfp_growth">TFP growth</label> <input id="tfp_growth" value="0.01"></div>
-          <div class="input-parameter"><label for="compute_depreciation">Compute depreciation</label> <input id="compute_depreciation" value="0.2"></div>
-          <div class="input-parameter"><label for="money_cap_training_before_wakeup">Money cap training</label> <input id="money_cap_training_before_wakeup" value="1e9"></div>
-        </div>
+          <div class="parameter-group">
+            <div class="parameter-group-label">Misc</div>
+            <div class="input-parameter"><label for="n_labour_tasks">Number of tasks</label> <input id="n_labour_tasks" value="100"></div>
+            <div class="input-parameter"><label for="labour_substitution_goods">Labour substitution goods</label> <input id="labour_substitution_goods" value="-0.5"></div>
+            <div class="input-parameter"><label for="labour_substitution_rnd">Labour substitution R&D</label> <input id="labour_substitution_rnd" value="-0.5"></div>
+            <div class="input-parameter"><label for="capital_substitution_goods">Capital substitution goods</label> <input id="capital_substitution_goods" value="-0.4"></div>
+            <div class="input-parameter"><label for="capital_substitution_rnd">Capital substitution R&D</label> <input id="capital_substitution_rnd" value="-0.25"></div>
+            <div class="input-parameter"><label for="hardware_returns">Hardware returns</label> <input id="hardware_returns" value="5.1"></div>
+            <div class="input-parameter"><label for="software_returns">Software returns</label> <input id="software_returns" value="1.25"></div>
+            <div class="input-parameter"><label for="hardware_performance_ceiling">Hardware perf. ceiling</label> <input id="hardware_performance_ceiling" value="1e+30"></div>
+            <div class="input-parameter"><label for="software_ceiling">Software ceiling</label> <input id="software_ceiling" value="10000000.0"></div>
+            <div class="input-parameter"><label for="rnd_parallelization_penalty">R&D parallelization penalty</label> <input id="rnd_parallelization_penalty" value="0.7"></div>
+            <div class="input-parameter"><label for="hardware_delay">Hardware delay</label> <input id="hardware_delay" value="1.0"></div>
+            <div class="input-parameter"><label for="frac_capital_hardware_rnd_growth">frac_capital_h</label> <input id="frac_capital_hardware_rnd_growth" value="0.01"></div>
+            <div class="input-parameter"><label for="frac_labour_hardware_rnd_growth">frac_labour_ha</label> <input id="frac_labour_hardware_rnd_growth" value="0.01"></div>
+            <div class="input-parameter"><label for="frac_compute_hardware_rnd_growth">frac_compute_h</label> <input id="frac_compute_hardware_rnd_growth" value="0.01"></div>
+            <div class="input-parameter"><label for="frac_labour_software_rnd_growth">frac_labour_so</label> <input id="frac_labour_software_rnd_growth" value="0.18"></div>
+            <div class="input-parameter"><label for="frac_compute_software_rnd_growth">frac_compute_s</label> <input id="frac_compute_software_rnd_growth" value="0.18"></div>
+            <div class="input-parameter"><label for="frac_gwp_compute_growth">frac_gwp_compu</label> <input id="frac_gwp_compute_growth" value="0.19"></div>
+            <div class="input-parameter"><label for="frac_compute_training_growth">frac_compute_t</label> <input id="frac_compute_training_growth" value="0.547528364331348"></div>
+            <div class="input-parameter"><label for="frac_capital_hardware_rnd_growth_rampup">frac_capital_h</label> <input id="frac_capital_hardware_rnd_growth_rampup" value="0.14"></div>
+            <div class="input-parameter"><label for="frac_labour_hardware_rnd_growth_rampup">frac_labour_ha</label> <input id="frac_labour_hardware_rnd_growth_rampup" value="0.14"></div>
+            <div class="input-parameter"><label for="frac_compute_hardware_rnd_growth_rampup">frac_compute_h</label> <input id="frac_compute_hardware_rnd_growth_rampup" value="0.67"></div>
+            <div class="input-parameter"><label for="frac_labour_software_rnd_growth_rampup">frac_labour_so</label> <input id="frac_labour_software_rnd_growth_rampup" value="0.22"></div>
+            <div class="input-parameter"><label for="frac_compute_software_rnd_growth_rampup">frac_compute_s</label> <input id="frac_compute_software_rnd_growth_rampup" value="0.67"></div>
+            <div class="input-parameter"><label for="frac_gwp_compute_growth_rampup">frac_gwp_compu</label> <input id="frac_gwp_compute_growth_rampup" value="0.19"></div>
+            <div class="input-parameter"><label for="frac_compute_training_growth_rampup">frac_compute_t</label> <input id="frac_compute_training_growth_rampup" value="1.1"></div>
+            <div class="input-parameter"><label for="frac_capital_hardware_rnd_ceiling">frac_capital_h</label> <input id="frac_capital_hardware_rnd_ceiling" value="0.03"></div>
+            <div class="input-parameter"><label for="frac_labour_hardware_rnd_ceiling">frac_labour_ha</label> <input id="frac_labour_hardware_rnd_ceiling" value="0.03"></div>
+            <div class="input-parameter"><label for="frac_compute_hardware_rnd_ceiling">frac_compute_h</label> <input id="frac_compute_hardware_rnd_ceiling" value="0.2"></div>
+            <div class="input-parameter"><label for="frac_labour_software_rnd_ceiling">frac_labour_so</label> <input id="frac_labour_software_rnd_ceiling" value="0.03"></div>
+            <div class="input-parameter"><label for="frac_compute_software_rnd_ceiling">frac_compute_s</label> <input id="frac_compute_software_rnd_ceiling" value="0.2"></div>
+            <div class="input-parameter"><label for="frac_gwp_compute_ceiling">frac_gwp_compu</label> <input id="frac_gwp_compute_ceiling" value="0.3"></div>
+            <div class="input-parameter"><label for="frac_compute_training_ceiling">frac_compute_t</label> <input id="frac_compute_training_ceiling" value="0.1"></div>
+            <div class="input-parameter"><label for="rampup_trigger">Rampup trigger</label> <input id="rampup_trigger" value="0.03"></div>
+            <div class="input-parameter"><label for="initial_capital_growth">Capital growth</label> <input id="initial_capital_growth" value="0.0275"></div>
+            <div class="input-parameter"><label for="labour_growth">Labour growth</label> <input id="labour_growth" value="0.01"></div>
+            <div class="input-parameter"><label for="tfp_growth">TFP growth</label> <input id="tfp_growth" value="0.01"></div>
+            <div class="input-parameter"><label for="compute_depreciation">Compute depreciation</label> <input id="compute_depreciation" value="0.2"></div>
+            <div class="input-parameter"><label for="money_cap_training_before_wakeup">Money cap training</label> <input id="money_cap_training_before_wakeup" value="1e9"></div>
+          </div>
+          -->
+
       </div>
     </div>
   </div>
@@ -415,7 +564,7 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
     <p>
       Show
       <select id="metrics-to-show">
-        <option value="important-metrics">most important metrics</option>
+        <option value="important-metrics">the most important metrics</option>
         <option value="all-metrics">all metrics</option>
       </select>
     </p>
@@ -438,94 +587,51 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
 
 </div> <!-- Playground -->
 
+<script>
+  // Initialize the accordion library for the additional parameters
+  let accordion = new handorgel(document.querySelector('.handorgel'), {});
+
+  const close_icon = 'bi-plus-lg';
+  const open_icon = 'bi-dash-lg';
+
+  accordion.on('fold:open', (fold) => {
+    fold.header.querySelector('.icon').classList.remove(close_icon);
+    fold.header.querySelector('.icon').classList.add(open_icon);
+  });
+
+  accordion.on('fold:close', (fold) => {
+    fold.header.querySelector('.icon').classList.remove(open_icon);
+    fold.header.querySelector('.icon').classList.add(close_icon);
+  });
+</script>
+
+
 <script src="op.js"></script>
 <script src="bridge.js"></script>
 
 <script src="https://d3js.org/d3.v4.js"></script>
 
-<script src="https://bossanova.uk/jspreadsheet/v4/jexcel.js"></script>
 <script src="https://jsuites.net/v4/jsuites.js"></script>
 <link rel="stylesheet" href="https://jsuites.net/v4/jsuites.css" />
 <link rel="stylesheet" href="https://unpkg.com/tippy.js@6/themes/light-border.css" />
-<link rel="stylesheet" href="https://bossanova.uk/jspreadsheet/v4/jexcel.css" />
 <script src="https://unpkg.com/@popperjs/core@2"></script>
 <script src="https://unpkg.com/tippy.js@6"></script>
 
 <script>
-  let parameter_meanings = 
-  {
-    "full_automation_requirements_training":"FLOP needed to train an AI capable of performing the most hard-to-train cognitive task.",
-    "flop_gap_training":"Ratio between the FLOP needed to train the most demanding AI task and the 20% most demanding task.",
-    "goods_vs_rnd_requirements_training":"Ratio between the FLOP needed to train the most demanding cognitive task for goods and services production, versus for R&D. The higher this is, the easier it is to automate R&D with respect to goods and services production.",
-    "full_automation_requirements_runtime":"FLOP\/year needed to substitute the output of one human worker in the most demanding AI task.",
-    "flop_gap_runtime":"Ratio between the FLOP\/year needed to automate the most demanding AI task and the 20% most demanding AI task.",
-    "goods_vs_rnd_requirements_runtime":"Ratio between the FLOP\/year needed to automate the most demanding cognitive task for goods production and for R&D. The higher this is, the easier it is to automate R&D with respect to goods and services production.",
-    "runtime_training_tradeoff":"How efficiently you can substitute training for higher runtime compute requirements.",
-    "runtime_training_max_tradeoff":null,
-    "labour_substitution_goods":null,
-    "labour_substitution_rnd":null,
-    "capital_substitution_goods":null,
-    "capital_substitution_rnd":null,
-    "hardware_returns":"How cumulative inputs to hardware R&D translate to better performance improvements. Doubling the cumulative input of harware R&D results in 2^hardware_returns improvement of hardware_efficiency (not accounting for the damping effect of the ceiling)",
-    "software_returns":"How cumulative inputs to software R&D translate to better performance improvements. Doubling the cumulative input of software R&D results in 2^software_returns improvement of hardware_efficiency (not accounting for the damping effect of the ceiling)",
-    "hardware_performance_ceiling":"Maximum FLOP\/year\/$ achiveable. Performance improvements get increasingly penalized as they approach this quantitiy.",
-    "software_ceiling":"Maximum Effective FLOP \/ physical FLOP achievable. Performance improvements get increasingly penalized as they approach this quantitiy.",
-    "rnd_parallelization_penalty":"Penalization to concurrent R&D efforts. The ouputs of the hardware and software production function R&D get raised to this penalty before being aggregated to the cumulative total.",
-    "hardware_delay":"Years between a chip design and its commercial release.",
-    "frac_capital_hardware_rnd_growth":null,
-    "frac_labour_hardware_rnd_growth":null,
-    "frac_compute_hardware_rnd_growth":null,
-    "frac_labour_software_rnd_growth":null,
-    "frac_compute_software_rnd_growth":null,
-    "frac_gwp_compute_growth":null,
-    "frac_compute_training_growth":null,
-    "frac_capital_hardware_rnd_growth_rampup":null,
-    "frac_labour_hardware_rnd_growth_rampup":null,
-    "frac_compute_hardware_rnd_growth_rampup":null,
-    "frac_labour_software_rnd_growth_rampup":null,
-    "frac_compute_software_rnd_growth_rampup":null,
-    "frac_gwp_compute_growth_rampup":null,
-    "frac_compute_training_growth_rampup":null,
-    "frac_capital_hardware_rnd_ceiling":null,
-    "frac_labour_hardware_rnd_ceiling":null,
-    "frac_compute_hardware_rnd_ceiling":null,
-    "frac_labour_software_rnd_ceiling":null,
-    "frac_compute_software_rnd_ceiling":null,
-    "frac_gwp_compute_ceiling":null,
-    "frac_compute_training_ceiling":null,
-    "initial_frac_capital_hardware_rnd":null,
-    "initial_frac_labour_hardware_rnd":null,
-    "initial_frac_compute_hardware_rnd":null,
-    "initial_frac_labour_software_rnd":null,
-    "initial_frac_compute_software_rnd":null,
-    "initial_biggest_training_run":null,
-    "ratio_initial_to_cumulative_input_hardware_rnd":null,
-    "ratio_initial_to_cumulative_input_software_rnd":null,
-    "initial_hardware_production":null,
-    "ratio_hardware_to_initial_hardware_production":null,
-    "initial_buyable_hardware_performance":"FLOP\/year of the most cost efficient chip. Measured in FLOP\/year\/$",
-    "initial_gwp":"Initial real global world product. Measured in 2020 USD.",
-    "initial_population":"Initial world population.",
-    "initial_cognitive_share_goods":"Initial fraction of the GWP captured by labour and compute owners vs capital owners",
-    "initial_cognitive_share_rnd":"Initial fraction of the R&D captured by labour and compute owners vs capital owners",
-    "initial_compute_share_goods":"Initial fraction of cognitive output done by computers for goods production",
-    "initial_compute_share_rnd":"Initial fraction of cognitive output done by computers for R&D",
-    "rampup_trigger":"Threshold of task automation in the production of goods and services that triggers massive investment growth.",
-    "initial_capital_growth":null,
-    "labour_growth":"Population yearly growth rate. Controls the growth of labour.",
-    "tfp_growth":"Yearly rate of growth of the total factor productivity. Each year the production gets passively better by a factor TFP that grows at this rate.",
-    "compute_depreciation":"Yearly rate of depreciation of hardware. Each year this portion of the accumulated compute is depreciated."
-  };
+  // TODO Move this elsewhere
+  let parameter_names = {"full_automation_requirements_training": "AGI training requirements", "flop_gap_training": "FLOP gap (training)", "goods_vs_rnd_requirements_training": "Training goods vs R&D", "full_automation_requirements_runtime": "AGI runtime requirements", "flop_gap_runtime": "FLOP gap (runtime)", "goods_vs_rnd_requirements_runtime": "Runtime goods vs R&D", "runtime_training_tradeoff": "Trade-off efficiency", "runtime_training_max_tradeoff": "Maximum trade-off", "labour_substitution_goods": "Labour substitution goods", "labour_substitution_rnd": "Labour substitution R&D", "capital_substitution_goods": "Substitution between capital and cognitive tasks for goods and services", "capital_substitution_rnd": "Substitution between capital and cognitive tasks for R&D", "hardware_returns": "Returns to hardware", "software_returns": "Returns to software", "hardware_performance_ceiling": "Maximum hardware performance", "software_ceiling": "Maximum software performance", "rnd_parallelization_penalty": "R&D parallelization penalty", "hardware_delay": "Hardware adoption delay", "frac_capital_hardware_rnd_growth": "Growth rate fraction capital hardware R&D", "frac_labour_hardware_rnd_growth": "Growth rate fraction labour hardware R&D", "frac_compute_hardware_rnd_growth": "Growth rate fraction compute hardware R&D", "frac_labour_software_rnd_growth": "Growth rate fraction labour software R&D", "frac_compute_software_rnd_growth": "Growth rate fraction compute software R&D", "frac_gwp_compute_growth": "Growth rate fraction GWP compute", "frac_compute_training_growth": "Growth rate fraction compute training", "frac_capital_hardware_rnd_growth_rampup": "Wake-up growth rate fraction capital hardware R&D", "frac_labour_hardware_rnd_growth_rampup": "Wake-up growth rate fraction labour hardware R&D", "frac_compute_hardware_rnd_growth_rampup": "Wake-up growth rate fraction compute hardware R&D", "frac_labour_software_rnd_growth_rampup": "Wake-up growth rate fraction labour software R&D", "frac_compute_software_rnd_growth_rampup": "Wake-up growth rate fraction of compute software R&D", "frac_gwp_compute_growth_rampup": "Wake-up growth rate fraction of GWP buying compute", "frac_compute_training_growth_rampup": "Wake-up growth rate fraction compute training AI models", "frac_capital_hardware_rnd_ceiling": "Max fraction capital hardware R&D", "frac_labour_hardware_rnd_ceiling": "Max fraction of labour dedicated to hardware R&D", "frac_compute_hardware_rnd_ceiling": "Max fraction of compute dedicated to hardware R&D", "frac_labour_software_rnd_ceiling": "Max fraction labour software R&D", "frac_compute_software_rnd_ceiling": "Max fraction compute software R&D", "frac_gwp_compute_ceiling": "Max fraction GWP compute", "frac_compute_training_ceiling": "Max fraction compute training", "initial_frac_capital_hardware_rnd": "Initial fraction capital hardware R&D", "initial_frac_labour_hardware_rnd": "Initial fraction labour hardware R&D", "initial_frac_compute_hardware_rnd": "Initial fraction compute hardware R&D", "initial_frac_labour_software_rnd": "Initial fraction labour software R&D", "initial_frac_compute_software_rnd": "Initial fraction compute software R&D", "initial_biggest_training_run": "Initial biggest training run", "ratio_initial_to_cumulative_input_hardware_rnd": "Initial vs cumulative input - hardware R&D", "ratio_initial_to_cumulative_input_software_rnd": "Initial vs cumulative input - software R&D", "initial_hardware_production": "Initial hardware production", "ratio_hardware_to_initial_hardware_production": "Accumulated hardware vs initial hardware production", "initial_buyable_hardware_performance": "Initial market hardware performance", "initial_gwp": "Initial GWP", "initial_population": "Initial population", "initial_cognitive_share_goods": "Initial cognitive share goods", "initial_cognitive_share_rnd": "Initial cognitive share in R&D", "initial_compute_share_goods": "Initial compute share goods", "initial_compute_share_rnd": "Initial compute share R&D", "rampup_trigger": "Wakeup trigger", "initial_capital_growth": "Initial capital growth rate", "labour_growth": "Population growth rate", "tfp_growth": "TFP growth rate", "compute_depreciation": "Compute depreciation rate", "money_cap_training_before_wakeup": "Money cap training before wakeup"};
+  let parameter_meanings = {"full_automation_requirements_training": "FLOP needed to train an AI capable of performing the most hard-to-train cognitive task.", "flop_gap_training": "Ratio between the FLOP needed to train the most demanding AI task and the 20% most demanding task.", "goods_vs_rnd_requirements_training": "Ratio between the training requirements for fully automating goods and services production vs (hardware and software) R&D. The higher this is, the easier it is to automate R&D compared to goods and services.", "full_automation_requirements_runtime": "FLOP/year needed to substitute the output of one human worker in the most demanding AI task.", "flop_gap_runtime": "Ratio between the FLOP/year needed to automate the most demanding AI task and the 20% most demanding AI task.", "goods_vs_rnd_requirements_runtime": "Ratio between the FLOP/year needed to automate the most demanding cognitive task for goods production and for R&D. The higher this is, the easier it is to automate R&D with respect to goods and services production. This incorporates one-time gains for AIs doing R&D that are additional to the one-time gains for AIs providing goods and services.", "runtime_training_tradeoff": "How efficiently you can substitute training for higher runtime compute requirements. A value of 0 or less indicates that you cannot perform this tradeoff at all. A value of N indicates that a 10X smaller training run increases runtime requirements by 10^N.", "runtime_training_max_tradeoff": "The maximum ratio of training that can be substituted with extra runtime", "labour_substitution_goods": "Substitution between cognitive tasks for goods and services.\nA more positive number means that it is easier to substitute the output of different cognitive tasks in the production of goods", "labour_substitution_rnd": "Substitution between cognitive tasks for R&D.\nA more positive number means that it is easier to substitute the output of different cognitive tasks in R&D", "capital_substitution_goods": "Substitution between capital and cognitive tasks for goods and services.\nA more positive number means that it is easier to substitute cognitive output by capital and viceversa in the production of goods ", "capital_substitution_rnd": "Substitution between capital and cognitive tasks for R&D.\nA more positive number means that it is easier to substitute cognitive output by capital and viceversa in R&D", "hardware_returns": "How cumulative inputs to hardware R&D translate to better performance improvements. Doubling the cumulative input of harware R&D results in 2^hardware_returns improvement of hardware_efficiency (not accounting for the damping effect of the ceiling)", "software_returns": "How cumulative inputs to software R&D translate to better performance improvements. Doubling the cumulative input of software R&D results in 2^software_returns improvement of hardware_efficiency (not accounting for the damping effect of the ceiling)", "hardware_performance_ceiling": "Maximum FLOP/year/$ achiveable. Performance improvements get increasingly penalized as they approach this quantitiy.", "software_ceiling": "Maximum 2020-FLOP / physical FLOP achievable. Performance improvements get increasingly penalized as they approach this quantitiy.", "rnd_parallelization_penalty": "Penalization to concurrent R&D efforts. The ouputs of the hardware and software production function R&D get raised to this penalty before being aggregated to the cumulative total.", "hardware_delay": "Years between a chip design and its commercial release.", "frac_capital_hardware_rnd_growth": "Growth rate of fraction of capital dedicated to hardware R&D", "frac_labour_hardware_rnd_growth": "Growth rate of fraction of labour dedicated to hardware R&D", "frac_compute_hardware_rnd_growth": "Growth rate of fraction of compute dedicated to hardware R&D", "frac_labour_software_rnd_growth": "Growth rate of fraction of labour dedicated to software R&D", "frac_compute_software_rnd_growth": "Growth rate of fraction of compute dedicated to software R&D", "frac_gwp_compute_growth": "Growth rate of fraction of GWP dedicated to buying compute", "frac_compute_training_growth": "Growth rate of fraction of compute dedicated to training AI models", "frac_capital_hardware_rnd_growth_rampup": "Post wake-up growth rate of fraction of capital dedicated to hardware R&D", "frac_labour_hardware_rnd_growth_rampup": "Post wake-up rate of fraction of labour dedicated to hardware R&D", "frac_compute_hardware_rnd_growth_rampup": "Post wake-up rate of fraction of compute dedicated to hardware R&D", "frac_labour_software_rnd_growth_rampup": "Post wake-up rate of fraction of labour dedicated to software R&D", "frac_compute_software_rnd_growth_rampup": "Post wake-up rate of fraction of compute dedicated to software R&D", "frac_gwp_compute_growth_rampup": "Post wake-up rate of fraction of GWP dedicated to buying compute", "frac_compute_training_growth_rampup": "Post wake-up rate of fraction of compute dedicated to training AI models", "frac_capital_hardware_rnd_ceiling": "Maximum of the fraction of capital dedicated to hardware R&D", "frac_labour_hardware_rnd_ceiling": "Maximum of the fraction of labour dedicated to hardware R&D", "frac_compute_hardware_rnd_ceiling": "Maximum of the fraction of compute dedicated to hardware R&D", "frac_labour_software_rnd_ceiling": "Maximum of the fraction of labour dedicated to software R&D", "frac_compute_software_rnd_ceiling": "Maximum of the fraction of compute dedicated to software R&D", "frac_gwp_compute_ceiling": "Maximum of the fraction of GWP dedicated to buying compute", "frac_compute_training_ceiling": "Maximum of the fraction of compute dedicated to training AI models", "initial_frac_capital_hardware_rnd": "Initial fraction of capital dedicated to hardware R&D", "initial_frac_labour_hardware_rnd": "Initial fraction of labour dedicated to hardware R&D", "initial_frac_compute_hardware_rnd": "Initial fraction of compute dedicated to hardware R&D", "initial_frac_labour_software_rnd": "Initial fraction of labour dedicated to software R&D", "initial_frac_compute_software_rnd": "Initial fraction of compute dedicated to software R&D", "initial_biggest_training_run": "Amount of compute used for the largest AI training run up to date, measured in current-FLOP", "ratio_initial_to_cumulative_input_hardware_rnd": "Ratio of budget of hardware R&D in 2022 versus cumulative budget through history", "ratio_initial_to_cumulative_input_software_rnd": "Ratio of budget of software R&D in 2022 versus cumulative budget through history", "initial_hardware_production": "FLOP/year capabilities of hardware produced in 2022", "ratio_hardware_to_initial_hardware_production": "FLOP/year capabilities of total available hardware in 2022 vs hardware produced in 2022", "initial_buyable_hardware_performance": "FLOP/year/$ of the most cost efficient chip available in the market today.", "initial_gwp": "Initial real global world product. Measured in 2020 USD.", "initial_population": "Initial world population.", "initial_cognitive_share_goods": "Initial fraction of the GWP captured by labour and compute owners vs capital owners", "initial_cognitive_share_rnd": "Initial fraction of the R&D captured by labour and compute owners vs capital owners", "initial_compute_share_goods": "Initial fraction of cognitive output done by computers for goods production", "initial_compute_share_rnd": "Initial fraction of cognitive output done by computers for R&D", "rampup_trigger": "Threshold of task automation in the production of goods and services that triggers massive investment growth.", "initial_capital_growth": "Initial rate of growth of capital", "labour_growth": "Population yearly growth rate. Controls the growth of labour.", "tfp_growth": "Yearly rate of growth of the total factor productivity. Each year the production gets passively better by a factor TFP that grows at this rate.", "compute_depreciation": "Yearly rate of depreciation of hardware. Each year this portion of the accumulated compute is depreciated.", "money_cap_training_before_wakeup": NaN};
+  let parameter_justifications = {"": "", "full_automation_requirements_training": "I'm mostly anchoring to the Bio Anchors report, with an extra OOM to account for TAI being a lower bar than full automation (AGI).", "flop_gap_training": "See discussion in <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/1Z7HJ9pHctgDi1XYbgRW9-7J1bxTL98KW1qb7HN7Mv-A/edit#heading=h.grg4srb18f02\" target=\"_blank\">summary</a></span> and <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#heading=h.o4db3tcgrq28\" target=\"_blank\">full report</a></span>.", "goods_vs_rnd_requirements_training": "I expect fully automating the cognitive tasks in good production or R&amp;D will require AI to (collectively) be extremely general and flexible. I have slightly lower requirements for R&amp;D because it may be easier to gather data, and there may be fewer regulatory restrictions. I think you could defend even lower requirements for software R&amp;D.", "full_automation_requirements_runtime": "I anchor on the Bio Anchors report (~1e16 FLOP/s). Then I adjust upwards by 1 OOM to account for TAI being a lower bar than full automation (AGI). Then I adjust downwards by 6X to account for <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#heading=h.wi3vto6myw5\" target=\"_blank\">one-time advantages</a></span> for AGI over humans in goods and services.", "flop_gap_runtime": "The spread of runtime requirements is smaller than the spread of training requirements for two reasons. First, a 10X increase in runtime compute typically corresponds to a 100X increase in training, e.g. for Chinchilla scaling. Secondly, increasing the horizon length of training tasks will increase training compute but not runtime.", "goods_vs_rnd_requirements_runtime": "I estimate the <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#heading=h.wi3vto6myw5\" target=\"_blank\">one-time gains</a></span> of AGIs over humans to be 60X in R&amp;D vs 6X in goods and services. This is a difference of 10X.", "runtime_training_tradeoff": "I describe the tradeoff dynamic <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/15EmltGq-kkiLO95AbvoB4ODVpyg26BgghvHBy1JDyZY/edit#heading=h.wa8izz23etjx\" target=\"_blank\">here</a></span>.", "runtime_training_max_tradeoff": "Discussed <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/15EmltGq-kkiLO95AbvoB4ODVpyg26BgghvHBy1JDyZY/edit#bookmark=id.kcldlzp2l745\" target=\"_blank\">here</a></span>.", "labour_substitution_goods": "Discussed <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/15EmltGq-kkiLO95AbvoB4ODVpyg26BgghvHBy1JDyZY/edit#heading=h.qazoq7gf2vgm\" target=\"_blank\">here</a></span>.", "labour_substitution_rnd": "Discussed <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/15EmltGq-kkiLO95AbvoB4ODVpyg26BgghvHBy1JDyZY/edit#heading=h.9t2n0pf04b2e\" target=\"_blank\">here</a></span>.", "capital_substitution_goods": "Discussed <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/15EmltGq-kkiLO95AbvoB4ODVpyg26BgghvHBy1JDyZY/edit#heading=h.fo846mq256bx\" target=\"_blank\">here</a></span>.", "capital_substitution_rnd": "Discussed <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/15EmltGq-kkiLO95AbvoB4ODVpyg26BgghvHBy1JDyZY/edit#heading=h.o7tmwweugbb\" target=\"_blank\">here</a></span>.", "hardware_returns": "Discussed <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#heading=h.9us1ymg9hau0\" target=\"_blank\">here</a></span>.", "software_returns": "Discussed <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#heading=h.yzbcl83o650l\" target=\"_blank\">here</a></span>.", "hardware_performance_ceiling": "Based on a rough estimate from a technical advisor. They guessed energy prices could eventually fall 10X from today to $0.01/kWh. And that (based on <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#56a3f1;\"><a href=\"https://en.wikipedia.org/wiki/Landauer%27s_principle\" target=\"_blank\">Landauer\u2019s limit</a></span>) you might eventually do 1e27 bit erasures per kWh. That implies 1e29 bit erasures per $. If we do 1 FLOP per bit, that's 1e29 FLOP/$. ", "software_ceiling": "If training AGI currently requires 1e36 FLOP, but this can be reduced to human life-time learning FLOP of 1e29, that's 7 OOMs improvement. ", "rnd_parallelization_penalty": "Econ models often use a value of 1. A prominent growth economist thought that values between 0.4 and 1 are reasonable. If you think adding new people really won't help much with AI progress, you could use a lower value.", "hardware_delay": "Discussed <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#bookmark=id.2gnv7nk1tdrv\" target=\"_blank\">here</a></span>. The conservative value of 2.5 years corresponds to an <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://semiwiki.com/semiconductor-manufacturers/tsmc/2212-how-long-does-it-take-to-go-from-a-muddy-field-to-full-28nm-capacity/\" target=\"_blank\">estimate</a></span> of the time needed to make a new fab. The aggressive value (no delay) corresponds to fabless improvements in chip design that can be printed with existing production lines with ~no delay. ", "frac_capital_hardware_rnd_growth": "Real $ investments in hardware R&amp;D have <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/spreadsheets/d/1bGbzR0c3TqsRYTWS3s6Bysgh9ZOuKS1w6qH1SOI11iE/edit#gid=186138651\" target=\"_blank\">recently grown</a></span> at ~4%; subtracting out ~3% GWP growth impleis ~1% growth in the fraction of GWP invested.", "frac_labour_hardware_rnd_growth": "As above.", "frac_compute_hardware_rnd_growth": "As above.", "frac_labour_software_rnd_growth": "Discussed <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#heading=h.1v8m5dp6xefi\" target=\"_blank\">here</a></span>, calcs <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/spreadsheets/d/1qmiomnNLpjcWSaeT54KC1PH1hfi_jUFIkWszxJGVU5w/edit#gid=0\" target=\"_blank\">here</a></span>. I subtract out 1% population growth from 19% growth in #reseachers (which is smaller than the 20% growth in real $).", "frac_compute_software_rnd_growth": "As above.", "frac_gwp_compute_growth": "Assumed to be equal to the growth rate post \"wake up\" (below). Why? Demand for AI chips is smaller today than after ramp-up, pushing towards slower growth today. But growth today is from a smaller base, and can come from the share of GPUs growing as a fraction of semiconductor production (which won't be possible once it's already ~100% of production). I'm lazily assuming these effects cancel out.", "frac_compute_training_growth": "This corresponds to the assumption that there will be a $4b training run in 2030, in line with Bio Anchors' prediction. Discussed a little <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#heading=h.yyref6x2mzxu\" target=\"_blank\">here</a></span>.", "frac_capital_hardware_rnd_growth_rampup": "Discussed <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#heading=h.612idx97x187\" target=\"_blank\">here</a></span>. I substract out 3% annual GWP growth to calculate the growth in the fraction of GWP invested.", "frac_labour_hardware_rnd_growth_rampup": "As above.", "frac_compute_hardware_rnd_growth_rampup": "I assume a one-year doubling as compute can be easily reallocated to the now-extremely-lucrative field of AI R&amp;D.", "frac_labour_software_rnd_growth_rampup": "Discussed <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#heading=h.vi6088puv22e\" target=\"_blank\">here</a></span>. I substract out 3% annual GWP growth to calculate the growth in the <span style=\"font-style:italic;\">fraction</span> of GWP invested.", "frac_compute_software_rnd_growth_rampup": "I assume a one-year doubling as compute can be easily reallocated to the now-extremely-lucrative field of AI R&amp;D.", "frac_gwp_compute_growth_rampup": "Discussed here. I substract out 3% annual GWP growth to calculate the growth in the fraction of GWP invested.", "frac_compute_training_growth_rampup": "Discussed <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#heading=h.5xk4lbt60vr0\" target=\"_blank\">here</a></span>.", "frac_capital_hardware_rnd_ceiling": "Discussed <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#bookmark=id.7ug8akmppx48\" target=\"_blank\">here</a></span>.", "frac_labour_hardware_rnd_ceiling": "As above.", "frac_compute_hardware_rnd_ceiling": "If people anticipate an AI driven singularity, the demand for progress in AI R&amp;D should become huge, such that the world allocates using a macroscopic of compute to AIs doing Ai R&amp;D.", "frac_labour_software_rnd_ceiling": "Discussed <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#bookmark=id.7ug8akmppx48\" target=\"_blank\">here</a></span>.", "frac_compute_software_rnd_ceiling": "If people anticipate an AI driven singularity, the demand for progress in AI R&amp;D should become huge, such that the world allocates using a macroscopic of compute to AIs doing Ai R&amp;D.", "frac_gwp_compute_ceiling": "Discussed <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#bookmark=id.rh3lt1q0f0hl\" target=\"_blank\">here</a></span>.", "frac_compute_training_ceiling": "Discussed <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#bookmark=id.tz6v7gxroefr\" target=\"_blank\">here</a></span>.", "initial_frac_capital_hardware_rnd": "Hardware R&amp;D spend is <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://www.onlinecomponents.com/en/blogpost/2021-semiconductor-rd-spend-to-rise-4-357/\" target=\"_blank\">~$70b</a></span>, which is ~0.1%. I double this to include some of the spending on new capital equipment (which totals <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://www.statista.com/statistics/864897/worldwide-capital-spending-in-the-semiconductor-industry/\" target=\"_blank\">~$130b</a></span>).", "initial_frac_labour_hardware_rnd": "As above.", "initial_frac_compute_hardware_rnd": "As above.", "initial_frac_labour_software_rnd": "I'd guess annual spending on software workers for SOTA AI is $10-20b (DM spend is ~$1b); $16b is 0.02%.", "initial_frac_compute_software_rnd": "As above.", "initial_biggest_training_run": "Discussed <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#bookmark=id.b15qyylbeqxp\" target=\"_blank\">here.</a></span>", "ratio_initial_to_cumulative_input_hardware_rnd": "See <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/spreadsheets/d/1bGbzR0c3TqsRYTWS3s6Bysgh9ZOuKS1w6qH1SOI11iE/edit#gid=186138651\" target=\"_blank\">calcs</a></span>, the cell called \"2022 inputs / cumulative inputs\"", "ratio_initial_to_cumulative_input_software_rnd": "Calculated assuming inputs have always been growing at 20%.", "initial_hardware_production": "Discussed <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#heading=h.yyref6x2mzxu\" target=\"_blank\">here</a></span>.", "ratio_hardware_to_initial_hardware_production": "Assumes annual FLOP production has been growing exponentially at 50%; ~28% from more FLOP/$ and ~22% from more $ spending.", "initial_buyable_hardware_performance": "The training of Palm cost <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://blog.heim.xyz/palm-training-cost/\" target=\"_blank\">~$10m</a></span>, and used 3e24 FLOP. This implies 3e17 FLOP/$. If companies renting chips make back their money over 2 years then that corresponds to 1.5e17 FLOP/year/$.", "initial_gwp": "See value for 2020 <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://data.worldbank.org/indicator/NY.GDP.MKTP.CD?locations=1W\" target=\"_blank\">here</a></span>.", "initial_population": "<a href=\"https://www.google.com/search?q=world+population+&amp;ei=bdAOY5mXFvXg0PEP9eeygAY&amp;ved=0ahUKEwjZgePejPD5AhV1MDQIHfWzDGAQ4dUDCA4&amp;uact=5&amp;oq=world+population+&amp;gs_lcp=Cgdnd3Mtd2l6EAMyBwgAELEDEEMyCAgAEIAEELEDMgoIABCxAxCDARBDMgcIABCxAxBDMgcIABCxAxBDMgsIABCABBCxAxCDATIKCAAQsQMQgwEQQzIFCAAQgAQyBQgAEIAEMgcIABCxAxBDOgcIABBHELADSgUIPBIBMUoECEEYAEoECEYYAFDHBljXB2DaCWgBcAF4AIABS4gBiQGSAQEymAEAoAEByAEIwAEB&amp;sclient=gws-wiz\" target=\"_blank\">Source.</a>", "initial_cognitive_share_goods": "Discussed <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#bookmark=id.osubru9caix\" target=\"_blank\">here</a></span>.", "initial_cognitive_share_rnd": "Discussed <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#bookmark=id.myon1lrlwj34\" target=\"_blank\">here</a></span>.", "initial_compute_share_goods": "The semiconductor industry's annual revenues are ~$600b, which is ~1% of GWP.", "initial_compute_share_rnd": "As above. (I'm assuming compute is used equally in hardware+software as in the general economy - excluding compute used on training runs.)", "rampup_trigger": "AI that can readily automate 3% of cognitive tasks can readily generate ~$1.5tr. (Assuming cognitive work is paid ~$50tr, ~50% of GDP). Of course, there will be a lag before this value is added, but people will also invest on the basis of promising demos.", "initial_capital_growth": "Recent GWP growth is ~3%; in equilibrium capital grows at the same rate as GDP.", "labour_growth": "<a href=\"https://www.google.com/search?q=world+population+growth+rate&amp;ei=VdAOY_7TDqu00PEP6pOViAM&amp;ved=0ahUKEwi-0qLTjPD5AhUrGjQIHepJBTEQ4dUDCA4&amp;uact=5&amp;oq=world+population+growth+rate&amp;gs_lcp=Cgdnd3Mtd2l6EAMyCAgAEIAEELEDMgUIABCABDIFCAAQgAQyBQgAEIAEMgUIABCABDIFCAAQgAQyBQgAEIAEMgUIABCABDIICAAQgAQQyQMyBQgAEIAEOgcIABBHELADOgQIABBDSgUIPBIBMUoECEEYAEoECEYYAFCOBVjcCGDnCWgBcAF4AIABVogB0gKSAQE1mAEAoAEByAEIwAEB&amp;sclient=gws-wiz\" target=\"_blank\">Source.</a>", "tfp_growth": "Average TFP growth over the last 20 years, <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/spreadsheets/d/1C-RUowD3Nwo51UF5ZeBjbeLwaw4HQ1o13KyJlhuXCcU/edit#gid=2116796644\" target=\"_blank\">source</a></span>.", "compute_depreciation": "Rough guess.", "money_cap_training_before_wakeup": ""};
+  let metric_names = {"cog_output_multiplier": "Time to tenfold cognitive output multiplier", "billion_agis": "Time to billion AGIs", "full_automation": "Time to full automation", "rampup_to_agi": "Time from wake-up and full automation", "combined": "Combined", "gwp_growth": "Time to 20% GWP growth", "agi_year": "AGI year", "rampup_start": "Wake-up year", "doubling_times": "Pattern of GWP doublings", "billion_agis skew": "Skew of time to billion AGI", "agi_date skew": "Skew of time to AGI date"};
+  let metric_meanings = {"cog_output_multiplier": "Years between <a href=\"https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#heading=h.vg16ijfr9w9a/\">AI's cognitive value-add</a> in hardware R&D being 2X and 10X.", "billion_agis": "Years between AI that automates 10% of cognitive tasks in R&D to the point when you can train and run 10 billion AGI-equivalents (taking the AGI runtime compute to be the runtime compute for the most compute-intensive R&D task).", "full_automation": "Years between AI that can perform 50% of cognitive tasks to AI that can perform 100%.", "rampup_to_agi": "Years between AI automating 3% of cognitive tasks in goods and services and AI that can perform 100% of cognitive tasks.", "combined": "Average of previous metrics.", "gwp_growth": "Years between instantaneous gwp growth reaching 5% and reaching 20%.\n\n(Not very meaningful because of zigzagging issues.)", "agi_year": "Year when all cognitive tasks have been automated", "rampup_start": "Year when AI becomes economically significant. This happens when a certain percentage of goods and services cognitive tasks have been automated (usually 3% but depends on the inputs) ", "doubling_times": "Years between successive GWP doublings", "billion_agis skew": "How the intervals are biased towards more aggressive or more conservative takeoffs.\nA more positive value means that the intervals are biased towards shorter takeoffs.\nComputed as |billion_agis_best_guess - billion_agis_conservative| - |billion_agis_aggressive - billion_agis_best_guess| ", "agi_date skew": "How the intervals are biased towards more aggressive or more conservative AGI dates.\nA more positive value means that the intervals are biased towards shorter takeoffs.\nComputed as |agi_date_best_guess - agi_date_conservative| - |agi_date_aggressive - agi_date_best_guess|"};
 
   parameter_meanings['t_step'] = 'Duration of each simulation step (in years)';
   parameter_meanings['t_end'] = 'When to stop the simulation';
 
-  let parameter_justifications =
-    {"full_automation_requirements_training": "I'm mostly anchoring to the Bio Anchors report, with an extra OOM to account for TAI being a lower bar than full automation (AGI).", "flop_gap_training": "See discussion in <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/1Z7HJ9pHctgDi1XYbgRW9-7J1bxTL98KW1qb7HN7Mv-A/edit#heading=h.grg4srb18f02\" target=\"_blank\">summary</a></span> and <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#heading=h.o4db3tcgrq28\" target=\"_blank\">full report</a></span>.", "goods_vs_rnd_requirements_training": "I expect fully automating the cognitive tasks in good production or R&amp;D will require AI to (collectively) be extremely general and flexible. I have slightly lower requirements for R&amp;D because it may be easier to gather data, and there may be fewer regulatory restrictions. I think you could defend even lower requirements for software R&amp;D.", "full_automation_requirements_runtime": "I anchor on the Bio Anchors report (~1e16 FLOP/s). Then I adjust upwards by 1 OOM to account for TAI being a lower bar than full automation (AGI). Then I adjust downwards by 6X to account for <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#heading=h.wi3vto6myw5\" target=\"_blank\">one-time advantages</a></span> for AGI over humans in goods and services.", "flop_gap_runtime": "The spread of runtime requirements is smaller than the spread of training requirements for two reasons. First, a 10X increase in runtime compute typically corresponds to a 100X increase in training, e.g. for Chinchilla scaling. Secondly, increasing the horizon length of training tasks will increase training compute but not runtime.", "goods_vs_rnd_requirements_runtime": "I estimate the <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#heading=h.wi3vto6myw5\" target=\"_blank\">one-time gains</a></span> of AGIs over humans to be 60X in R&amp;D vs 6X in goods and services. This is a difference of 10X.", "runtime_training_tradeoff": "I describe the tradeoff dynamic <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/15EmltGq-kkiLO95AbvoB4ODVpyg26BgghvHBy1JDyZY/edit#heading=h.wa8izz23etjx\" target=\"_blank\">here</a></span>.", "runtime_training_max_tradeoff": "Discussed <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/15EmltGq-kkiLO95AbvoB4ODVpyg26BgghvHBy1JDyZY/edit#bookmark=id.kcldlzp2l745\" target=\"_blank\">here</a></span>.", "labour_substitution_goods": "Discussed <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/15EmltGq-kkiLO95AbvoB4ODVpyg26BgghvHBy1JDyZY/edit#heading=h.qazoq7gf2vgm\" target=\"_blank\">here</a></span>.", "labour_substitution_rnd": "Discussed <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/15EmltGq-kkiLO95AbvoB4ODVpyg26BgghvHBy1JDyZY/edit#heading=h.9t2n0pf04b2e\" target=\"_blank\">here</a></span>.", "capital_substitution_goods": "Discussed <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/15EmltGq-kkiLO95AbvoB4ODVpyg26BgghvHBy1JDyZY/edit#heading=h.fo846mq256bx\" target=\"_blank\">here</a></span>.", "capital_substitution_rnd": "Discussed <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/15EmltGq-kkiLO95AbvoB4ODVpyg26BgghvHBy1JDyZY/edit#heading=h.o7tmwweugbb\" target=\"_blank\">here</a></span>.", "hardware_returns": "Discussed <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#heading=h.9us1ymg9hau0\" target=\"_blank\">here</a></span>.", "software_returns": "Discussed <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#heading=h.yzbcl83o650l\" target=\"_blank\">here</a></span>.", "hardware_performance_ceiling": "Based on a rough estimate from a technical advisor. They guessed energy prices could eventually fall 10X from today to $0.01/kWh. And that (based on <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#56a3f1;\"><a href=\"https://en.wikipedia.org/wiki/Landauer%27s_principle\" target=\"_blank\">Landauer\u2019s limit</a></span>) you might eventually do 1e27 bit erasures per kWh. That implies 1e29 bit erasures per $. If we do 1 FLOP per bit, that's 1e29 FLOP/$. ", "software_ceiling": "If training AGI currently requires 1e36 FLOP, but this can be reduced to human life-time learning FLOP of 1e29, that's 7 OOMs improvement. ", "rnd_parallelization_penalty": "Econ models often use a value of 1. A prominent growth economist thought that values between 0.4 and 1 are reasonable. If you think adding new people really won't help much with AI progress, you could use a lower value.", "hardware_delay": "Discussed <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#bookmark=id.2gnv7nk1tdrv\" target=\"_blank\">here</a></span>. The conservative value of 2.5 years corresponds to an <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://semiwiki.com/semiconductor-manufacturers/tsmc/2212-how-long-does-it-take-to-go-from-a-muddy-field-to-full-28nm-capacity/\" target=\"_blank\">estimate</a></span> of the time needed to make a new fab. The aggressive value (no delay) corresponds to fabless improvements in chip design that can be printed with existing production lines with ~no delay. ", "frac_capital_hardware_rnd_growth": "Real $ investments in hardware R&amp;D have <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/spreadsheets/d/1bGbzR0c3TqsRYTWS3s6Bysgh9ZOuKS1w6qH1SOI11iE/edit#gid=186138651\" target=\"_blank\">recently grown</a></span> at ~4%; subtracting out ~3% GWP growth impleis ~1% growth in the fraction of GWP invested.", "frac_labour_hardware_rnd_growth": "As above.", "frac_compute_hardware_rnd_growth": "As above.", "frac_labour_software_rnd_growth": "Discussed <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#heading=h.1v8m5dp6xefi\" target=\"_blank\">here</a></span>, calcs <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/spreadsheets/d/1qmiomnNLpjcWSaeT54KC1PH1hfi_jUFIkWszxJGVU5w/edit#gid=0\" target=\"_blank\">here</a></span>. I subtract out 1% population growth from 19% growth in #reseachers (which is smaller than the 20% growth in real $).", "frac_compute_software_rnd_growth": "As above.", "frac_gwp_compute_growth": "Assumed to be equal to the growth rate post \"wake up\" (below). Why? Demand for AI chips is smaller today than after ramp-up, pushing towards slower growth today. But growth today is from a smaller base, and can come from the share of GPUs growing as a fraction of semiconductor production (which won't be possible once it's already ~100% of production). I'm lazily assuming these effects cancel out.", "frac_compute_training_growth": "This corresponds to the assumption that there will be a $4b training run in 2030, in line with Bio Anchors' prediction. Discussed a little <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#heading=h.yyref6x2mzxu\" target=\"_blank\">here</a></span>.", "frac_capital_hardware_rnd_growth_rampup": "Discussed <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#heading=h.612idx97x187\" target=\"_blank\">here</a></span>. I substract out 3% annual GWP growth to calculate the growth in the fraction of GWP invested.", "frac_labour_hardware_rnd_growth_rampup": "As above.", "frac_compute_hardware_rnd_growth_rampup": "I assume a one-year doubling as compute can be easily reallocated to the now-extremely-lucrative field of AI R&amp;D.", "frac_labour_software_rnd_growth_rampup": "Discussed <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#heading=h.vi6088puv22e\" target=\"_blank\">here</a></span>. I substract out 3% annual GWP growth to calculate the growth in the <span style=\"font-style:italic;\">fraction</span> of GWP invested.", "frac_compute_software_rnd_growth_rampup": "I assume a one-year doubling as compute can be easily reallocated to the now-extremely-lucrative field of AI R&amp;D.", "frac_gwp_compute_growth_rampup": "Discussed here. I substract out 3% annual GWP growth to calculate the growth in the fraction of GWP invested.", "frac_compute_training_growth_rampup": "Discussed <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#heading=h.5xk4lbt60vr0\" target=\"_blank\">here</a></span>.", "frac_capital_hardware_rnd_ceiling": "Discussed <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#bookmark=id.7ug8akmppx48\" target=\"_blank\">here</a></span>.", "frac_labour_hardware_rnd_ceiling": "As above.", "frac_compute_hardware_rnd_ceiling": "If people anticipate an AI driven singularity, the demand for progress in AI R&amp;D should become huge, such that the world allocates using a macroscopic of compute to AIs doing Ai R&amp;D.", "frac_labour_software_rnd_ceiling": "Discussed <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#bookmark=id.7ug8akmppx48\" target=\"_blank\">here</a></span>.", "frac_compute_software_rnd_ceiling": "If people anticipate an AI driven singularity, the demand for progress in AI R&amp;D should become huge, such that the world allocates using a macroscopic of compute to AIs doing Ai R&amp;D.", "frac_gwp_compute_ceiling": "Discussed <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#bookmark=id.rh3lt1q0f0hl\" target=\"_blank\">here</a></span>.", "frac_compute_training_ceiling": "Discussed <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#bookmark=id.tz6v7gxroefr\" target=\"_blank\">here</a></span>.", "initial_frac_capital_hardware_rnd": "Hardware R&amp;D spend is <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://www.onlinecomponents.com/en/blogpost/2021-semiconductor-rd-spend-to-rise-4-357/\" target=\"_blank\">~$70b</a></span>, which is ~0.1%. I double this to include some of the spending on new capital equipment (which totals <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://www.statista.com/statistics/864897/worldwide-capital-spending-in-the-semiconductor-industry/\" target=\"_blank\">~$130b</a></span>).", "initial_frac_labour_hardware_rnd": "As above.", "initial_frac_compute_hardware_rnd": "As above.", "initial_frac_labour_software_rnd": "I'd guess annual spending on software workers for SOTA AI is $10-20b (DM spend is ~$1b); $16b is 0.02%.", "initial_frac_compute_software_rnd": "As above.", "initial_biggest_training_run": "Discussed <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#bookmark=id.b15qyylbeqxp\" target=\"_blank\">here.</a></span>", "ratio_initial_to_cumulative_input_hardware_rnd": "See <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/spreadsheets/d/1bGbzR0c3TqsRYTWS3s6Bysgh9ZOuKS1w6qH1SOI11iE/edit#gid=186138651\" target=\"_blank\">calcs</a></span>, the cell called \"2022 inputs / cumulative inputs\"", "ratio_initial_to_cumulative_input_software_rnd": "Calculated assuming inputs have always been growing at 20%.", "initial_hardware_production": "Discussed <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#heading=h.yyref6x2mzxu\" target=\"_blank\">here</a></span>.", "ratio_hardware_to_initial_hardware_production": "Assumes annual FLOP production has been growing exponentially at 50%; ~28% from more FLOP/$ and ~22% from more $ spending.", "initial_buyable_hardware_performance": "The training of Palm cost <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://blog.heim.xyz/palm-training-cost/\" target=\"_blank\">~$10m</a></span>, and used 3e24 FLOP. This implies 3e17 FLOP/$. If companies renting chips make back their money over 2 years then that corresponds to 1.5e17 FLOP/year/$.", "initial_gwp": "See value for 2020 <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://data.worldbank.org/indicator/NY.GDP.MKTP.CD?locations=1W\" target=\"_blank\">here</a></span>.", "initial_population": "<a href=\"https://www.google.com/search?q=world+population+&amp;ei=bdAOY5mXFvXg0PEP9eeygAY&amp;ved=0ahUKEwjZgePejPD5AhV1MDQIHfWzDGAQ4dUDCA4&amp;uact=5&amp;oq=world+population+&amp;gs_lcp=Cgdnd3Mtd2l6EAMyBwgAELEDEEMyCAgAEIAEELEDMgoIABCxAxCDARBDMgcIABCxAxBDMgcIABCxAxBDMgsIABCABBCxAxCDATIKCAAQsQMQgwEQQzIFCAAQgAQyBQgAEIAEMgcIABCxAxBDOgcIABBHELADSgUIPBIBMUoECEEYAEoECEYYAFDHBljXB2DaCWgBcAF4AIABS4gBiQGSAQEymAEAoAEByAEIwAEB&amp;sclient=gws-wiz\" target=\"_blank\">Source.</a>", "initial_cognitive_share_goods": "Discussed <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#bookmark=id.osubru9caix\" target=\"_blank\">here</a></span>.", "initial_cognitive_share_rnd": "Discussed <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#bookmark=id.myon1lrlwj34\" target=\"_blank\">here</a></span>.", "initial_compute_share_goods": "The semiconductor industry's annual revenues are ~$600b, which is ~1% of GWP.", "initial_compute_share_rnd": "As above. (I'm assuming compute is used equally in hardware+software as in the general economy - excluding compute used on training runs.)", "rampup_trigger": "AI that can readily automate 3% of cognitive tasks can readily generate ~$1.5tr. (Assuming cognitive work is paid ~$50tr, ~50% of GDP). Of course, there will be a lag before this value is added, but people will also invest on the basis of promising demos.", "initial_capital_growth": "Recent GWP growth is ~3%; in equilibrium capital grows at the same rate as GDP.", "labour_growth": "<a href=\"https://www.google.com/search?q=world+population+growth+rate&amp;ei=VdAOY_7TDqu00PEP6pOViAM&amp;ved=0ahUKEwi-0qLTjPD5AhUrGjQIHepJBTEQ4dUDCA4&amp;uact=5&amp;oq=world+population+growth+rate&amp;gs_lcp=Cgdnd3Mtd2l6EAMyCAgAEIAEELEDMgUIABCABDIFCAAQgAQyBQgAEIAEMgUIABCABDIFCAAQgAQyBQgAEIAEMgUIABCABDIICAAQgAQQyQMyBQgAEIAEOgcIABBHELADOgQIABBDSgUIPBIBMUoECEEYAEoECEYYAFCOBVjcCGDnCWgBcAF4AIABVogB0gKSAQE1mAEAoAEByAEIwAEB&amp;sclient=gws-wiz\" target=\"_blank\">Source.</a>", "tfp_growth": "Average TFP growth over the last 20 years, <span style=\"text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;\"><a href=\"https://docs.google.com/spreadsheets/d/1C-RUowD3Nwo51UF5ZeBjbeLwaw4HQ1o13KyJlhuXCcU/edit#gid=2116796644\" target=\"_blank\">source</a></span>.", "compute_depreciation": "Rough guess.", "money_cap_training_before_wakeup": ""};
-
   let tippy_instances = [];
   for (let input of document.querySelectorAll('.input-parameter')) {
-    let id = input.querySelector('input').id;
+    let elements = input.querySelectorAll('input');
+    let id = elements[elements.length-1].id;
     let meaning = parameter_meanings[id];
     let justification = parameter_justifications[id];
 
@@ -557,10 +663,7 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
     );
   }
 
-  let humanParamNames = {'full_automation_requirements_training': 'Full automation training requirements', 'flop_gap_training': 'Training gap', 'goods_vs_rnd_requirements_training': 'Training goods vs R&D', 'full_automation_requirements_runtime': 'Full automation runtime requirements', 'flop_gap_runtime': 'Runtime gap', 'goods_vs_rnd_requirements_runtime': 'Runtime goods vs R&D', 'runtime_training_tradeoff': 'Trade-off efficiency', 'runtime_training_max_tradeoff': 'Maximum trade-off', 'labour_substitution_goods': 'Labour substitution goods', 'labour_substitution_rnd': 'Labour substitution R&D', 'capital_substitution_goods': 'Substitution between capital and cognitive tasks for goods and services', 'capital_substitution_rnd': 'Substitution between capital and cognitive tasks for R&D', 'hardware_returns': 'Returns to hardware', 'software_returns': 'Returns to software', 'hardware_performance_ceiling': 'Maximum hardware performance', 'software_ceiling': 'Maximum software performance', 'rnd_parallelization_penalty': 'R&D parallelization penalty', 'hardware_delay': 'Hardware adoption delay', 'frac_capital_hardware_rnd_growth': 'Growth rate fraction capital hardware R&D', 'frac_labour_hardware_rnd_growth': 'Growth rate fraction labour hardware R&D', 'frac_compute_hardware_rnd_growth': 'Growth rate fraction compute hardware R&D', 'frac_labour_software_rnd_growth': 'Growth rate fraction labour software R&D', 'frac_compute_software_rnd_growth': 'Growth rate fraction compute software R&D', 'frac_gwp_compute_growth': 'Growth rate fraction GWP compute', 'frac_compute_training_growth': 'Growth rate fraction compute training', 'frac_capital_hardware_rnd_growth_rampup': 'Wake-up growth rate fraction capital hardware R&D', 'frac_labour_hardware_rnd_growth_rampup': 'Wake-up growth rate fraction labour hardware R&D', 'frac_compute_hardware_rnd_growth_rampup': 'Wake-up growth rate fraction compute hardware R&D', 'frac_labour_software_rnd_growth_rampup': 'Wake-up growth rate fraction labour software R&D', 'frac_compute_software_rnd_growth_rampup': 'Wake-up growth rate fraction of compute software R&D', 'frac_gwp_compute_growth_rampup': 'Wake-up growth rate fraction of GWP buying compute', 'frac_compute_training_growth_rampup': 'Wake-up growth rate fraction compute training AI models', 'frac_capital_hardware_rnd_ceiling': 'Max fraction capital hardware R&D', 'frac_labour_hardware_rnd_ceiling': 'Max fraction of labour dedicated to hardware R&D', 'frac_compute_hardware_rnd_ceiling': 'Max fraction of compute dedicated to hardware R&D', 'frac_labour_software_rnd_ceiling': 'Max fraction labour software R&D', 'frac_compute_software_rnd_ceiling': 'Max fraction compute software R&D', 'frac_gwp_compute_ceiling': 'Max fraction GWP compute', 'frac_compute_training_ceiling': 'Max fraction compute training', 'initial_frac_capital_hardware_rnd': 'Initial fraction capital hardware R&D', 'initial_frac_labour_hardware_rnd': 'Initial fraction labour hardware R&D', 'initial_frac_compute_hardware_rnd': 'Initial fraction compute hardware R&D', 'initial_frac_labour_software_rnd': 'Initial fraction labour software R&D', 'initial_frac_compute_software_rnd': 'Initial fraction compute software R&D', 'initial_biggest_training_run': 'Initial biggest training run', 'ratio_initial_to_cumulative_input_hardware_rnd': 'Initial vs cumulative input - hardware R&D', 'ratio_initial_to_cumulative_input_software_rnd': 'Initial vs cumulative input - software R&D', 'initial_hardware_production': 'Initial hardware production', 'ratio_hardware_to_initial_hardware_production': 'Accumulated hardware vs initial hardware production', 'initial_buyable_hardware_performance': 'Initial market hardware performance', 'initial_gwp': 'Initial GWP', 'initial_population': 'Initial population', 'initial_cognitive_share_goods': 'Initial cognitive share goods', 'initial_cognitive_share_rnd': 'Initial cognitive share in R&D', 'initial_compute_share_goods': 'Initial compute share goods', 'initial_compute_share_rnd': 'Initial compute share R&D', 'rampup_trigger': 'Wakeup trigger', 'initial_capital_growth': 'Initial capital growth rate', 'labour_growth': 'Population growth rate', 'tfp_growth': 'TFP growth rate', 'compute_depreciation': 'Compute depreciation rate', 'money_cap_training_before_wakeup': 'Money cap training before wakeup'}
-  let humanMetricNames = {'cog_output_multiplier': 'Time to tenfold cognitive output multiplier', 'billion_agis': 'Time to billion AGIs', 'full_automation': 'Time to full automation', 'rampup_to_agi': 'Time from wake-up and full automation', 'combined': 'Combined', 'gwp_growth': 'Time to 20% GWP growth', 'agi_year': 'AGI year', 'rampup_start': 'Wake-up year', 'doubling_times': 'Pattern of GWP doublings', 'billion_agis skew': 'Skew of time to billion AGI', 'agi_date skew': 'Skew of time to AGI date'};
-
-  let humanNames = {...humanParamNames, ...humanMetricNames};
+  let humanNames = {...parameter_names, ...metric_names};
 
   for (let parameter of document.querySelectorAll('.input-parameter')) {
     let paramId = parameter.querySelector('input').id;
@@ -607,7 +710,7 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
     let metrics_table;
 
     if (ui_state.metrics_to_show == 'important-metrics') {
-      let important_metrics = [ 'billion_agis', 'full_automation', 'agi_year', 'rampup_start'];
+      let important_metrics = ["billion_agis", "full_automation", "agi_year", "rampup_start"];
 
       metrics_table = {};
       for (let key of important_metrics) {
@@ -619,6 +722,8 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
 
     clear_tables('#takeoff-metrics-table-container');
     add_table('#takeoff-metrics-table-container', metrics_table);
+
+    injectMeaningTooltips();
   });
 
   function run_simulation(immediate, callback) {
@@ -777,22 +882,31 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
     plt.show();
   }
 
-  function update_disabled() {
-    let checkbox = document.getElementById('runtime_training_tradeoff_enabled');
-    for (let input of checkbox.parentElement.parentElement.querySelectorAll('.input-parameter')) {
-      if (input == checkbox.parentElement) continue;
-      if (checkbox.checked) {
-        input.classList.remove('disabled');
-      } else {
-        input.classList.add('disabled');
-      }
+  let tradeoff_enabled = document.querySelectorAll('.runtime_training_tradeoff_enabled');
+
+  function update_disabled(enable) {
+    let tradeoff = document.getElementById('runtime_training_tradeoff');
+    let max_tradeoff = document.getElementById('runtime_training_max_tradeoff');
+
+    if (enable) {
+      tradeoff.parentElement.classList.remove('disabled');
+      max_tradeoff.parentElement.classList.remove('disabled');
+    } else {
+      tradeoff.parentElement.classList.add('disabled');
+      max_tradeoff.parentElement.classList.add('disabled');
+    }
+
+    for (let checkbox of tradeoff_enabled) {
+      checkbox.checked = enable;
     }
   }
 
-  document.getElementById('runtime_training_tradeoff_enabled').addEventListener('change', () => {
-    update_disabled();
-    run_simulation(true);
-  });
+  for (let checkbox of tradeoff_enabled) {
+    checkbox.addEventListener('change', () => {
+      update_disabled(checkbox.checked);
+      run_simulation(false);
+    });
+  }
 
   update_disabled();
 
@@ -807,7 +921,7 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
 
   function get_parameters() {
     let params = {};
-    for (let input of document.querySelectorAll('.input-parameter input')) {
+    for (let input of document.querySelectorAll('.input-parameter .input')) {
       let v = (input.type == 'checkbox') ? input.checked : +input.value;
       if (Number.isNaN(v)) {
         // Invalid input
@@ -816,10 +930,11 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
       params[input.id] = v;
     }
 
-    if (!params['runtime_training_tradeoff_enabled']) {
+    let runtime_training_tradeoff_enabled = document.querySelector('.runtime_training_tradeoff_enabled').checked;
+
+    if (!runtime_training_tradeoff_enabled) {
       params['runtime_training_tradeoff'] = 0;
     }
-    delete params['runtime_training_tradeoff_enabled'];
 
     return params;
   }
@@ -1805,13 +1920,10 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
   // Misc
   //////////////////////////////////////////////////////////////////////////////
 
-  let paramNotes = {"full_automation_requirements_training": "FLOP needed to train an AI capable of performing the most hard-to-train cognitive task.", "flop_gap_training": "Ratio between the FLOP needed to train the most demanding AI task and the 20% most demanding task.", "goods_vs_rnd_requirements_training": "Ratio between the FLOP needed to train the most demanding cognitive task for goods and services production, versus for R&D. The higher this is, the easier it is to automate R&D with respect to goods and services production.", "full_automation_requirements_runtime": "FLOP/year needed to substitute the output of one human worker in the most demanding AI task.", "flop_gap_runtime": "Ratio between the FLOP/year needed to automate the most demanding AI task and the 20% most demanding AI task.", "goods_vs_rnd_requirements_runtime": "Ratio between the FLOP/year needed to automate the most demanding cognitive task for goods production and for R&D. The higher this is, the easier it is to automate R&D with respect to goods and services production.", "runtime_training_tradeoff": "How efficiently you can substitute training for higher runtime compute requirements.", "runtime_training_max_tradeoff": "The maximum ratio of training that can be substituted with extra runtime", "labour_substitution_goods": NaN, "labour_substitution_rnd": NaN, "capital_substitution_goods": NaN, "capital_substitution_rnd": NaN, "hardware_returns": "How cumulative inputs to hardware R&D translate to better performance improvements. Doubling the cumulative input of harware R&D results in 2^hardware_returns improvement of hardware_efficiency (not accounting for the damping effect of the ceiling)", "software_returns": "How cumulative inputs to software R&D translate to better performance improvements. Doubling the cumulative input of software R&D results in 2^software_returns improvement of hardware_efficiency (not accounting for the damping effect of the ceiling)", "hardware_performance_ceiling": "Maximum FLOP/year/$ achiveable. Performance improvements get increasingly penalized as they approach this quantitiy.", "software_ceiling": "Maximum Effective FLOP / physical FLOP achievable. Performance improvements get increasingly penalized as they approach this quantitiy.", "rnd_parallelization_penalty": "Penalization to concurrent R&D efforts. The ouputs of the hardware and software production function R&D get raised to this penalty before being aggregated to the cumulative total.", "hardware_delay": "Years between a chip design and its commercial release.", "frac_capital_hardware_rnd_growth": "Growth of the fraction of capital dedicated to hardware R&D", "frac_labour_hardware_rnd_growth": "Growth of the fraction of labour dedicated to hardware R&D", "frac_compute_hardware_rnd_growth": "Growth of the fraction of compute dedicated to hardware R&D", "frac_labour_software_rnd_growth": "Growth of the fraction of labour dedicated to software R&D", "frac_compute_software_rnd_growth": "Growth of the fraction of compute dedicated to software R&D", "frac_gwp_compute_growth": "Growth of the fraction of gwp dedicated to buying compute", "frac_compute_training_growth": "Growth of the fraction of compute dedicated to training AI models", "frac_capital_hardware_rnd_growth_rampup": "Growth of the fraction of capital dedicated to hardware R&D after AI becomes economically important", "frac_labour_hardware_rnd_growth_rampup": "Growth of the fraction of labour dedicated to hardware R&D after AI becomes economically important", "frac_compute_hardware_rnd_growth_rampup": "Growth of the fraction of compute dedicated to hardware R&D after AI becomes economically important", "frac_labour_software_rnd_growth_rampup": "Growth of the fraction of labour dedicated to software R&D after AI becomes economically important", "frac_compute_software_rnd_growth_rampup": "Growth of the fraction of compute dedicated to software R&D after AI becomes economically important", "frac_gwp_compute_growth_rampup": "Growth of the fraction of gwp dedicated to buying compute after AI becomes economically important", "frac_compute_training_growth_rampup": "Growth of the fraction of compute dedicated to training AI models after AI becomes economically important", "frac_capital_hardware_rnd_ceiling": "Maximum of the fraction of capital dedicated to hardware R&D", "frac_labour_hardware_rnd_ceiling": "Maximum of the fraction of labour dedicated to hardware R&D", "frac_compute_hardware_rnd_ceiling": "Maximum of the fraction of compute dedicated to hardware R&D", "frac_labour_software_rnd_ceiling": "Maximum of the fraction of labour dedicated to software R&D", "frac_compute_software_rnd_ceiling": "Maximum of the fraction of compute dedicated to software R&D", "frac_gwp_compute_ceiling": "Maximum of the fraction of gwp dedicated to buying compute", "frac_compute_training_ceiling": "Maximum of the fraction of compute dedicated to training AI models", "initial_frac_capital_hardware_rnd": "Initial value of the fraction of capital dedicated to hardware R&D", "initial_frac_labour_hardware_rnd": "Initial value of the fraction of labour dedicated to hardware R&D", "initial_frac_compute_hardware_rnd": "Initial value of the fraction of compute dedicated to hardware R&D", "initial_frac_labour_software_rnd": "Initial value of the fraction of labour dedicated to software R&D", "initial_frac_compute_software_rnd": "Initial value of the fraction of compute dedicated to software R&D", "initial_biggest_training_run": "Initial biggest AI training run in 2020-FLOP", "ratio_initial_to_cumulative_input_hardware_rnd": "Ratio of budget of hardware R&D in 2022 versus cumulative budget through history", "ratio_initial_to_cumulative_input_software_rnd": "Ratio of budget of software R&D in 2022 versus cumulative budget through history", "initial_hardware_production": "FLOP/year capabilities of hardware produced in 2022", "ratio_hardware_to_initial_hardware_production": "FLOP/year capabilities of total available hardware in 2022 vs hardware produced in 2022", "initial_buyable_hardware_performance": "FLOP/year of the most cost efficient chip. Measured in FLOP/year/$", "initial_gwp": "Initial real global world product. Measured in 2020 USD.", "initial_cognitive_share_goods": "Initial fraction of the GWP captured by labour and compute owners vs capital owners", "initial_cognitive_share_rnd": "Initial fraction of the R&D captured by labour and compute owners vs capital owners", "initial_compute_share_goods": "Initial fraction of cognitive output done by computers for goods production", "initial_compute_share_rnd": "Initial fraction of cognitive output done by computers for R&D", "rampup_trigger": "Threshold of task automation in the production of goods and services that triggers massive investment growth.", "initial_capital_growth": "Initial rate of growth of capital", "labour_growth": "Population yearly growth rate. Controls the growth of labour.", "tfp_growth": "Yearly rate of growth of the total factor productivity. Each year the production gets passively better by a factor TFP that grows at this rate.", "compute_depreciation": "Yearly rate of depreciation of hardware. Each year this portion of the accumulated compute is depreciated."};
-  let metricNotes = {"cog_output_multiplier": "Years between <a href=\"https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#heading=h.vg16ijfr9w9a/\">AI's cognitive value-add</a> in hardware R&D being 2X and 10X.", "billion_agis": "Years between AI that automates 10% of cognitive tasks in R&D to the point when you can train and run 10 billion AGI-equivalents (taking the AGI runtime compute to be the runtime compute for the most compute-intensive R&D task).", "full_automation": "Years between AI that can perform 50% of cognitive tasks to AI that can perform 100%.", "rampup_to_agi": "Years between AI automating 3% of cognitive tasks in goods and services and AI that can perform 100% of cognitive tasks.", "combined": "Average of previous metrics.", "gwp_growth": "Years between instantaneous gwp growth reaching 5% and reaching 20%.\n\n(Not very meaningful because of zigzagging issues.)", "agi_year": "Year when all cognitive tasks have been automated", "rampup_start": "Year when AI becomes economically significant. This happens when a certain percentage of goods and services cognitive tasks have been automated (usually 3% but depends on the inputs) ", "doubling_times": "Years between successive GWP doublings"};
-
   function injectMeaningTooltips() {
     for (let node of document.querySelectorAll('[data-param-metric-id]')) {
       let id = node.dataset.paramMetricId;
-      let content = paramNotes[id] || metricNotes[id];
+      let content = parameter_meanings[id] || metric_meanings[id];
       injectMeaningTooltip(node, content);
     }
   }

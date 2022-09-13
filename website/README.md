@@ -1,4 +1,4 @@
-Sorry, quite messy.
+Sorry, this is quite messy right now.
 
 Execute the test from the root directory with
 

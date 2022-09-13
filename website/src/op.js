@@ -1788,7 +1788,6 @@ function run_bioanchors_model({
   );
   software = np.minimum(software_ceiling, software);
 
-console.log({timesteps, training_investment, hardware, software_timesteps, software});
   return {timesteps, training_investment, hardware, software_timesteps, software};
 }
 
