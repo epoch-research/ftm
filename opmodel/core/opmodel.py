@@ -161,12 +161,18 @@ class SimulateTakeOff():
     self.initial_software = 1
     self.initial_tfp_goods = 1
     self.initial_tfp_rnd = 1
-    self.initial_rnd_input_hardware = 8000000.0
-    self.initial_rnd_input_software = 8000000.0
     self.investment_rate = 0.2
     self.initial_hardware = \
       self.initial_hardware_production \
       * self.ratio_hardware_to_initial_hardware_production
+
+    # Set the initial R&D inputs to roughly match their real values
+    # (note that the simulation doesn't care about these values; we could set
+    # both of these to 1 and there would be no changes in the dynamics of the model)
+    frac_gwp_hardware_rnd_2020 = 0.2e-2
+    frac_gwp_software_rnd_2020 = 0.02e-2
+    self.initial_rnd_input_hardware = self.initial_gwp * frac_gwp_hardware_rnd_2020
+    self.initial_rnd_input_software = self.initial_gwp * frac_gwp_software_rnd_2020
     
     # Economy shares
     self.initial_capital_share_goods = 1 - self.initial_cognitive_share_goods
