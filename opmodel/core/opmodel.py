@@ -593,7 +593,7 @@ class SimulateTakeOff():
 
     # Update compute to labour ratio of automatable tasks
     with np.errstate(under = 'ignore'):
-      # Ignore underflows (we are taking care of them below)
+      # Ignore underflows (we are taking care of them below with np.maximum)
       runtime_requirements_goods = \
         (self.automation_runtime_flops_goods    \
         * (self.automation_training_flops_goods \
@@ -606,7 +606,7 @@ class SimulateTakeOff():
       1. / runtime_requirements_goods
     
     with np.errstate(under = 'ignore'):
-      # Ignore underflows (we are taking care of them below)
+      # Ignore underflows (we are taking care of them below with np.maximum)
       runtime_requirements_rnd = \
         (self.automation_runtime_flops_rnd    \
         * (self.automation_training_flops_rnd \
