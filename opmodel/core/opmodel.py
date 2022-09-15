@@ -1129,95 +1129,106 @@ class SimulateTakeOff():
 
   @staticmethod
   def solve_allocation(L, C, β, ρ, η, AT):
-    """
-    Solve the input allocation problem for
-    L = Labour budget
-    C = Compute budget
-    β = task weights 
-    ρ = labour / capital substitution parameter
-    η = compute / labour substitution ratio
-    AT = number of automatable tasks
+      """
+      Solve the input allocation problem for
+      L = Labour budget
+      C = Compute budget
+      β = task weights 
+      ρ = labour / capital substitution parameter
+      η = compute / labour substitution ratio
+      AT = number of automatable tasks
 
-    See description of solution at the end of the notebook
-    We assume that 
-      * η is monotonically decreasing on its index.
-      * task 0 is automatable
-    """
+      See description of solution at the end of the notebook
+      We assume that 
+        * η is monotonically decreasing on its index.
+        * task 0 is automatable
+      """
 
-    # Check assumptions
-    assert np.all(np.diff(η) <= 0.)
-    assert AT > 0
+      # Check assumptions
+      assert np.all(np.diff(η) <= 0.)
+      assert AT > 0
 
-    # Preprocessing parameters
-    N = len(β)
-    σ = 1. / (1.-ρ)
+      # Preprocessing parameters
+      N = len(β)
+      σ = 1. / (1.-ρ)
 
-    # Precompute partial sums
+      # Precompute partial sums
 
-    # np.sum(β[I:]**σ)
-    sums_β = np.zeros(N + 1)
-    sums_β[:-1] = np.cumsum(β[::-1]**σ)[::-1]
+      # np.sum(β[I:]**σ)
+      sums_β = np.zeros(N + 1)
+      sums_β[:-1] = np.cumsum(β[::-1]**σ)[::-1]
 
-    # np.sum(β[:I]**σ * η[:I]**(σ-1))
-    sums_β_η = np.zeros(N + 1)
-    sums_β_η[1:] = np.cumsum(β[:]**σ * η[:]**(σ-1))
+      # np.sum(β[:I]**σ * η[:I]**(σ-1))
+      sums_β_η = np.zeros(N + 1)
+      sums_β_η[1:] = np.cumsum(β[:]**σ * η[:]**(σ-1))
 
-    # Iterate over critical indices
-    for I in range(AT):
-      # Initialize
-      labour_input_task = np.zeros(N)
-      compute_input_task = np.zeros(N)
+      # Iterate over critical indices
+      for I in range(AT):
+        # Initialize
+        labour_input_task = np.zeros(N)
+        compute_input_task = np.zeros(N)
 
-      ## Equation 20
-      A = η[I]**σ * sums_β[I]
-      B = sums_β_η[I]
-      compute_input_task[I] =\
-        (C*A - L*B) / (A + η[I]*B)
-      
-      ## Equation 18
-      labour_input_task[I] =\
-        (L + η[I]*compute_input_task[I]) \
-        * (β[I]**σ / sums_β[I]) \
-        - η[I]*compute_input_task[I]
-      
-      if labour_input_task[I] >= 0:
-        ## Equation 17
-        labour_input_task[I+1:] =\
-          (L + η[I]*compute_input_task[I]) \
-          * (β[I+1:]**σ / sums_β[I])
+        ## Equation 20
+        A = η[I]**σ * sums_β[I]
+        B = sums_β_η[I]
+        compute_input_task[I] =\
+          (C*A - L*B) / (A + η[I]*B)
         
-        ## Equation 14
+        ## Equation 18
+        labour_input_task[I] =\
+          (L + η[I]*compute_input_task[I]) \
+          * (β[I]**σ / sums_β[I]) \
+          - η[I]*compute_input_task[I]
+        
+        if labour_input_task[I] >= 0:
+          ## Equation 17
+          labour_input_task[I+1:] =\
+            (L + η[I]*compute_input_task[I]) \
+            * (β[I+1:]**σ / sums_β[I])
+          
+          ## Equation 14
+          Z = sums_β_η[I+1]
+          compute_input_task[:I] =\
+            (C + labour_input_task[I]/η[I]) \
+            * β[:I]**σ * η[:I]**(σ-1) / Z
+
+          if I > 0 and compute_input_task[I] < 0:
+              compute_input_task[I:] = 0
+              compute_input_task[:I] =\
+            C \
+            * β[:I]**σ * η[:I]**(σ-1) / sums_β_η[I]
+
+              labour_input_task[:I] = 0
+              labour_input_task[I:] =\
+            L \
+            * (β[I:]**σ / sums_β[I])
+                                   
+          break
+      else:
+        # The critical index is the last one
+        I = AT-1
+
+        # Initialize
+        labour_input_task = np.zeros(N) 
+        compute_input_task = np.zeros(N)
+
+        ## Equations 14 & 15
         Z = sums_β_η[I+1]
-        compute_input_task[:I] =\
-          (C + labour_input_task[I]/η[I]) \
-          * β[:I]**σ * η[:I]**(σ-1) / Z
+        compute_input_task[:I+1] =\
+          C * β[:I+1]**σ * η[:I+1]**(σ-1) / Z
+        
+        ## We assume LI = 0
+        labour_input_task[I] = 0
 
-        break
-    else:
-      # The critical index is the last one
-      I = AT-1
-
-      # Initialize
-      labour_input_task = np.zeros(N) 
-      compute_input_task = np.zeros(N)
-
-      ## Equations 14 & 15
-      Z = sums_β_η[I+1]
-      compute_input_task[:I+1] =\
-        C * β[:I+1]**σ * η[:I+1]**(σ-1) / Z
+        ## Equation 22
+        labour_input_task[I+1:] =\
+          L * (β[I+1:]**σ / sums_β[I+1])
       
-      ## We assume LI = 0
-      labour_input_task[I] = 0
-
-      ## Equation 22
-      labour_input_task[I+1:] =\
-        L * (β[I+1:]**σ / sums_β[I+1])
-    
-    # Fix rounding error
-    if np.all(labour_input_task==0): 
-      labour_input_task[-1] = L
-
-    return labour_input_task, compute_input_task
+      # Fix rounding error
+      if np.all(labour_input_task==0): 
+        labour_input_task[-1] = L
+        
+      return labour_input_task, compute_input_task
   
   @staticmethod
   def odds_to_probs(o):
