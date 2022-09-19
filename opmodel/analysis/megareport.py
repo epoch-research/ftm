@@ -1,7 +1,7 @@
 from . import log
 from . import *
 
-from ..report.report import Report
+from .report import Report
 from .exploration_analysis import explore
 from .sensitivity_analysis import write_sensitivity_analysis_report
 from .timelines_analysis import write_timelines_analysis_report

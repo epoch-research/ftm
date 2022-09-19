@@ -8,5 +8,5 @@ import argparse
 from ..core.opmodel import SimulateTakeOff
 from ..core.utils import display, log, draw_oom_lines
 from ..core.utils import *
-from ..report.report import Report
+from .report import Report
 

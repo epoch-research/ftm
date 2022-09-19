@@ -16,7 +16,6 @@ from xml.etree import ElementTree as et
 import argparse
 
 from . import log, Report, get_option, init_cli_arguments, handle_cli_arguments
-from . import Report
 
 EPS = 1e-40 # frankly, just some arbitrary number that feels low enough
 DIFF_COL = 'Diff (%)'
