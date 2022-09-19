@@ -555,11 +555,6 @@ class SkewedLogUniform(rv_continuous):
     self.upper_bound = bound
     self.b = bound
 
-  def _ppf(self, q):
-    upper_q = self._cdf(self.upper_bound)
-    q = q * upper_q
-    return super()._ppf(q)
-
   def _cdf(self, x):
     # Transform to loguniform
 
@@ -579,15 +574,52 @@ class SkewedLogUniform(rv_continuous):
     s = self.integration_direction
 
     if s*y < s*self.low:
-      cd = 0
+      q = 0
     elif s*y < s*self.med:
-      cd = 1./2 * (y - self.low) / (self.med - self.low)
+      q = 1./2 * (y - self.low) / (self.med - self.low)
     elif s*y < s*self.high:
-      cd = 1./2 + 1./2 * (y - self.med) / (self.high - self.med)
+      q = 1./2 + 1./2 * (y - self.med) / (self.high - self.med)
     else:
-      cd = 1
+      q = 1
 
-    return cd
+    return q
+
+  def _ppf(self, q):
+    upper_q = self._cdf(self.upper_bound)
+    q = q * upper_q
+
+    scalar_input = np.isscalar(q)
+
+    if scalar_input:
+      q = np.array([q])
+
+    # Undo the _cdf
+
+    y = np.zeros(len(q))
+
+    for i in range(len(q)):
+      if q[i] <= 0:
+        y[i] = self.low
+      elif q[i] <= 1./2:
+        y[i] = self.low + 2 * q[i] * (self.med - self.low)
+      elif q[i] < 1:
+        y[i] = self.med + 2 * (q[i] - 1./2) * (self.high - self.med)
+      else:
+        y[i] = self.high
+
+    y = np.exp(y)
+
+    if self.kind == "frac":
+      x = y / (1. + y)
+    elif self.kind == "inv_frac":
+      x = y / (1. + y)
+      x = 1 / x
+    elif self.kind == 'neg':
+      x = -y
+    else:
+      x = y
+
+    return x[0] if scalar_input else x
 
 class PointDistribution(rv_continuous):
   def __init__(self, v):
