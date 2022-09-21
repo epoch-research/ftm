@@ -185,7 +185,11 @@ def write_takeoff_probability_table(n_trials=100, max_retries=100, input_results
 
   return df
 
-def write_mc_analysis_report(n_trials=100, max_retries=100, include_sample_table=False, report_file_path=None, report_dir_path=None, report=None, output_results_filename=None, input_results_filename=None):
+def write_mc_analysis_report(
+    n_trials=100, max_retries=100, include_sample_table=False, report_file_path=None,
+    report_dir_path=None, report=None, output_results_filename=None, input_results_filename=None
+  ):
+
   if report_file_path is None:
     report_file_path = 'mc_analysis.html'
 
