@@ -1,4 +1,3 @@
-git+https://github.com/tadamcz/copula-wrapper.git@007ad4beca7b58239975f72d0d6630391a2f1b6b#egg=copula-wrapper
 pyyaml
 seaborn
 bs4
