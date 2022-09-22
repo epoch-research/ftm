@@ -296,10 +296,10 @@ def write_mc_analysis_report(
   fig, ax = plt.subplots(1, 2, num = 1, figsize = (10, 6), dpi = 80)
 
   ax[0].set_ylabel('Year')
-  sns.violinplot(data = pd.DataFrame(absolute_violin_metrics), ax = ax[0])
+  sns.violinplot(data = pd.DataFrame(absolute_violin_metrics), ax = ax[0], cut = 0)
 
   ax[1].set_ylabel('Years')
-  sns.violinplot(data = pd.DataFrame(relative_violin_metrics), ax = ax[1], palette = sns.color_palette()[2:])
+  sns.violinplot(data = pd.DataFrame(relative_violin_metrics), ax = ax[1], cut = 0, palette = sns.color_palette()[2:])
 
   plt.subplots_adjust(wspace = 0.3) # Increase spacing between subplots
 
