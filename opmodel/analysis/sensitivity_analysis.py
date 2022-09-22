@@ -300,6 +300,9 @@ def get_metric_values(metric, conditional_samples, metric_arguments):
   return metric_values
 
 def g(dist, metric, parameters, mean_samples = 1, var_samples = 10, processes = None, metric_arguments = None, save_dir = None):
+  """
+  Compute E[var(metric | parameters)]
+  """
   if processes is None:
     processes = os.cpu_count()
 
