@@ -21,17 +21,22 @@ class SensitivityAnalysisResults:
     self.analysis_params = analysis_params
 
 def sensitivity_analysis(quick_test_mode = False, method = 'point_comparison'):
-  if method == 'point_comparison':   return point_comparison(quick_test_mode = quick_test_mode)
-  if method == 'variance_reduction': return variance_reduction_comparison(quick_test_mode = quick_test_mode, method = 'variance_reduction')
-  if method == 'shapley_values':     return variance_reduction_comparison(quick_test_mode = quick_test_mode, method = 'shapley_values')
+  if method == 'point_comparison':
+    return point_comparison(quick_test_mode = quick_test_mode)
 
-def variance_reduction_comparison(quick_test_mode = False, save_dir = None, method = 'variance_reduction'):
+  if method == 'variance_reduction_on_margin':
+    return variance_reduction_comparison(quick_test_mode = quick_test_mode, method = 'variance_reduction_on_margin')
+
+  if method == 'shapley_values':
+    return variance_reduction_comparison(quick_test_mode = quick_test_mode, method = 'shapley_values')
+
+def variance_reduction_comparison(quick_test_mode = False, save_dir = None, method = 'variance_reduction_on_margin'):
   params_dist = ParamsDistribution()
 
-  metric_names = SimulateTakeOff.takeoff_metrics
+  metric_names = SimulateTakeOff.takeoff_metrics + ['rampup_start', 'agi_year']
   parameters = [name for name, marginal in params_dist.marginals.items() if not isinstance(marginal, PointDistribution)]
-  mean_samples = 10
-  var_samples = 1000
+  mean_samples = 100
+  var_samples = 100
   shapley_samples = 1000
 
   if quick_test_mode:
@@ -42,7 +47,7 @@ def variance_reduction_comparison(quick_test_mode = False, save_dir = None, meth
 
   log.info('Running simulations...')
   param_importance = get_parameter_importance(
-      params_dist, variance_reduction_metrics, parameters = parameters, metric_arguments = metric_names,
+      params_dist, parameter_importance_metrics, parameters = parameters, metric_arguments = metric_names,
       mean_samples = mean_samples, var_samples = var_samples, shapley_samples = shapley_samples,
       save_dir = save_dir, method = method,
   )
@@ -51,7 +56,7 @@ def variance_reduction_comparison(quick_test_mode = False, save_dir = None, meth
     log.info(f'All the samples and metrics have been stored in {save_dir}')
 
   table = pd.DataFrame.from_dict(param_importance, orient = 'index', columns = metric_names)
-  print(table)
+  log.info(table)
 
   results = SensitivityAnalysisResults()
   results.parameter_table = params_dist.parameter_table
@@ -66,7 +71,7 @@ def variance_reduction_comparison(quick_test_mode = False, save_dir = None, meth
 
   return results
 
-def variance_reduction_metrics(params, metric_names):
+def parameter_importance_metrics(params, metric_names):
   model = SimulateTakeOff(**params, t_step = 1)
 
   # Check that no goods task is automatable from the beginning (except for the first one)
@@ -75,7 +80,12 @@ def variance_reduction_metrics(params, metric_names):
 
   model.run_simulation()
 
-  metrics = [model.takeoff_metrics[name] for name in metric_names]
+  all_metrics = model.takeoff_metrics.copy()
+  all_metrics["rampup_start"] = model.t_end if model.rampup_start is None else model.rampup_start
+  all_metrics["agi_year"]     = model.t_end if model.agi_year is None else model.agi_year
+
+  # Keep only the ones in metric_names (in that order)
+  metrics = [all_metrics[name] for name in metric_names]
 
   return metrics
 
@@ -240,7 +250,7 @@ def write_sensitivity_analysis_report(method="point_comparison", quick_test_mode
 def get_parameter_importance(
     dist, metric,
     mean_samples = 4, var_samples = 10, shapley_samples = 1, parameters = None, metric_arguments = None,
-    save_dir = None, method = 'variance_reduction'
+    save_dir = None, method = 'variance_reduction_on_margin'
   ):
 
   if parameters is None:
@@ -251,7 +261,7 @@ def get_parameter_importance(
   configured_g = lambda params: \
     g(dist, metric, params, mean_samples = mean_samples, var_samples = var_samples, metric_arguments = metric_arguments, save_dir = save_dir)
 
-  if method == 'variance_reduction':
+  if method == 'variance_reduction_on_margin':
     log.info(f'Computing g_empty...')
     log.indent()
     g_empty = configured_g([])
@@ -291,7 +301,7 @@ def get_parameter_importance(
       importance[param] = r
 
   else:
-    raise ValueError("method must be one of 'variance_reduction' or 'shapley_values'")
+    raise ValueError("method must be one of 'variance_reduction_on_margin' or 'shapley_values'")
 
   return importance
 
@@ -372,7 +382,7 @@ if __name__ == '__main__':
     default = 'point_comparison',
     choices = [
       'point_comparison',
-      'variance_reduction',
+      'variance_reduction_on_margin',
       'shapley_values',
     ]
   )
