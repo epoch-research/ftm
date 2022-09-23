@@ -1037,6 +1037,11 @@ class SimulateTakeOff():
           getattr(self,f'{frac_metric}_ceiling'),
           )
 
+    # Cap the growth of the fraction of FLOP before rampup
+    if self.money_spent_training[t_idx-1] > self.money_cap_training_before_wakeup \
+    and not self.rampup[t_idx-1]:
+      self.frac_compute_training[t_idx] = self.frac_compute_training[t_idx-1]
+
     # Goods production fractional inputs
     self.frac_capital_goods[t_idx] = \
       1 - self.frac_capital_hardware_rnd[t_idx]
@@ -1044,12 +1049,6 @@ class SimulateTakeOff():
       1 - self.frac_labour_hardware_rnd[t_idx] - self.frac_labour_software_rnd[t_idx]
     self.frac_compute_goods[t_idx] = \
       1 - self.frac_compute_hardware_rnd[t_idx] - self.frac_compute_software_rnd[t_idx] - self.frac_compute_training[t_idx]
-      
-    
-    # Cap the growth of the fraction of FLOP before rampup
-    if self.money_spent_training[t_idx-1] > self.money_cap_training_before_wakeup \
-    and not self.rampup[t_idx-1]:
-      self.frac_compute_training[t_idx] = self.frac_compute_training[t_idx-1]
   
   def calculate_total_inputs(self, t_idx):
     
