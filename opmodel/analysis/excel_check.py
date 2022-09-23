@@ -78,7 +78,7 @@ def write_excel_report(olde_sheet_url, report_file_path=None, report_dir_path=No
   # Compare the results and write the report
   # -----------------------------------------------------------------------------
   def load_sheet_range(range):
-    to_float = lambda x: np.nan if (x is None or x == '#REF!') else float(x)
+    to_float = lambda x: np.nan if (x is None or x == '#REF!' or x == '#N/A') else float(x)
 
     if re.match(r'^[A-Z]+$', range):
       col = range
