@@ -572,12 +572,24 @@ class MiscTests(unittest.TestCase):
     return values
 
 class TestTradeoff(unittest.TestCase):
-  def test_invariant_automated_tasks(self):
-    def _check(parameters):
-      parameters = parameters.copy()
+  def setUp(self):
+    self.parameters = []
 
+    best_guess_parameters = {parameter : row['Best guess'] for parameter, row in get_parameter_table().iterrows()}
+    self.parameters.append(best_guess_parameters)
+
+    params_dist = ParamsDistribution()
+    for row, sample in params_dist.rvs(10).iterrows():
+      parameters = sample.to_dict()
+      self.parameters.append(parameters)
+
+    for parameters in self.parameters:
       parameters['runtime_training_tradeoff'] = 1
       parameters['runtime_training_max_tradeoff'] = 1e100
+
+  def test_invariant_automated_tasks(self):
+    for parameters in self.parameters:
+      parameters = parameters.copy()
 
       model_1 = SimulateTakeOff(**parameters)
       model_1.run_simulation()
@@ -592,11 +604,19 @@ class TestTradeoff(unittest.TestCase):
       self.assertTrue(np.all(model_1.frac_tasks_automated_goods == model_2.frac_tasks_automated_goods))
       self.assertTrue(np.all(model_1.frac_tasks_automated_rnd == model_2.frac_tasks_automated_rnd))
 
-    best_guess_parameters = {parameter : row['Best guess'] for parameter, row in get_parameter_table().iterrows()}
-    _check(best_guess_parameters)
+  def test_invariant_runtime_requirements(self):
+    # When biggest_training_run == training requirements, the actual runtime requirements for a task
+    # should be the same as if there was no tradeoff
 
-    params_dist = ParamsDistribution()
-    for row, sample in params_dist.rvs(10).iterrows():
-      parameters = sample.to_dict()
-      _check(parameters)
+    model = SimulateTakeOff(**self.parameters[0])
 
+    for i in range(100):
+      # Pick random values for everything
+      runtime_reqs  = np.array([10**np.random.uniform(high = 30)])
+      training_reqs = np.array([10**np.random.uniform(high = 40)])
+      model.runtime_training_tradeoff = 10**np.random.uniform(low = -3, high = 3)
+
+      biggest_training_run = training_reqs[0]
+      actual_reqs = model.compute_runtime_requirements(training_reqs, runtime_reqs, biggest_training_run)
+
+      self.assertTrue(np.abs((actual_reqs[0] - runtime_reqs[0])/runtime_reqs[0]) < 1e-9)

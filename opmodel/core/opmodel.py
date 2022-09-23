@@ -591,32 +591,28 @@ class SimulateTakeOff():
       / (self.n_labour_tasks_goods
          + self.n_labour_tasks_rnd) # We dont count the initial compute task
 
-    # Update compute to labour ratio of automatable tasks
+    runtime_requirements_goods = self.compute_runtime_requirements(
+      self.automation_training_flops_goods,
+      self.automation_runtime_flops_goods,
+      self.biggest_training_run[t_idx],
+    )
+    self.task_compute_to_labour_ratio_goods[t_idx] = 1. / runtime_requirements_goods
+
+    runtime_requirements_rnd = self.compute_runtime_requirements(
+      self.automation_training_flops_rnd,
+      self.automation_runtime_flops_rnd,
+      self.biggest_training_run[t_idx],
+    )
+    self.task_compute_to_labour_ratio_rnd[t_idx] = 1. / runtime_requirements_rnd
+
+  def compute_runtime_requirements(self, automation_training_flops, automation_runtime_flops, biggest_training_run):
     with np.errstate(under = 'ignore'):
       # Ignore underflows (we are taking care of them below with np.maximum)
-      runtime_requirements_goods = \
-        (self.automation_runtime_flops_goods    \
-        * (self.automation_training_flops_goods \
-        /  self.biggest_training_run[t_idx])   \
-        ** self.runtime_training_tradeoff)\
-        if self.runtime_training_tradeoff is not None else \
-        self.automation_runtime_flops_goods
-    runtime_requirements_goods = np.maximum(1.,runtime_requirements_goods)  # Requirements cannot fall below 1
-    self.task_compute_to_labour_ratio_goods[t_idx] = \
-      1. / runtime_requirements_goods
-    
-    with np.errstate(under = 'ignore'):
-      # Ignore underflows (we are taking care of them below with np.maximum)
-      runtime_requirements_rnd = \
-        (self.automation_runtime_flops_rnd    \
-        * (self.automation_training_flops_rnd \
-        /  self.biggest_training_run[t_idx]) \
-        ** self.runtime_training_tradeoff)\
-        if self.runtime_training_tradeoff is not None else \
-        self.automation_runtime_flops_rnd
-    runtime_requirements_rnd = np.maximum(1.,runtime_requirements_rnd)  # Requirements cannot fall below 1
-    self.task_compute_to_labour_ratio_rnd[t_idx] = \
-      1. / runtime_requirements_rnd
+      runtime_requirements = automation_runtime_flops
+      if self.runtime_training_tradeoff is not None:
+        runtime_requirements = runtime_requirements * (automation_training_flops/biggest_training_run)**self.runtime_training_tradeoff
+    runtime_requirements = np.maximum(1., runtime_requirements)  # Requirements cannot fall below 1
+    return runtime_requirements
   
   ##############################################################################
 
