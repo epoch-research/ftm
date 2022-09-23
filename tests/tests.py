@@ -3,10 +3,10 @@ import unittest
 import numpy as np
 import pandas as pd
 from scipy import stats
-import opmodel.core.utils as utils
+from opmodel.core.utils import *
 from scipy.interpolate import interp1d
 from statsmodels.distributions.empirical_distribution import ECDF
-from opmodel.analysis.mc_analysis import ParamsDistribution, PointDistribution, AjeyaDistribution
+from opmodel.stats.distributions import ParamsDistribution, PointDistribution, AjeyaDistribution
 
 from opmodel.core.opmodel import *
 
@@ -570,3 +570,33 @@ class MiscTests(unittest.TestCase):
     values = np.array(values)
 
     return values
+
+class TestTradeoff(unittest.TestCase):
+  def test_invariant_automated_tasks(self):
+    def _check(parameters):
+      parameters = parameters.copy()
+
+      parameters['runtime_training_tradeoff'] = 1
+      parameters['runtime_training_max_tradeoff'] = 1e100
+
+      model_1 = SimulateTakeOff(**parameters)
+      model_1.run_simulation()
+
+      parameters['full_automation_requirements_training'] /= 2
+      parameters['full_automation_requirements_runtime']  *= 2
+
+      model_2 = SimulateTakeOff(**parameters)
+      model_2.run_simulation()
+
+      # The number of tasks automated should be the same
+      self.assertTrue(np.all(model_1.frac_tasks_automated_goods == model_2.frac_tasks_automated_goods))
+      self.assertTrue(np.all(model_1.frac_tasks_automated_rnd == model_2.frac_tasks_automated_rnd))
+
+    best_guess_parameters = {parameter : row['Best guess'] for parameter, row in get_parameter_table().iterrows()}
+    _check(best_guess_parameters)
+
+    params_dist = ParamsDistribution()
+    for row, sample in params_dist.rvs(10).iterrows():
+      parameters = sample.to_dict()
+      _check(parameters)
+
