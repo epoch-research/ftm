@@ -123,6 +123,8 @@ class GaussianCopula(sm_api.GaussianCopula):
     self.mu = np.zeros(len(corr))
 
   def rvs(self, nobs=1, args=[], random_state=None):
+    # The "0.5 + (1 - 1e-10) * (x - 0.5)" below is to ensure we pass to the normal ppf only values inside (0, 1).
+    # TODO: Is this reasonable? sm_copulas.CopulaDistribution does the same
     fixed_values = [self.distr_uv.ppf(0.5 + (1 - 1e-10) * (x - 0.5)) for x in args]
     x = self.sample_normal_cond(values = fixed_values, nobs = nobs, random_state = random_state)
     return self.distr_uv.cdf(x)
