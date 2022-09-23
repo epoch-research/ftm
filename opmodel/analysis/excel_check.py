@@ -111,7 +111,8 @@ def write_excel_report(olde_sheet_url, report_file_path=None, report_dir_path=No
     'agi_year'                   : load_sheet_range('BA54'),
     'full_rnd_automation_year'   : load_sheet_range('BB54'),
     'fast_growth_year'           : load_sheet_range('BC54'),
-    'wakeup_year'                : float(model.index_to_time(np.argmax(load_sheet_range('B')))),
+    'wakeup_year'                : np.nan if not np.any(load_sheet_range('B')) \
+                                      else float(model.index_to_time(np.argmax(load_sheet_range('B')))),
 
     'timesteps'                  : clip(load_sheet_range('A')),
     'gwp'                        : clip(load_sheet_range('P')),
