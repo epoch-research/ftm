@@ -513,8 +513,7 @@ class SimulateTakeOff():
     self.tfp_rnd[0] = self.initial_tfp_rnd
     
     self.money_spent_training[0] = \
-      self.compute_investment[0] * self.initial_biggest_training_run \
-      / (self.hardware[0] * self.initial_software) / self.t_step
+      self.initial_biggest_training_run / (self.initial_software * self.initial_buyable_hardware_performance)
   
   def initialize_fractional_inputs(self):
 
@@ -1085,7 +1084,7 @@ class SimulateTakeOff():
     
     # Track money spent training
     self.money_spent_training[t_idx] = \
-      self.compute_investment[t_idx] * self.frac_compute_training[t_idx] / self.t_step
+      self.compute[t_idx] * self.frac_compute_training[t_idx] / (self.software[t_idx] * buyable_hardware_performance)
 
   ###########################################################################
 
