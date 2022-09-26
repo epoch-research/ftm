@@ -49,12 +49,18 @@ class ParamsDistribution():
         marginal = PointDistribution(row['Best guess'])
       marginals[parameter] = marginal
 
-    lower_ajeya_bound = \
+    lowest_training_requirements_goods = \
         (marginals['initial_biggest_training_run'].b * marginals['runtime_training_max_tradeoff'].b) \
         * marginals['flop_gap_training'].a**(10.5/7)
 
+    lowest_training_requirements_rnd = \
+        (marginals['initial_biggest_training_run'].b * marginals['runtime_training_max_tradeoff'].b * marginals['goods_vs_rnd_requirements_training'].b) \
+        * marginals['flop_gap_training'].a**(10.5/7)
+
+    lowest_training_requirements = max(lowest_training_requirements_goods, lowest_training_requirements_rnd)
+
     marginals['full_automation_requirements_training'] = \
-        AjeyaDistribution(lower_bound = lower_ajeya_bound)
+        AjeyaDistribution(lower_bound = lowest_training_requirements)
 
     pairwise_rank_corr = {}
     for left in marginals.keys():
