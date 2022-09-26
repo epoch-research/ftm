@@ -516,6 +516,7 @@ except ModuleNotFoundError:
 class Log:
   ERROR_LEVEL = 1
   INFO_LEVEL  = 2
+  TRACE_LEVEL = 3
 
   def __init__(self, level=None):
     self.level = level if (level is not None) else INFO_LEVEL
@@ -527,6 +528,9 @@ class Log:
   def deindent(self):
     self.indentation_level -= 1
     if self.indentation_level < 0: self.indentation_level = 0
+
+  def trace(self, *args, **kwargs):
+    self.print(log.TRACE_LEVEL, *args, **kwargs)
 
   def info(self, *args, **kwargs):
     self.print(log.INFO_LEVEL, *args, **kwargs)
