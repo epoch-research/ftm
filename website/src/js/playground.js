@@ -27,7 +27,7 @@ metrics_to_show.addEventListener('change',  () => {
   ui_state.metrics_to_show = metrics_to_show.value;
 
   let all_metrics_table = {
-    ...sim.takeoff_metrics,
+    ...sim.get_takeoff_metrics(),
     'rampup_start': sim.rampup_start,
     'agi_year': sim.agi_year,
   };
