@@ -187,6 +187,19 @@ function get_parameters() {
   return params;
 }
 
+// Internal, for debugging
+function set_parameters(params) {
+  for (let param in params) {
+    let input = document.getElementById(param);
+    if (!input) {
+      console.log(param);
+    }
+    input.value = params[param];
+  }
+
+  run_simulation(false);
+}
+
 
 // ------------------------------------------------------------------------
 // Plotting stuff
