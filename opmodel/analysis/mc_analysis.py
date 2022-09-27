@@ -15,7 +15,7 @@ from numpy.random import default_rng
 from matplotlib import cm
 from xml.etree import ElementTree as et
 from ..core.utils import get_clipped_ajeya_dist, get_param_names, get_metric_names
-from ..stats.distributions import ParamsDistribution, JointDistribution, PointDistribution, SkewedLogUniform
+from ..stats.distributions import *
 
 rng = default_rng()
 
@@ -131,12 +131,16 @@ def mc_analysis(n_trials = 100, max_retries = 100):
   results.n_trials           = n_trials
   results.timesteps          = mc_model.timesteps
   results.t_step             = mc_model.t_step
+  results.t_start            = mc_model.t_start
+  results.t_end              = mc_model.t_end
   results.param_samples      = pd.concat(samples, ignore_index = True)
-  results.ajeya_cdf          = params_dist.marginals['full_automation_requirements_training'].cdf_pd
   results.parameter_table    = params_dist.parameter_table
   results.rank_correlations  = params_dist.rank_correlations
   results.slow_takeoff_count = slow_takeoff_count
   results.last_valid_indices = last_valid_indices
+
+  reqs_marginal = params_dist.marginals['full_automation_requirements_training']
+  results.ajeya_cdf = reqs_marginal.cdf_pd if isinstance(reqs_marginal, AjeyaDistribution) else None
 
   return results
 
@@ -281,17 +285,21 @@ def write_mc_analysis_report(
   report.add_data_frame(metrics_quantiles)
 
   # Plot trajectories
-  metrics = ['biggest_training_run']
+  metrics = {'biggest_training_run': 'Biggest training run'}
   for metric in metrics:
     results.state_metrics[metric] = np.stack(results.state_metrics[metric])
-    plot_quantiles(results.timesteps, results.state_metrics[metric], "Year", metric)
+    plot_quantiles(results.timesteps, results.state_metrics[metric], "Year", metrics[metric])
     report.add_figure()
 
   # Add violin plots of scalar metrics
   metric_id_to_human = get_metric_names()
 
-  absolute_violin_metrics = {metric_id_to_human[id]: results.scalar_metrics[id] for id in ['rampup_start', 'agi_year']}
-  relative_violin_metrics = {metric_id_to_human[id]: results.scalar_metrics[id] for id in ['billion_agis', 'full_automation']}
+  # Mmmh... this is quite hacky
+  limit_absolute = results.t_end
+  limit_relative = results.t_end - results.t_start
+
+  absolute_violin_metrics = {metric_id_to_human[id]: [x if (x < limit_absolute) else np.nan for x in results.scalar_metrics[id]] for id in ['rampup_start', 'agi_year']}
+  relative_violin_metrics = {metric_id_to_human[id]: [x if (x < limit_relative) else np.nan for x in results.scalar_metrics[id]] for id in ['billion_agis', 'full_automation']}
 
   fig, ax = plt.subplots(1, 2, num = 1, figsize = (10, 6), dpi = 80)
 
@@ -328,21 +336,24 @@ def write_mc_analysis_report(
   report.add_paragraph("<span style='font-weight:bold'>Input statistics:</span> <span data-modal-trigger='input-stats-modal'><i>click here to view</i>.</span>")
   report.add_data_frame_modal(params_stats_table, 'input-stats-modal')
 
-  report.add_data_frame_modal(results.ajeya_cdf, 'ajeya-modal', show_index = False)
+  if results.ajeya_cdf:
+    report.add_data_frame_modal(results.ajeya_cdf, 'ajeya-modal', show_index = False)
 
-  # the parameter full_automation_requirements_training is special (we are sampling from Ajeya's distribution)
-  table = report.add_data_frame(results.parameter_table.drop(index = 'full_automation_requirements_training', columns = 'Type'), show_justifications = True)
-  tbody = None
-  for element in table.iter():
-    if element.tag == 'tbody':
-      tbody = element
-      break
-  tbody.insert(0, et.fromstring(f'''
-    <tr>
-      <th data-param-id='full_automation_requirements_training'>{get_param_names()['full_automation_requirements_training'] if get_option('human_names') else 'full_automation_requirements_training'}</th>
-      <td colspan="4" style="text-align: center">sampled from a clipped Cotra's distribution <span data-modal-trigger="ajeya-modal">(<i>click here to view</i>)</span></td>
-    </tr>
-  '''))
+    # the parameter full_automation_requirements_training is special (we might be sampling from Ajeya's distribution)
+    table = report.add_data_frame(results.parameter_table.drop(index = 'full_automation_requirements_training', columns = 'Type'), show_justifications = True)
+    tbody = None
+    for element in table.iter():
+      if element.tag == 'tbody':
+        tbody = element
+        break
+    tbody.insert(0, et.fromstring(f'''
+      <tr>
+        <th data-param-id='full_automation_requirements_training'>{get_param_names()['full_automation_requirements_training'] if get_option('human_names') else 'full_automation_requirements_training'}</th>
+        <td colspan="4" style="text-align: center">sampled from a clipped Cotra's distribution <span data-modal-trigger="ajeya-modal">(<i>click here to view</i>)</span></td>
+      </tr>
+    '''))
+  else:
+    report.add_data_frame(results.parameter_table.drop(columns = 'Type'), show_justifications = True)
 
   if include_sample_table:
     report.add_header("Parameter samples", level = 3)
