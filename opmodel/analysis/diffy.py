@@ -72,7 +72,7 @@ class JSModel(Model):
         log.push(Array.from(arguments).map(x => JSON.stringify(x)).join(', '));
       }};
     ''')
-    self.module.eval(f'simulation_result = run_model(transform_python_to_js_params({json.dumps(self.inputs)}))')
+    self.module.eval(f'simulation_result = ftm.run_simulation(bridge.transform_python_to_js_params({json.dumps(self.inputs)}))')
     print(self.module.execute("log.join('\\n')"))
 
   def get_var_to_lineno(self): return {}
@@ -80,15 +80,15 @@ class JSModel(Model):
   def get_static_variables(self): return {}
 
   def get_takeoff_metrics(self):
-    variables = self.module.execute(f'get_takeoff_metrics(simulation_result)')
+    variables = self.module.execute(f'bridge.get_takeoff_metrics(simulation_result)')
     return variables
 
   def get_main_dynamic_variables(self, step_index):
-    variables = self.module.execute(f'get_external_variables(simulation_result, {step_index})')
+    variables = self.module.execute(f'bridge.get_external_variables(simulation_result, {step_index})')
     return variables
 
   def get_internal_dynamic_variables(self, step_index):
-    variables = self.module.execute(f'get_internal_variables(simulation_result, {step_index})')
+    variables = self.module.execute(f'bridge.get_internal_variables(simulation_result, {step_index})')
     return variables
 
   def get_step_count(self):
@@ -381,16 +381,17 @@ class ModelManager:
   def load_js_module(project_path):
     from py_mini_racer import MiniRacer
 
-    main_path = os.path.join(project_path, 'op.js')
-    bridge_path = os.path.join(project_path, 'bridge.js')
+    scripts = [
+      'nj.js',
+      'ftm.js',
+      'bridge.js',
+    ]
 
     ctx = MiniRacer()
-    with open(main_path, 'r') as f:
-      script = f.read()
-      ctx.eval(script)
-    with open(bridge_path, 'r') as f:
-      script = f.read()
-      ctx.eval(script)
+    for script in scripts:
+      with open(os.path.join(project_path, script), 'r') as f:
+        script = f.read()
+        ctx.eval(script)
     return ctx
 
   @staticmethod
