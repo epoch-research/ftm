@@ -735,8 +735,9 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
 -->
 
 
-<script src="op.js"></script>
-<script src="bridge.js"></script>
+<script src="ftm/nj.js"></script>
+<script src="ftm/ftm.js"></script>
+<script src="ftm/bridge.js"></script>
 
 <script src="https://d3js.org/d3.v4.js"></script>
 
@@ -866,7 +867,7 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
       cancelBackgroundProcesses();
       dispatchBackgroundProcess(() => {
         let js_params = transform_python_to_js_params(params);
-        sim = run_model(js_params);
+        sim = ftm.run_simulation(js_params);
 
         if (callback) {
           callback(sim);
@@ -1079,8 +1080,8 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
     let low = +Infinity;
 
     for (let data of dataset) {
-      low = Math.min(np.min(data.y), low);
-      high = Math.max(np.max(data.y), high);
+      low = Math.min(nj.min(data.y), low);
+      high = Math.max(nj.max(data.y), high);
     }
 
     low = Math.floor(Math.log10(low));
@@ -1262,11 +1263,11 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
       let xlims = [Infinity, -Infinity];
       let ylims = [Infinity, -Infinity];
       for (let data of this.dataset) {
-        xlims[0] = Math.min(np.min(data.x), xlims[0]);
-        xlims[1] = Math.max(np.max(data.x), xlims[1]);
+        xlims[0] = Math.min(nj.min(data.x), xlims[0]);
+        xlims[1] = Math.max(nj.max(data.x), xlims[1]);
 
-        ylims[0] = Math.min(np.min(data.y), ylims[0]);
-        ylims[1] = Math.max(np.max(data.y), ylims[1]);
+        ylims[0] = Math.min(nj.min(data.y), ylims[0]);
+        ylims[1] = Math.max(nj.max(data.y), ylims[1]);
       }
 
       if ((ylims[1] - ylims[0]) < 0.001) {
@@ -1781,7 +1782,7 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
       t_start: sim.t_start,
       t_end: sim.timesteps[sim.timesteps.length-1],
 
-      t_step: best_guess_sim.params.t_step,
+      t_step: best_guess_sim.consts.t_step,
       initial_software: best_guess_sim.states[0].software.v,
       initial_hardware: best_guess_sim.states[0].hardware_performance.v,
       initial_training_investment: 50 * best_guess_sim.states[0].compute_investment * best_guess_sim.states[0].frac_compute.training.v
@@ -1807,13 +1808,13 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
 
     function add_data(t, v, line_options) {
       let start_idx = 0;
-      let reference_idx = (sim.rampup_start != null) ? np.argmax(np.gte(t, sim.rampup_start)) : 0;
-      let end_idx = (crop_after_agi && sim.agi_year != null) ? np.argmax(np.gte(t, sim.agi_year + 5)) : t.length;
+      let reference_idx = (sim.rampup_start != null) ? nj.argmax(nj.gte(t, sim.rampup_start)) : 0;
+      let end_idx = (crop_after_agi && sim.agi_year != null) ? nj.argmax(nj.gte(t, sim.agi_year + 5)) : t.length;
 
       t = t.slice(start_idx, end_idx);
       v = v.slice(start_idx, end_idx);
       if (ui_state.show_normalized_decomposition) {
-        v = np.div(v, v[reference_idx]);
+        v = nj.div(v, v[reference_idx]);
       }
 
       graph.add_data_xy(t, v, line_options);
@@ -1829,7 +1830,7 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
       } else {
         add_data(
           bioanchors.timesteps,
-          np.mult(sim.get_thread('compute_investment'), sim.get_thread('frac_compute.training.v')),
+          nj.mult(sim.get_thread('compute_investment'), sim.get_thread('frac_compute.training.v')),
           {label: 'Training compute investment', color: 'purple', section}
         );
       }
@@ -2048,6 +2049,7 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
     for (let timer of backgroundTimers) {
       clearTimeout(timer);
     }
+    backgroundTimers = [];
   }
 
   ///////////////////////////////////////////////////////////////////////////////

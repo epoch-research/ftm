@@ -29,11 +29,11 @@ def build():
     with open(os.path.join(BUILD_DIR, filename), 'w') as f:
       return f.write(content)
 
-  cp('bridge.js')
-  cp('op.js')
-
   shutil.rmtree(os.path.join(BUILD_DIR, 'assets'))
   shutil.copytree(os.path.join(SRC_DIR, 'assets'), os.path.join(BUILD_DIR, 'assets'))
+
+  shutil.rmtree(os.path.join(BUILD_DIR, 'ftm'))
+  shutil.copytree(os.path.join(SRC_DIR, 'ftm'), os.path.join(BUILD_DIR, 'ftm'))
 
   header = read('header.html')
 

@@ -14,7 +14,7 @@ from opmodel.analysis.mc_analysis import ParamsDistribution
 
 MODULE_DIR = os.path.dirname(os.path.realpath(__file__))
 
-js_model_path = os.path.join(MODULE_DIR, '../src')
+js_model_path = os.path.join(MODULE_DIR, '../src/ftm')
 
 parameter_table = get_parameter_table()
 best_guess_parameters   = {parameter : row['Best guess']   for parameter, row in parameter_table.iterrows()}
@@ -25,16 +25,17 @@ class JSModel:
   def __init__(self, project_path):
     from py_mini_racer import MiniRacer
 
-    main_path = os.path.join(project_path, 'op.js')
-    bridge_path = os.path.join(project_path, 'bridge.js')
+    scripts = [
+      'nj.js',
+      'ftm.js',
+      'bridge.js',
+    ]
 
     ctx = MiniRacer()
-    with open(main_path, 'r') as f:
-      script = f.read()
-      ctx.eval(script)
-    with open(bridge_path, 'r') as f:
-      script = f.read()
-      ctx.eval(script)
+    for script in scripts:
+      with open(os.path.join(project_path, script), 'r') as f:
+        script = f.read()
+        ctx.eval(script)
 
     self.module = ctx
 
@@ -46,11 +47,11 @@ class JSModel:
         log.push(Array.from(arguments).map(x => JSON.stringify(x)).join(', '));
       }};
     ''')
-    self.module.eval(f'simulation_result = run_model(transform_python_to_js_params({json.dumps(self.parameters)}))')
+    self.module.eval(f'simulation_result = ftm.run_simulation(bridge.transform_python_to_js_params({json.dumps(self.parameters)}))')
     print(self.module.execute("log.join('\\n')"))
 
   def __getattr__(self, key):
-    keys = self.eval_and_get('Object.keys(simulation_result)')
+    keys = self.eval_and_get('Reflect.ownKeys(simulation_result).concat(Reflect.ownKeys(Reflect.getPrototypeOf(simulation_result)))')
     if key in keys:
       t = self.eval_and_get(f'typeof simulation_result.{key}')
       if t == 'function':
