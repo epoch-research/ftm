@@ -2,7 +2,7 @@
 #
 #   python -m website.tests.test
 #
-# If you don't get any exception, everything is fine.
+# If the script terminates normally, without throwing an exception, everything is fine.
 
 import json
 import numpy as np
@@ -14,7 +14,7 @@ from opmodel.analysis.mc_analysis import ParamsDistribution
 
 MODULE_DIR = os.path.dirname(os.path.realpath(__file__))
 
-js_model_path = os.path.join(MODULE_DIR, '../src/ftm')
+js_model_path = os.path.join(MODULE_DIR, '../src/js/ftm')
 
 parameter_table = get_parameter_table()
 best_guess_parameters   = {parameter : row['Best guess']   for parameter, row in parameter_table.iterrows()}

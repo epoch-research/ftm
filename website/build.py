@@ -21,6 +21,10 @@ def build():
   def cp(filename):
     shutil.copyfile(os.path.join(SRC_DIR, filename), os.path.join(BUILD_DIR, filename))
 
+  def cpdir(name):
+    shutil.rmtree(os.path.join(BUILD_DIR, name), ignore_errors = True)
+    shutil.copytree(os.path.join(SRC_DIR, name), os.path.join(BUILD_DIR, name))
+
   def read(filename):
     with open(os.path.join(SRC_DIR, filename), 'r') as f:
       return f.read()
@@ -29,11 +33,8 @@ def build():
     with open(os.path.join(BUILD_DIR, filename), 'w') as f:
       return f.write(content)
 
-  shutil.rmtree(os.path.join(BUILD_DIR, 'assets'))
-  shutil.copytree(os.path.join(SRC_DIR, 'assets'), os.path.join(BUILD_DIR, 'assets'))
-
-  shutil.rmtree(os.path.join(BUILD_DIR, 'ftm'))
-  shutil.copytree(os.path.join(SRC_DIR, 'ftm'), os.path.join(BUILD_DIR, 'ftm'))
+  cpdir('css')
+  cpdir('js')
 
   header = read('header.html')
 
