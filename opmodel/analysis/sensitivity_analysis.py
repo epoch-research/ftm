@@ -40,13 +40,14 @@ def variance_reduction_comparison(quick_test_mode = False, save_dir = None, meth
   shapley_samples = 1000
 
   if quick_test_mode:
-    mean_samples = 10
+    mean_samples = 50_000
+    var_samples = 2
     shapley_samples = 4
-    var_samples = 10
-    parameters = parameters[:5]
+    #parameters = ['full_automation_requirements_training', 'flop_gap_training',]
+    parameters = ['flop_gap_training',]
 
   log.info('Running simulations...')
-  param_importance = get_parameter_importance(
+  param_importance, param_stds = get_parameter_importance(
       params_dist, parameter_importance_metrics, parameters = parameters, metric_arguments = metric_names,
       mean_samples = mean_samples, var_samples = var_samples, shapley_samples = shapley_samples,
       save_dir = save_dir, method = method,
@@ -56,11 +57,19 @@ def variance_reduction_comparison(quick_test_mode = False, save_dir = None, meth
     log.info(f'All the samples and metrics have been stored in {save_dir}')
 
   table = pd.DataFrame.from_dict(param_importance, orient = 'index', columns = metric_names)
+  log.info()
+  log.info('Importances:')
   log.info(table)
+
+  std_table = pd.DataFrame.from_dict(param_stds, orient = 'index', columns = metric_names)
+  log.info()
+  log.info('Standard errors:')
+  log.info(std_table)
 
   results = SensitivityAnalysisResults()
   results.parameter_table = params_dist.parameter_table
   results.table = table
+  results.std_table = std_table
   results.analysis_params = {
     'mean_samples': mean_samples,
     'var_samples': var_samples,
@@ -220,6 +229,7 @@ def write_sensitivity_analysis_report(method="point_comparison", quick_test_mode
 
   columns = list(results.table.columns)
   skews = [c for c in columns if c.endswith(' skew')]
+  totals_row = None
 
   if skews:
     table = next(table_container.iter('table'))
@@ -238,8 +248,15 @@ def write_sensitivity_analysis_report(method="point_comparison", quick_test_mode
       current_col = skew_col + 1
     tfoot.append(et.fromstring(f'<th colspan="{len(columns) - current_col}"></th>'))
 
+    totals_row = len(table_container.findall('.//tr')) - 1
+
+  report.add_importance_selector(table_container,
+    label = 'parameters', layout = 'vertical', important_rows_to_keep = [0, totals_row] if (totals_row is not None) else [0]
+  )
+
   report.add_header("Inputs", level = 3)
-  report.add_data_frame(results.parameter_table, show_justifications = True)
+  inputs_table = report.add_data_frame(results.parameter_table, show_justifications = True)
+  report.add_importance_selector(inputs_table, label = 'parameters', layout = 'vertical')
 
   if new_report:
     report_path = report.write()
@@ -257,6 +274,7 @@ def get_parameter_importance(
     parameters = [name for name, marginal in dist.marginals.items() if not isinstance(marginal, PointDistribution)]
 
   importance = {}
+  stds = {}
 
   configured_g = lambda params: \
     g(dist, metric, params, mean_samples = mean_samples, var_samples = var_samples, metric_arguments = metric_arguments, save_dir = save_dir)
@@ -264,18 +282,23 @@ def get_parameter_importance(
   if method == 'variance_reduction_on_margin':
     log.info(f'Computing g_empty...')
     log.indent()
-    g_empty = configured_g([])
+    g_empty, g_empty_std = configured_g([])
     log.deindent()
     for param in parameters:
       log.info(f'Running simulations for {param}...')
       log.indent()
-      importance[param] = 1 - configured_g([param])/g_empty
+
+      g_param, g_param_std = configured_g([param])
+
+      importance[param] = 1 - g_param/g_empty
+      stds[param] = (g_param/g_empty) * np.sqrt((g_param_std/g_param)**2 + (g_empty_std/g_empty)**2)
+
       log.deindent()
 
   elif method == 'shapley_values':
     log.info(f'Computing g_empty...')
     log.indent()
-    g_empty = configured_g([])
+    g_empty, g_empty_std = configured_g([])
     log.deindent()
 
     K = shapley_samples
@@ -283,6 +306,7 @@ def get_parameter_importance(
       log.info(f'Running simulations for {param}...')
       log.indent()
       r = 0
+      v = 0
       for k in range(K):
         log.info(f'value {k:2}/{K}')
         permutation = np.random.permutation(parameters)
@@ -293,17 +317,26 @@ def get_parameter_importance(
         params_with_i = [p for p in parameters if p in permutation[:param_index+1]]
 
         log_level = log.level
-        log.level = -1
-        r_k = (configured_g(params) - configured_g(params_with_i))/g_empty
+        log.level = -1 # hackily deactivate logs
+
+        g_params, g_params_std = configured_g(params)
+        g_params_i, g_params_i_std = configured_g(params_with_i)
+
+        r_k = (g_params - g_params_i)/g_empty
+        v_k = (g_params_std**2 + g_params_i_std**2 + r_k**2 * g_empty_std**2)/g_empty**2
+
         r += r_k/K
+        v += v_k/K**2
+
         log.level = log_level
       log.deindent()
       importance[param] = r
+      stds[param] = np.sqrt(v)
 
   else:
     raise ValueError("method must be one of 'variance_reduction_on_margin' or 'shapley_values'")
 
-  return importance
+  return importance, stds
 
 def get_metric_values(metric, conditional_samples, metric_arguments):
   metric_values = [metric(s.to_dict(), metric_arguments) for _, s in conditional_samples.iterrows()]
@@ -362,12 +395,12 @@ def g(dist, metric, parameters, mean_samples = 1, var_samples = 10, processes = 
       with gzip.open(os.path.join(save_dir, filename), 'wb') as f:
         f.write(json.dumps(save_dict).encode('utf-8'))
 
-    # Compute the mean
+    # Compute the mean and the standard error
+    vars = [np.var(metric_values, ddof = 1, axis = 0) for metric_values in metric_values_array]
+    mean = np.mean(vars, axis = 0)
+    std = np.std(vars, ddof = 1, axis = 0)/np.sqrt(len(vars))
 
-    means = [np.var(metric_values, ddof = 1, axis = 0) for metric_values in metric_values_array]
-    mean = np.mean(means, axis = 0)
-
-    return mean
+    return mean, std
 
 if __name__ == '__main__':
   parser = init_cli_arguments()

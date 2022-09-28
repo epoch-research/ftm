@@ -36,7 +36,8 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
       table.append(row)
   table = pd.DataFrame(table)
 
-  report.add_data_frame(table, show_index = False)
+  table_container = report.add_data_frame(table, show_index = False)
+  report.add_importance_selector(table_container, label = 'metrics')
 
 
   #
@@ -147,15 +148,27 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
   ''')
 
   table_container = et.Element('div', {'class': 'dataframe-container'})
-  table = et.Element('table', {'border': '1', 'class': 'dataframe', 'id': 'timelines-inputs-table'})
+  table = et.Element('table', {'border': '1', 'class': 'dataframe vertical', 'id': 'timelines-inputs-table'})
   tbody = et.Element('tbody')
   thead = et.Element('thead')
   table.append(thead)
   table.append(tbody)
   table_container.append(table)
 
-  container = report.add_html('<div style="overflow-x: auto;"></div>')
+  container = report.add_html('<div style="overflow-x: auto;" class="show-only-important"></div>')
   container.append(table_container)
+
+  importance_selector = et.fromstring('''
+    <p class="importance-selector">
+      Show
+      <br/>
+      <select onchange="onImportanceSelect(this)">
+        <option value="important">the most important parameters</option>
+        <option value="all">all parameters</option>
+      </select>
+    </p>
+  ''')
+  report.insert_before(report.default_parent, container, importance_selector)
 
   inputs = {}
   for group in results.scenario_groups:
@@ -180,6 +193,9 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
     let inputs = ''' + inputs_json + ''';
     let rowCount = ''' + str(row_count) + ''';
     let param_names = ''' + json.dumps(get_param_names()) + ''';
+
+    let most_important_metrics = ''' + json.dumps(get_most_important_metrics()) + ''';
+    let most_important_parameters = ''' + json.dumps(get_most_important_parameters()) + ''';
 
     function getFormatInformation(x) {
       let str;
@@ -262,6 +278,7 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
 
       return formatted;
     }
+
     function renderSummary(scenarios) {
       let summaryTable = document.getElementById('timelines-summary-table');
       let tbody = summaryTable.querySelector('tbody')
@@ -293,7 +310,8 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
           html += `<td>${timeline}</td>`;
           html += `<td>${name}</td>`;
           for (let col in summary) {
-            html += `<td>${formattedCols[col][rowIndex]}</td>`;
+            let important = (col in most_important_metrics);
+            html += `<td${important ? ' class="important"' : '' }>${formattedCols[col][rowIndex]}</td>`;
           }
           html += '</tr>';
         }
@@ -330,10 +348,11 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
       }
 
       for (let param in formattedCols[0]) {
+        let important = most_important_parameters.includes(param);
         html += '<tr>';
-        html += `<th data-param-id="${param}">${param_names[param]}</th>`;
+        html += `<th${important ? ' class="important"' : '' } data-param-id="${param}">${param_names[param]}</th>`;
         for (let col of formattedCols) {
-          html += `<td>${col[param]}</td>`;
+          html += `<td${important ? ' class="important"' : '' }>${col[param]}</td>`;
         }
         html += '</tr>';
       }

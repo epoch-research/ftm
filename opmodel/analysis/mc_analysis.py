@@ -281,8 +281,9 @@ def write_mc_analysis_report(
       }
   ''') + '</script>'))
 
+  # Metrics quantiles table
   metrics_quantiles = pd.DataFrame(results.metrics_quantiles)
-  report.add_data_frame(metrics_quantiles)
+  report.add_data_frame(metrics_quantiles, show_importance_selector = True, important_columns_to_keep = [0, 1], label = 'metrics')
 
   # Plot trajectories
   metrics = {'biggest_training_run': 'Biggest training run'}
@@ -336,13 +337,13 @@ def write_mc_analysis_report(
   report.add_paragraph("<span style='font-weight:bold'>Input statistics:</span> <span data-modal-trigger='input-stats-modal'><i>click here to view</i>.</span>")
   report.add_data_frame_modal(params_stats_table, 'input-stats-modal')
 
-  if results.ajeya_cdf:
+  if results.ajeya_cdf is not None:
     report.add_data_frame_modal(results.ajeya_cdf, 'ajeya-modal', show_index = False)
 
     # the parameter full_automation_requirements_training is special (we might be sampling from Ajeya's distribution)
-    table = report.add_data_frame(results.parameter_table.drop(index = 'full_automation_requirements_training', columns = 'Type'), show_justifications = True)
+    inputs_table = report.add_data_frame(results.parameter_table.drop(index = 'full_automation_requirements_training', columns = 'Type'), show_justifications = True)
     tbody = None
-    for element in table.iter():
+    for element in inputs_table.iter():
       if element.tag == 'tbody':
         tbody = element
         break
@@ -353,7 +354,9 @@ def write_mc_analysis_report(
       </tr>
     '''))
   else:
-    report.add_data_frame(results.parameter_table.drop(columns = 'Type'), show_justifications = True)
+    inputs_table = report.add_data_frame(results.parameter_table.drop(columns = 'Type'), show_justifications = True)
+
+  report.add_importance_selector(inputs_table, label = 'parameters', layout = 'vertical')
 
   if include_sample_table:
     report.add_header("Parameter samples", level = 3)

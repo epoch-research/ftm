@@ -27,6 +27,8 @@ class Report:
 
     self.param_names = get_param_names()
     self.metric_names = get_metric_names()
+    self.most_important_metrics = get_most_important_metrics()
+    self.most_important_parameters = get_most_important_parameters()
 
     self.tab_groups = []
     self.tab_groups_parents = []
@@ -121,6 +123,18 @@ class Report:
 
         table.dataframe tbody tr:nth-child(odd) {
           background-color: #eee;
+        }
+
+        .show-only-important table.dataframe.horizontal th:not(.important),
+        .show-only-important table.dataframe.horizontal td:not(.important)
+        {
+          display: none;
+        }
+
+        .show-only-important table.dataframe.vertical tbody th:not(.important),
+        .show-only-important table.dataframe.vertical tbody td:not(.important)
+        {
+          display: none;
         }
 
         table.dataframe tbody tr:hover {
@@ -477,7 +491,7 @@ class Report:
             width: 90% !important;
             min-width: 90% !important;
           }
-          
+
           @supports (display: flex) {
             .modal-container {
               width: 90% !important;
@@ -592,7 +606,23 @@ class Report:
       </script>
     '''))
 
-    # Tooltips explaining the params and metrics on hover 
+    # Importance selectors
+    self.body.append(et.fromstring('''
+      <script>
+        function onImportanceSelect(selector) {
+          // This sucks
+          let tableContainer = selector.parentElement.nextElementSibling;
+
+          if (selector.value == 'all') {
+            tableContainer.classList.remove('show-only-important');
+          } else {
+            tableContainer.classList.add('show-only-important');
+          }
+        }
+      </script>
+    '''))
+
+    # Tooltips explaining the params and metrics on hover
     script = et.Element('script')
     self.body.append(script);
     script.text = '''
@@ -820,7 +850,11 @@ class Report:
     content_container.append(content)
     parent.append(modal)
 
-  def add_data_frame(self, df, index = None, show_index = True, show_index_header = False, use_render = False, parent=None, show_justifications=False, **to_html_args):
+  def add_data_frame(
+      self, df, index = None, show_index = True, show_index_header = False, use_render = False, parent=None, show_justifications=False,
+      show_importance_selector=False, importance_layout = 'horizontal', important_rows_to_keep=[], important_columns_to_keep=[0], label = 'xxx', # TODO Document this
+      **to_html_args
+    ):
     if parent is None: parent = self.default_parent
 
     if isinstance(df, dict):
@@ -849,6 +883,10 @@ class Report:
       container.append(copy_button_container)
 
     parent.append(container)
+
+    if show_importance_selector:
+      self.add_importance_selector(container, importance_layout, important_rows_to_keep, important_columns_to_keep, label, parent = parent)
+
     return container
 
   def process_table(self, table, show_justifications = False):
@@ -872,6 +910,67 @@ class Report:
         if th.text in self.metric_names:
           human_name = self.metric_names[th.text]
           th.text = human_name
+
+  def add_importance_selector(self, table_container,
+      layout = 'horizontal', important_rows_to_keep=[], important_columns_to_keep=[0], # TODO Document this
+      label = 'xxx', parent = None,
+    ):
+
+    table = table_container.find('.//table')
+    thead = table.find('.//thead')
+    tbody = table.find('.//tbody')
+
+    self.add_class(table, layout)
+
+    self.add_class(table_container, 'show-only-important')
+
+    # Mark the important metrics and parameters
+    if layout == 'vertical':
+      row = 0
+      important_rows = []
+      for tr in tbody.findall('.//tr'):
+        el = tr[0]
+        element_id = el.attrib.get('data-metric-id', el.attrib.get('data-param-id', None))
+        if row in important_rows_to_keep or element_id in self.most_important_metrics or element_id in self.most_important_parameters:
+          important_rows.append(row)
+        row += 1
+
+      trs = tbody.findall('.//tr')
+      for row in important_rows:
+        for cell in trs[row]:
+          self.add_class(cell, 'important')
+    else:
+      column = 0
+      important_columns = []
+      for th in thead.findall('.//th'):
+        element_id = th.attrib.get('data-metric-id', th.attrib.get('data-param-id', None))
+        if column in important_columns_to_keep or element_id in self.most_important_metrics or element_id in self.most_important_parameters:
+          important_columns.append(column)
+          self.add_class(th, 'important')
+        column += 1
+
+      for tr in table.findall('.//tr'):
+        cells = list(tr)
+        for i in important_columns:
+          if i < len(cells):
+            self.add_class(cells[i], 'important')
+
+    selector = self.create_importance_selector(label)
+
+    # Add the importance selector
+    self.insert_before(parent, table_container, selector)
+
+  def create_importance_selector(self, label):
+    selector = et.fromstring(f'''
+      <p class="importance-selector">
+        Show
+        <select onchange="onImportanceSelect(this)">
+          <option value="important">the most important {label}</option>
+          <option value="all">all {label}</option>
+        </select>
+      </p>
+    ''')
+    return selector
 
   def add_banner_message(self, message, classes = []):
     element = et.fromstring(f'<div>{message}</div>')
@@ -955,6 +1054,15 @@ class Report:
   # ---------------------------------------------------------------------------
   # Utils
   # ---------------------------------------------------------------------------
+
+  def insert_before(self, parent, reference, element):
+    if parent is None: parent = self.default_parent
+    parent.insert(list(parent).index(reference), element)
+
+  def add_class(self, el, clazz):
+    if 'class' not in el.attrib:
+      el.attrib['class'] = ''
+    el.attrib['class'] = (el.attrib['class'] + ' ' + clazz).strip()
 
   def convert_to_id(self, s):
     s = re.sub(' +', '-', s.lower())
