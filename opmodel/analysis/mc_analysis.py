@@ -296,7 +296,7 @@ def write_mc_analysis_report(
   # Plot CDFs of scalar metrics
   metric_id_to_human = get_metric_names()
 
-  def plot_ecdf(x, limit, label, color = None):
+  def plot_ecdf(x, limit, label, color = None, normalize = False):
     x = np.sort(x)
 
     ecdf = ECDF(x)(x)
@@ -310,17 +310,16 @@ def write_mc_analysis_report(
     ecdf = np.append(ecdf, ecdf[-1])
     x = np.append(x, limit)
 
+    if normalize:
+      ecdf /= ecdf[-1]
+
     plt.step(x, ecdf, where = 'post', label = label, color = color)
     plt.ylim(0, 1)
-
-    plt.ylabel('CDF')
 
   sns.reset_defaults()
 
   colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
   color_index = 0
-
-  print(results.scalar_metrics)
 
   # Absolute metrics
   plt.figure(figsize=(10,6))
@@ -328,17 +327,21 @@ def write_mc_analysis_report(
     plot_ecdf(results.scalar_metrics[metric], limit = results.t_end, label = metric_id_to_human[metric], color = colors[color_index])
     color_index += 1
   plt.xlabel('Year')
-  plt.gca().legend(loc = 'upper left')
+  plt.ylabel('CDF')
+  plt.gca().legend(loc = 'lower right')
 
   report.add_figure()
 
   # Relative metrics
   plt.figure(figsize=(10,6))
-  for metric in ['billion_agis', 'full_automation']:
-    plot_ecdf(results.scalar_metrics[metric], limit = results.t_end - results.t_start, label = metric_id_to_human[metric], color = colors[color_index])
+  for metric in ['full_automation', 'billion_agis']:
+    plot_ecdf(results.scalar_metrics[metric], limit = results.t_end - results.t_start, label = metric_id_to_human[metric], color = colors[color_index], normalize = True)
     color_index += 1
+  text = f'p(takeoff before year {results.t_end}) = {np.mean(np.array(results.scalar_metrics["billion_agis"]) < results.t_end - results.t_start):.0%}'
+  plt.text(results.t_end - results.t_start - 2, 0.95, text, va = 'top', ha = 'right')
   plt.xlabel('Years')
-  plt.gca().legend(loc = 'upper left')
+  plt.ylabel(f'CDF\n(conditional on takeoff happening before {results.t_end})')
+  plt.gca().legend(loc = 'lower right')
 
   report.add_figure()
 
