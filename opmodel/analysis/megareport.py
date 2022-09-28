@@ -5,9 +5,10 @@ from .report import Report
 from .exploration_analysis import explore
 from .sensitivity_analysis import write_sensitivity_analysis_report
 from .timelines_analysis import write_timelines_analysis_report
-from .mc_analysis import write_mc_analysis_report
+from .mc_analysis import write_mc_analysis_report, McAnalysisResults
 
-def megareport(report_file_path=None, report_dir_path=None, quick_test_mode=False, report=None, mc_trials=None):
+def megareport(report_file_path=None, report_dir_path=None, quick_test_mode=False, report=None, mc_trials=None, mc_input_results_filename=None):
+  if mc_trials is None: mc_trials = 100
   if report_file_path is None:
     report_file_path = 'megareport.html'
 
@@ -34,9 +35,9 @@ def megareport(report_file_path=None, report_dir_path=None, quick_test_mode=Fals
   log.indent()
   report.begin_tab('Monte Carlo analysis', 'mc_analysis')
   if quick_test_mode:
-    write_mc_analysis_report(report = report, n_trials = 4 if mc_trials is None else mc_trials)
+    write_mc_analysis_report(report = report, n_trials = 4 if mc_trials is None else mc_trials, input_results_filename = mc_input_results_filename)
   else:
-    write_mc_analysis_report(report = report, n_trials = mc_trials)
+    write_mc_analysis_report(report = report, n_trials = mc_trials, input_results_filename = mc_input_results_filename)
   log.deindent()
   log.info()
 
@@ -63,6 +64,15 @@ if __name__ == '__main__':
     type=int,
   )
 
+  parser.add_argument(
+    "--input-results-file",
+    help = 'Read the MC results from this file (pickle) instead of regenerating them',
+  )
+
   args = handle_cli_arguments(parser)
 
-  megareport(report_file_path=args.output_file, report_dir_path=args.output_dir, quick_test_mode=args.quick_test_mode, mc_trials=args.mc_trials)
+  megareport(
+    report_file_path=args.output_file, report_dir_path=args.output_dir,
+    quick_test_mode=args.quick_test_mode, mc_trials=args.mc_trials,
+    mc_input_results_filename=args.input_results_file,
+  )
