@@ -360,6 +360,16 @@ def get_parameter_justifications():
   df = get_sheet_df_as_rich_text('Parameters')
   return df['Justification for assumption'].to_dict()
 
+def get_most_important_metrics():
+  table = pd.read_excel(get_input_workbook(), sheet_name = MOST_IMPORTANT_PARAMETERS_SHEET)
+  metrics = table['Metric id'].dropna().tolist()
+  return metrics
+
+def get_most_important_parameters():
+  table = pd.read_excel(get_input_workbook(), sheet_name = MOST_IMPORTANT_PARAMETERS_SHEET)
+  params = table['Parameter id'].dropna().tolist()
+  return params
+
 #--------------------------------------------------------------------------
 # CLI parameters
 #--------------------------------------------------------------------------

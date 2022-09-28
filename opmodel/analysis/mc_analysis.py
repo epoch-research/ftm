@@ -16,6 +16,7 @@ from matplotlib import cm
 from xml.etree import ElementTree as et
 from ..core.utils import get_clipped_ajeya_dist, get_param_names, get_metric_names
 from ..stats.distributions import *
+from statsmodels.distributions.empirical_distribution import ECDF
 
 rng = default_rng()
 
@@ -292,25 +293,52 @@ def write_mc_analysis_report(
     plot_quantiles(results.timesteps, results.state_metrics[metric], "Year", metrics[metric])
     report.add_figure()
 
-  # Add violin plots of scalar metrics
+  # Plot CDFs of scalar metrics
   metric_id_to_human = get_metric_names()
 
-  # Mmmh... this is quite hacky
-  limit_absolute = results.t_end
-  limit_relative = results.t_end - results.t_start
+  def plot_ecdf(x, limit, label, color = None):
+    x = np.sort(x)
 
-  absolute_violin_metrics = {metric_id_to_human[id]: [x if (x < limit_absolute) else np.nan for x in results.scalar_metrics[id]] for id in ['rampup_start', 'agi_year']}
-  relative_violin_metrics = {metric_id_to_human[id]: [x if (x < limit_relative) else np.nan for x in results.scalar_metrics[id]] for id in ['billion_agis', 'full_automation']}
+    ecdf = ECDF(x)(x)
 
-  fig, ax = plt.subplots(1, 2, num = 1, figsize = (10, 6), dpi = 80)
+    ecdf = np.insert(ecdf, 0, 0)
+    x = np.insert(x, 0, x[0])
 
-  ax[0].set_ylabel('Year')
-  sns.violinplot(data = pd.DataFrame(absolute_violin_metrics), ax = ax[0], cut = 0)
+    ecdf = ecdf[x < limit]
+    x = x[x < limit]
 
-  ax[1].set_ylabel('Years')
-  sns.violinplot(data = pd.DataFrame(relative_violin_metrics), ax = ax[1], cut = 0, palette = sns.color_palette()[2:])
+    ecdf = np.append(ecdf, ecdf[-1])
+    x = np.append(x, limit)
 
-  plt.subplots_adjust(wspace = 0.3) # Increase spacing between subplots
+    plt.step(x, ecdf, where = 'post', label = label, color = color)
+    plt.ylim(0, 1)
+
+    plt.ylabel('CDF')
+
+  sns.reset_defaults()
+
+  colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+  color_index = 0
+
+  print(results.scalar_metrics)
+
+  # Absolute metrics
+  plt.figure(figsize=(10,6))
+  for metric in ['rampup_start', 'agi_year']:
+    plot_ecdf(results.scalar_metrics[metric], limit = results.t_end, label = metric_id_to_human[metric], color = colors[color_index])
+    color_index += 1
+  plt.xlabel('Year')
+  plt.gca().legend(loc = 'upper left')
+
+  report.add_figure()
+
+  # Relative metrics
+  plt.figure(figsize=(10,6))
+  for metric in ['billion_agis', 'full_automation']:
+    plot_ecdf(results.scalar_metrics[metric], limit = results.t_end - results.t_start, label = metric_id_to_human[metric], color = colors[color_index])
+    color_index += 1
+  plt.xlabel('Years')
+  plt.gca().legend(loc = 'upper left')
 
   report.add_figure()
 
