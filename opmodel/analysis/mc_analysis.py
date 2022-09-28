@@ -429,7 +429,6 @@ def plot_quantiles(ts, data, xlabel, ylabel, n_quantiles = 7, colormap = cm.Blue
   legend_handles.reverse()
   legend_labels.reverse()
 
-  ax1.set_title("Takeoff simulation", fontsize=15)
   ax1.set_yscale("log")
   ax1.tick_params(labelsize=11.5)
   ax1.set_xlabel(xlabel, fontsize=14)
