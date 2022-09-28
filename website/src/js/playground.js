@@ -1270,9 +1270,6 @@ for (let input of document.querySelectorAll('.input-parameter')) {
     tooltip += '<span style="font-weight: bold">Justification for best guess value:</span> ' + justification;
   }
 
-  if (tooltip.length > 0) tooltip += '<br><br>';
-  tooltip += `<span style="font-weight: bold">key</span>: ${id}`
-
   tippy_instances.push(
     tippy(input, {
       content: tooltip,
