@@ -77,7 +77,7 @@ class Report:
         .main {
           display: grid;
           grid-template-columns: [full-start] minmax(4vw,auto) [wide-start] minmax(auto,140px) [main-start] min(640px,calc(100% - 8vw)) [main-end] minmax(auto,140px) [wide-end] minmax(4vw,auto) [full-end];
-          padding: 10px;
+          padding: 1em;
         }
 
         .main > * {
@@ -263,7 +263,7 @@ class Report:
 
         /*----- Content of Tabs -----*/
         .tab-content {
-          padding:1em;
+          padding: 1em;
           background:#fff;
           overflow-x: auto;
           width: calc(100vw - 75px);
