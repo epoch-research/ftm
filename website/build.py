@@ -33,6 +33,8 @@ def build():
     with open(os.path.join(BUILD_DIR, filename), 'w') as f:
       return f.write(content)
 
+  cp('favicon.svg')
+
   cpdir('css')
   cpdir('js')
 
