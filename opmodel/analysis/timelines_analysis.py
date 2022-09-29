@@ -168,7 +168,7 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
   ''')
 
   table_container = et.Element('div', {'class': 'dataframe-container'})
-  table = et.Element('table', {'border': '1', 'class': 'dataframe vertical', 'id': 'timelines-inputs-table'})
+  table = et.Element('table', {'border': '1', 'class': 'dataframe', 'id': 'timelines-inputs-table'})
   tbody = et.Element('tbody')
   thead = et.Element('thead')
   table.append(thead)
@@ -351,7 +351,7 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
       let theadHtml = '';
       let html = '';
 
-      theadHtml += '<tr><th></th>';
+      theadHtml += '<tr><th class="important"></th>';
 
       let formattedCols = [];
       for (let scenarioIndex = 0; scenarioIndex < scenarios.length; scenarioIndex++) {
@@ -364,7 +364,7 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
         let formattedCol = formatColumn(input);
         formattedCols.push(formattedCol);
 
-        theadHtml += `<th>${timeline} - ${name}</th>`;
+        theadHtml += `<th class="important">${timeline} - ${name}</th>`;
       }
 
       for (let param in formattedCols[0]) {

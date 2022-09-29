@@ -175,9 +175,9 @@ def point_comparison(quick_test_mode = False):
 
     # Add timelines metrics
     result["rampup_start"] = f"[{format_year(low_model, low_model.rampup_start)}, {format_year(med_model, med_model.rampup_start)}, {format_year(high_model, high_model.rampup_start)}]"
-    result["agi_date"] = f"[{format_year(low_model, low_model.agi_year)}, {format_year(med_model, med_model.agi_year)}, {format_year(high_model, high_model.agi_year)}]"
+    result["agi_year"] = f"[{format_year(low_model, low_model.agi_year)}, {format_year(med_model, med_model.agi_year)}, {format_year(high_model, high_model.agi_year)}]"
 
-    result["agi_date skew"] = skew(
+    result["agi_year skew"] = skew(
       high_model.agi_year,
       med_model.agi_year,
       low_model.agi_year
@@ -202,11 +202,11 @@ def point_comparison(quick_test_mode = False):
 
   return results
 
-def write_sensitivity_analysis_report(method="point_comparison", quick_test_mode=False, report_file_path=None, report_dir_path=None, report=None):
+def write_sensitivity_analysis_report(method="point_comparison", quick_test_mode=False, report_file_path=None, report_dir_path=None, report=None, analysis_results=None):
   if report_file_path is None:
     report_file_path = 'sensitivity_analysis.html'
 
-  results = sensitivity_analysis(quick_test_mode = quick_test_mode, method = method)
+  results = analysis_results if analysis_results else sensitivity_analysis(quick_test_mode = quick_test_mode, method = method)
 
   log.info('Writing report...')
 
@@ -250,8 +250,18 @@ def write_sensitivity_analysis_report(method="point_comparison", quick_test_mode
 
     totals_row = len(table_container.findall('.//tr')) - 1
 
+
+  most_important_metrics = get_most_important_metrics()
+  most_important_parameters = get_most_important_parameters()
+
+  def keep_cell(row, col, index_r, index_c, cell):
+    col_condition = (col in [0, 1, 2, 3]) or (index_c in most_important_metrics)
+    row_condition = (row in [0]) or (index_r in most_important_parameters)
+    return col_condition and row_condition
+
   report.add_importance_selector(table_container,
-    label = 'parameters', layout = 'vertical', important_rows_to_keep = [0, totals_row] if (totals_row is not None) else [0]
+    label = 'parameters and metrics', layout = 'mixed',
+    keep_cell = keep_cell,
   )
 
   report.add_header("Inputs", level = 3)

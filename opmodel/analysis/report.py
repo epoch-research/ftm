@@ -125,14 +125,8 @@ class Report:
           background-color: #eee;
         }
 
-        .show-only-important table.dataframe.horizontal th:not(.important),
-        .show-only-important table.dataframe.horizontal td:not(.important)
-        {
-          display: none;
-        }
-
-        .show-only-important table.dataframe.vertical tbody th:not(.important),
-        .show-only-important table.dataframe.vertical tbody td:not(.important)
+        .show-only-important table.dataframe th:not(.important),
+        .show-only-important table.dataframe td:not(.important)
         {
           display: none;
         }
@@ -903,7 +897,7 @@ class Report:
     parent.append(container)
 
     if show_importance_selector:
-      self.add_importance_selector(container, importance_layout, important_rows_to_keep, important_columns_to_keep, label, parent = parent)
+      self.add_importance_selector(container, importance_layout, important_rows_to_keep, important_columns_to_keep, label = label, parent = parent)
 
     return container
 
@@ -930,7 +924,7 @@ class Report:
           th.text = human_name
 
   def add_importance_selector(self, table_container,
-      layout = 'horizontal', important_rows_to_keep=[], important_columns_to_keep=[0], # TODO Document this
+      layout = 'horizontal', important_rows_to_keep=[], important_columns_to_keep=[], keep_cell = None, # TODO Document all this
       label = 'xxx', parent = None,
     ):
 
@@ -938,43 +932,45 @@ class Report:
     thead = table.find('.//thead')
     tbody = table.find('.//tbody')
 
-    self.add_class(table, layout)
+    if layout == 'vertical':
+      important_rows_to_keep.append(0)
+    else:
+      important_columns_to_keep.append(0)
 
     self.add_class(table_container, 'show-only-important')
 
-    # Mark the important metrics and parameters
-    if layout == 'vertical':
-      row = 0
-      important_rows = []
-      for tr in tbody.findall('.//tr'):
+    if keep_cell is None:
+      keep_cell = lambda row, col, index_r, index_c, cell: \
+          (row in important_rows_to_keep) or (index_r in self.most_important_parameters) \
+          if layout == 'vertical' else \
+          (col in important_columns_to_keep) or (index_c in self.most_important_metrics)
+
+    indices_row = {}
+    indices_col = {}
+
+    for row, tr in enumerate(table.findall('.//tr')):
+      element_id = ''
+      if len(tr):
         el = tr[0]
-        element_id = el.attrib.get('data-metric-id', el.attrib.get('data-param-id', None))
-        if row in important_rows_to_keep or element_id in self.most_important_metrics or element_id in self.most_important_parameters:
-          important_rows.append(row)
-        row += 1
+        element_id = el.attrib.get('data-metric-id', el.attrib.get('data-param-id', el.text or ''))
+      indices_row[row] = element_id
 
-      trs = tbody.findall('.//tr')
-      for row in important_rows:
-        for cell in trs[row]:
+    for col, el in enumerate(table.find('.//tr')):
+      element_id = el.attrib.get('data-metric-id', el.attrib.get('data-param-id', el.text or ''))
+      indices_col[col] = element_id
+
+    # Mark the important cells
+    for row, tr in enumerate(table.findall('.//tr')):
+      for col, cell in enumerate(tr):
+        index_r = indices_row[row]
+        index_c = indices_col[col]
+        if keep_cell(row, col, index_r, index_c, cell):
           self.add_class(cell, 'important')
-    else:
-      column = 0
-      important_columns = []
-      for th in thead.findall('.//th'):
-        element_id = th.attrib.get('data-metric-id', th.attrib.get('data-param-id', None))
-        if column in important_columns_to_keep or element_id in self.most_important_metrics or element_id in self.most_important_parameters:
-          important_columns.append(column)
-        column += 1
 
-      for tr in table.findall('.//tr'):
-        cells = list(tr)
-        for i in important_columns:
-          if i < len(cells):
-            self.add_class(cells[i], 'important')
-
+    # Create the selector
     selector = self.create_importance_selector(label)
 
-    # Add the importance selector
+    # Add the selector
     self.insert_before(parent, table_container, selector)
 
   def create_importance_selector(self, label):
