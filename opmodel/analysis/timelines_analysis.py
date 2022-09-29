@@ -9,11 +9,11 @@ from ..core.scenarios import ScenarioRunner
 class TimelinesAnalysisResults:
   pass
 
-def write_timelines_analysis_report(report_file_path=None, report_dir_path=None, report=None):
+def write_timelines_analysis_report(report_file_path=None, report_dir_path=None, report=None, analysis_results=None):
   if report_file_path is None:
     report_file_path = 'timelines_analysis.html'
 
-  results = timelines_analysis()
+  results = analysis_results if analysis_results else timelines_analysis()
 
   log.info('Writing report...')
   new_report = report is None
@@ -30,14 +30,14 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
 
   for group in results.scenario_groups:
     for scenario in group:
-      row = {**{'timeline' : group.name, 'scenario' : scenario.name}, **scenario.model.takeoff_metrics}
+      row = {**{'Timeline' : group.name, 'Scenario' : scenario.name}, **scenario.model.takeoff_metrics}
       for metric in ['rampup_start', 'agi_year', 'doubling_times']:
         row[metric] = getattr(scenario.model, metric)
       table.append(row)
   table = pd.DataFrame(table)
 
   table_container = report.add_data_frame(table, show_index = False)
-  report.add_importance_selector(table_container, label = 'metrics')
+  report.add_importance_selector(table_container, label = 'metrics', important_columns_to_keep = [0, 1])
 
 
   #
@@ -100,11 +100,20 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
   thead = et.Element('thead')
   tr = et.Element('tr', {'style': 'text-align: right;'})
 
+  variable_names = get_variable_names()
+
   scenario = results.scenario_groups[0][0]
-  tr.append(et.fromstring(f'<th>timeline</th>'))
-  tr.append(et.fromstring(f'<th>scenario</th>'))
+  tr.append(et.fromstring(f'<th>Timeline</th>'))
+  tr.append(et.fromstring(f'<th>Scenario</th>'))
   for metric in scenario.model.get_summary_table().columns:
-    tr.append(et.fromstring(f'<th>{metric}</th>'))
+    possible_suffixes = [' growth rate', ' doubling time', '']
+    for suffix in possible_suffixes:
+      if metric.endswith(suffix):
+        prefix = metric[:-len(suffix)] if len(suffix) else metric
+        human_name = f'{variable_names.get(prefix, prefix)} {suffix}'
+        break
+
+    tr.append(et.fromstring(f'<th>{Report.escape(human_name)}</th>'))
 
   thead.append(tr)
   table.append(thead)
@@ -119,7 +128,18 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
     summaries_group = {}
     for scenario in group:
       summary_table = scenario.model.get_summary_table()
-      summaries_group[scenario.name] = summary_table.to_dict()
+      summary_dict = summary_table.to_dict()
+
+      # Humanize periods
+      human_period = {
+        'prerampup' : 'Pre wake-up',
+        'rampup_start': 'Wake-up',
+        'mid rampup': 'Mid rampup',
+        'agi': 'AGI',
+      }
+      summary_dict['period'] = {k: human_period[v] for k, v in summary_dict['period'].items()}
+
+      summaries_group[scenario.name] = summary_dict
       row_count = len(summary_table)
     summaries[group.name] = summaries_group
   summaries_json = json.dumps(summaries)

@@ -27,17 +27,16 @@ class TooManyRetries(Exception):
   pass
 
 def mc_analysis(n_trials = 100, max_retries = 100):
-  scalar_metrics = ['rampup_start', 'agi_year']
-  state_metrics = ['biggest_training_run', 'gwp']
+  scalar_metrics = {}
 
-  scalar_metrics = {
-      metric : [] for metric in scalar_metrics
-  }
   for takeoff_metric in SimulateTakeOff.takeoff_metrics:
     scalar_metrics[takeoff_metric] = []
 
+  for m in ['rampup_start', 'agi_year']:
+    scalar_metrics[m] = []
+
   state_metrics = {
-      metric : [] for metric in state_metrics
+      metric : [] for metric in ['biggest_training_run', 'gwp']
   }
 
   slow_takeoff_count = 0
@@ -192,17 +191,19 @@ def write_takeoff_probability_table(n_trials=100, max_retries=100, input_results
 
 def write_mc_analysis_report(
     n_trials=100, max_retries=100, include_sample_table=False, report_file_path=None,
-    report_dir_path=None, report=None, output_results_filename=None, input_results_filename=None
+    report_dir_path=None, report=None, output_results_filename=None, input_results_filename=None,
+    results=None
   ):
 
   if report_file_path is None:
     report_file_path = 'mc_analysis.html'
 
-  if input_results_filename:
-    with open(input_results_filename, 'rb') as f:
-      results = pickle.load(f)
-  else:
-    results = mc_analysis(n_trials, max_retries)
+  if not results:
+    if input_results_filename:
+      with open(input_results_filename, 'rb') as f:
+        results = pickle.load(f)
+    else:
+      results = mc_analysis(n_trials, max_retries)
 
   if output_results_filename:
     with open(output_results_filename, 'wb') as f:
@@ -286,7 +287,7 @@ def write_mc_analysis_report(
   metrics_quantiles = pd.DataFrame(results.metrics_quantiles)
   metrics_quantiles_styled = metrics_quantiles.style.format(lambda x: x if isinstance(x, str) else f'{x:.2f}').hide(axis = 'index')
   report.add_data_frame(metrics_quantiles_styled, show_importance_selector = True,
-      important_columns_to_keep = [0, 1], label = 'metrics', show_index = False,
+      important_columns_to_keep = [0], label = 'metrics', show_index = False,
   )
 
   # Plot CDFs of scalar metrics
@@ -317,17 +318,6 @@ def write_mc_analysis_report(
   colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
   color_index = 0
 
-  # Absolute metrics
-  plt.figure(figsize=(10,6))
-  for metric in ['rampup_start', 'agi_year']:
-    plot_ecdf(results.scalar_metrics[metric], limit = results.t_end, label = metric_id_to_human[metric], color = colors[color_index])
-    color_index += 1
-  plt.ylabel('CDF')
-  plt.xlabel('Year')
-  plt.gca().legend(loc = 'lower right')
-
-  report.add_figure()
-
   # Relative metrics
   plt.figure(figsize=(10,6))
   for metric in ['full_automation', 'billion_agis']:
@@ -337,6 +327,17 @@ def write_mc_analysis_report(
   plt.text(results.t_end - results.t_start - 2, 0.95, text, va = 'top', ha = 'right')
   plt.xlabel('Years')
   plt.ylabel(f'CDF\n(conditional on takeoff happening before {results.t_end})')
+  plt.gca().legend(loc = 'lower right')
+
+  report.add_figure()
+
+  # Absolute metrics
+  plt.figure(figsize=(10,6))
+  for metric in ['rampup_start', 'agi_year']:
+    plot_ecdf(results.scalar_metrics[metric], limit = results.t_end, label = metric_id_to_human[metric], color = colors[color_index])
+    color_index += 1
+  plt.ylabel('CDF')
+  plt.xlabel('Year')
   plt.gca().legend(loc = 'lower right')
 
   report.add_figure()
