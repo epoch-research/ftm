@@ -17,6 +17,10 @@ let ui_state = {
 
   metrics_to_show: 'important-metrics',
 
+  // Tables
+  takeoff_table_scroll_x: 0,
+  summary_table_scroll_x: 0,
+
   // TODO Generalize these
   metrics_graph_top_selection: 'raw metric',
   metrics_graph_side_selection: 'GWP',
@@ -44,7 +48,11 @@ metrics_to_show.addEventListener('change',  () => {
   }
 
   clear_tables('#takeoff-metrics-table-container');
-  add_table('#takeoff-metrics-table-container', metrics_table);
+  let table_wrapper = add_table('#takeoff-metrics-table-container', metrics_table);
+  table_wrapper.scrollLeft = ui_state.takeoff_table_scroll_x;
+  table_wrapper.addEventListener('scroll', () => {
+    ui_state.takeoff_table_scroll_x = table_wrapper.scrollLeft;
+  });
 
   injectMeaningTooltips();
 });
@@ -61,8 +69,6 @@ function run_simulation(immediate, callback) {
         callback(sim);
       }
 
-      let takeoff_metrics = sim.get_takeoff_metrics();
-
       let t = sim.get_thread('t_year');
       let indices = sim.get_thread('t_idx');
       //let b = sim.get_thread('biggest_training_run');
@@ -74,7 +80,11 @@ function run_simulation(immediate, callback) {
       clear_tables('#summary-table-container');
       clear_tables('#year-by-year-table-container');
 
-      add_table('#summary-table-container', sim.get_summary_table());
+      let summary_table_wrapper = add_table('#summary-table-container', sim.get_summary_table());
+      summary_table_wrapper.scrollLeft = ui_state.summary_table_scroll_x;
+      summary_table_wrapper.addEventListener('scroll', () => {
+        ui_state.summary_table_scroll_x = summary_table_wrapper.scrollLeft;
+      });
 
       let detailed_table = {
         'Year':                 t,
@@ -1091,7 +1101,7 @@ function clear_tables(container) {
   container.innerHTML = '';
 }
 
-function add_table(container, table) {
+function add_table(container, table, scroll_x) {
   container = nodify(container);
 
   let str = [];
@@ -1135,6 +1145,8 @@ function add_table(container, table) {
   wrapper.classList.add('table-wrapper');
   wrapper.innerHTML = str.join('');
   container.appendChild(wrapper);
+
+  return wrapper;
 }
 
 function format_value_for_cell(v) {
