@@ -40,6 +40,7 @@ def build():
 
   playground = read('playground.html')
   playground = f'''
+    <!DOCTYPE html>
     <title>Playground</title>
     {header}
     {playground}
@@ -49,6 +50,7 @@ def build():
 
   megareport = read('megareport.html')
   megareport = f'''
+    <!DOCTYPE html>
     <title>Megareport</title>
     {header}
     {megareport}
