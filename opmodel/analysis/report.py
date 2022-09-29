@@ -964,7 +964,6 @@ class Report:
         element_id = th.attrib.get('data-metric-id', th.attrib.get('data-param-id', None))
         if column in important_columns_to_keep or element_id in self.most_important_metrics or element_id in self.most_important_parameters:
           important_columns.append(column)
-          self.add_class(th, 'important')
         column += 1
 
       for tr in table.findall('.//tr'):
