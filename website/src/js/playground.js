@@ -102,12 +102,15 @@ function run_simulation(immediate, callback) {
 
       let yearly_table = {};
 
+      let prev_year = null;
       for (let i of indices) {
-        if (t[i] == Math.floor(t[i])) {
+        let year = Math.floor(t[i]);
+        if (year != prev_year) {
           for (let v in detailed_table) {
             if (!(v in yearly_table)) yearly_table[v] = [];
-            yearly_table[v].push(detailed_table[v][i]);
+            yearly_table[v].push((v == 'Year') ? year : detailed_table[v][i]);
           }
+          prev_year = year;
         }
       }
 
