@@ -190,6 +190,10 @@ class Report:
     # See https://inspirationalpixels.com/creating-tabs-with-html-css-and-jquery/#step-css
     self.head.append(et.fromstring('''
       <style>
+        :root {
+          --border-radius: 7px;
+        }
+
         /*----- Tabs -----*/
         .tabs {
           width:100%;
@@ -198,10 +202,12 @@ class Report:
 
         .tab-links {
           padding-left: 0;
-          margin-bottom: 0;
           height: 37px;
           border-bottom: 1px solid grey;
           border-left: 1px solid grey;
+          border: none;
+          overflow-y: hidden;
+          margin-bottom: -2px;
         }
 
         /*----- Tab Links -----*/
@@ -218,6 +224,17 @@ class Report:
           border: 1px solid grey;
           border-left: none;
           background:#e7e7e7;
+          border-top: 2px solid #333;
+        }
+
+        .tab-links li:first-child {
+          border-top-left-radius: var(--border-radius);
+          border-left: 2px solid #333;
+        }
+
+        .tab-links li:last-child {
+          border-top-right-radius: var(--border-radius);
+          border-right: 2px solid #333;
         }
 
         .tab-links span {
@@ -246,12 +263,13 @@ class Report:
 
         /*----- Content of Tabs -----*/
         .tab-content {
-          padding:15px;
-          border: 1px solid grey;
-          border-top: none;
+          padding:1em;
           background:#fff;
           overflow-x: auto;
           width: calc(100vw - 75px);
+          border-radius: var(--border-radius);
+          border: 2px solid #333;
+          border-top-left-radius: 0;
         }
 
         .tab {

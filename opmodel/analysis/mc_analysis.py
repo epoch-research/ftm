@@ -113,13 +113,13 @@ def mc_analysis(n_trials = 100, max_retries = 100):
   quantiles = [0.01, 0.1, 0.2, 0.5, 0.8, 0.9, 0.99]
   metrics_quantiles = []
   for q in quantiles:
-    row = {"quantile" : q}
+    row = {"Quantile" : q}
     for scalar_metric in scalar_metrics:
       row[scalar_metric] = np.quantile(scalar_metrics[scalar_metric], q)
     metrics_quantiles.append(row)
 
   ## Add mean
-  row = {"quantile" : "mean"}
+  row = {"Quantile" : "mean"}
   for scalar_metric in scalar_metrics:
     row[scalar_metric] = np.mean(scalar_metrics[scalar_metric])
   metrics_quantiles.append(row)
@@ -284,14 +284,10 @@ def write_mc_analysis_report(
 
   # Metrics quantiles table
   metrics_quantiles = pd.DataFrame(results.metrics_quantiles)
-  report.add_data_frame(metrics_quantiles, show_importance_selector = True, important_columns_to_keep = [0, 1], label = 'metrics')
-
-  # Plot trajectories
-  metrics = {'biggest_training_run': 'Biggest training run'}
-  for metric in metrics:
-    results.state_metrics[metric] = np.stack(results.state_metrics[metric])
-    plot_quantiles(results.timesteps, results.state_metrics[metric], "Year", metrics[metric])
-    report.add_figure()
+  metrics_quantiles_styled = metrics_quantiles.style.format(lambda x: x if isinstance(x, str) else f'{x:.2f}').hide(axis = 'index')
+  report.add_data_frame(metrics_quantiles_styled, show_importance_selector = True,
+      important_columns_to_keep = [0, 1], label = 'metrics', show_index = False,
+  )
 
   # Plot CDFs of scalar metrics
   metric_id_to_human = get_metric_names()
@@ -326,8 +322,8 @@ def write_mc_analysis_report(
   for metric in ['rampup_start', 'agi_year']:
     plot_ecdf(results.scalar_metrics[metric], limit = results.t_end, label = metric_id_to_human[metric], color = colors[color_index])
     color_index += 1
-  plt.xlabel('Year')
   plt.ylabel('CDF')
+  plt.xlabel('Year')
   plt.gca().legend(loc = 'lower right')
 
   report.add_figure()
@@ -345,6 +341,13 @@ def write_mc_analysis_report(
 
   report.add_figure()
 
+  # Plot trajectories
+  metrics = {'biggest_training_run': 'Biggest training run'}
+  for metric in metrics:
+    results.state_metrics[metric] = np.stack(results.state_metrics[metric])
+    plot_quantiles(results.timesteps, results.state_metrics[metric], "Year", metrics[metric])
+    report.add_figure()
+
   # Display input parameter statistics
   param_stats = []
   for key, samples in results.param_samples.iteritems():
@@ -357,7 +360,7 @@ def write_mc_analysis_report(
   # Write down the parameters
   report.add_header("Inputs", level = 3)
 
-  report.add_paragraph(f"<span style='font-weight:bold'>Number of samples:</span> {n_trials}")
+  report.add_paragraph(f"<span style='font-weight:bold'>Number of samples:</span> {results.n_trials}")
 
   report.add_paragraph("<span style='font-weight:bold'>Rank correlations:</span> <span data-modal-trigger='rank-correlations-modal'><i>click here to view</i>.</span>")
   report.add_data_frame_modal(results.rank_correlations.fillna(''), 'rank-correlations-modal')
@@ -417,24 +420,22 @@ def plot_quantiles(ts, data, xlabel, ylabel, n_quantiles = 7, colormap = cm.Blue
 
   # Plot
   half = int((n_quantiles-1)/2)
-  fig, (ax1) = plt.subplots(nrows=1, ncols=1, sharex=True, figsize=(8,4))
+  plt.figure(figsize=(10,6))
   for i in range(half):
     credence = percentiles[(n_quantiles-1)-i] - percentiles[i]
     label = f'{round(credence)}% credence interval'
-    ax1.fill_between(ts, marks[:,i],marks[:,-(i+1)],color=colormap(i/half), label=label)
-  ax1.plot(ts, marks[:,half],color='k', label="median")
+    plt.gca().fill_between(ts, marks[:,i],marks[:,-(i+1)],color=colormap(i/half), label=label)
+  plt.gca().plot(ts, marks[:,half],color='k', label="median")
 
   # Sort the legend
-  legend_handles, legend_labels = ax1.get_legend_handles_labels()
+  legend_handles, legend_labels = plt.gca().get_legend_handles_labels()
   legend_handles.reverse()
   legend_labels.reverse()
 
-  ax1.set_yscale("log")
-  ax1.tick_params(labelsize=11.5)
-  ax1.set_xlabel(xlabel, fontsize=14)
-  ax1.set_ylabel(ylabel, fontsize=14)
-  fig.tight_layout()
-  plt.legend(legend_handles, legend_labels, bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0)
+  plt.gca().set_yscale("log")
+  plt.ylabel(ylabel)
+  plt.xlabel(xlabel)
+  plt.legend(legend_handles, legend_labels, loc='upper left')
 
 if __name__ == '__main__':
   parser = init_cli_arguments()
