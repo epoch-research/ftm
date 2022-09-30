@@ -12,9 +12,8 @@ Output:
 Dependencies:
   * ./nj.js
 
-
 TODO:
-  * oh, please, do something about the v. annoying .v situation
+  * oh, please, do something about the v. annoying .v field
 
 *******************************************************************************/
 
