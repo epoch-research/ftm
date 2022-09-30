@@ -60,6 +60,16 @@ def build():
 
   write(megareport, 'megareport.html')
 
+  four_oh_four = read('404.html')
+  four_oh_four = f'''
+    <!DOCTYPE html>
+    <title>Ooops</title>
+    {header}
+    {four_oh_four}
+  '''
+
+  write(four_oh_four, '404.html')
+
 def clean():
   print('Cleaning')
   os.rmdir(BUILD_DIR)
