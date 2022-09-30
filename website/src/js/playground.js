@@ -146,7 +146,7 @@ function run_simulation(immediate, callback) {
       ], '#metrics-graph-container');
 
       document.body.classList.remove('running');
-    }, immediate ? 1 : 500);
+    }, immediate ? 20 : 500);
   }
 }
 
