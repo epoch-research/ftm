@@ -36,6 +36,9 @@ def generate_sidebar_content():
       additional_inputs += f' <input id="{id}" class="runtime_training_tradeoff_enabled" type="checkbox">'
       label_target = id
 
+    if param == 'runtime_training_tradeoff' and value < 0:
+      value = 1
+
     array.append(f'''<div class="{classes}"><label for="{label_target}">{name}</label>{additional_inputs} <input class="input" id="{param}" value="{value}"></div>''')
     test += 1
 

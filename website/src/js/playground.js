@@ -459,11 +459,11 @@ class Graph {
     let xAxis = svg.append("g")
       .attr("transform", "translate(0," + height + ")")
       .attr("stroke-width", 2)
-      .call(d3.axisBottom(x));
+      .call(d3.axisBottom(x).tickSizeOuter(0));
 
     let yAxis = svg.append("g")
       .attr("stroke-width", 2)
-      .call(d3.axisLeft(y));
+      .call(d3.axisLeft(y).tickSizeOuter(0));
 
     let legend_objects = [];
 
@@ -697,8 +697,8 @@ class Graph {
         self.transform_update_callback(self.transform);
       }
 
-      xAxis.call(d3.axisBottom(currentX));
-      yAxis.call(d3.axisLeft(currentY));
+      xAxis.call(d3.axisBottom(currentX).tickSizeOuter(0));
+      yAxis.call(d3.axisLeft(currentY).tickSizeOuter(0));
 
       content
         .selectAll('.data-path')
@@ -1061,11 +1061,16 @@ function add_multigraph(sim, variables, container, crop_after_agi = true) {
       graph.yscale('log');
     }
 
+    let xlims = [sim.timesteps[0], sim.timesteps[sim.states.length-1]];
+
     if (crop_after_agi) {
       let end_idx = (crop_after_agi && sim.agi_year != null) ? Math.min(sim.time_to_index(sim.agi_year + 5), sim.states.length) : sim.states.length;
+      xlims[1] = sim.timesteps[end_idx];
       x = x.slice(0, end_idx);
       y = y.slice(0, end_idx);
     }
+
+    graph.xlims(xlims);
 
     let label = side;
     if (show_growth) {
