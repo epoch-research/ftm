@@ -1172,10 +1172,10 @@ let ftm = {};
         'cumulative_rnd_input_software': this.get_thread('software.cumulative_rnd_input'),
       };
 
-      for (let [period, t] of Object.entries({'prerampup': prerampup,
-                        'rampup_start': this.rampup_start,
-                        'mid rampup': this.rampup_mid,
-                        'agi': this.agi_year})) {
+      for (let [period, t] of Object.entries({'Pre wake-up': prerampup,
+                        'Wake-up': this.rampup_start,
+                        'Mid rampup': this.rampup_mid,
+                        'AGI': this.agi_year})) {
 
         if (t == null) {
           let summary_row = {
