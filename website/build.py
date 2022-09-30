@@ -70,7 +70,7 @@ def build():
   four_oh_four = f'''
     <!DOCTYPE html>
     <title>Ooops</title>
-    {header}
+    {process_header(header, 'four_oh_four')}
     {four_oh_four}
   '''
 
