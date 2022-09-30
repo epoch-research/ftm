@@ -1355,18 +1355,45 @@ function injectMeaningTooltip(node, meaning) {
   if (node._meaningInjected) return;
 
   if (meaning) {
-    tippy(node, {
+    let icon = document.createElement('i');
+    icon.classList.add('bi', 'bi-info-circle', 'info-icon');
+    node.append(icon);
+
+    tippy(icon, {
       content: meaning,
       allowHTML: true,
       interactive: true,
-      //placement: (node.parentElement.parentElement.tagName == 'THEAD') ? 'top' : 'right',
-      theme: 'light-border',
+      placement: (node.parentElement.parentElement.tagName == 'THEAD') ? 'top' : 'right',
       appendTo: document.body,
+      plugins: [hideOnEsc],
+      theme: 'light-border',
     });
 
     node._meaningInjected = true;
   }
 }
+
+// See https://atomiks.github.io/tippyjs/v6/plugins/#hideonesc
+const hideOnEsc = {
+  name: 'hideOnEsc',
+  defaultValue: true,
+  fn({hide}) {
+    function onKeyDown(event) {
+      if (event.keyCode === 27) {
+        hide();
+      }
+    }
+
+    return {
+      onShow() {
+        document.addEventListener('keydown', onKeyDown);
+      },
+      onHide() {
+        document.removeEventListener('keydown', onKeyDown);
+      },
+    };
+  },
+};
 
 // ------------------------------------------------------------------------
 // And... run
