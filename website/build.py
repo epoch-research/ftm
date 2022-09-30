@@ -34,6 +34,7 @@ def build():
       return f.write(content)
 
   cp('favicon.svg')
+  cp('spinner.svg')
 
   cpdir('css')
   cpdir('js')

@@ -64,6 +64,7 @@ metrics_to_show.addEventListener('change',  () => {
 function run_simulation(immediate, callback) {
   let params = get_parameters();
   if (params) {
+    document.body.classList.add('running');
     cancelBackgroundProcesses();
     dispatchBackgroundProcess(() => {
       let js_params = transform_python_to_js_params(params);
@@ -143,6 +144,8 @@ function run_simulation(immediate, callback) {
         { label: 'Money spent on training', var: 'money_spent_training'},
         { label: 'Fraction of compute invested in training', var: 'frac_compute.training.v'},
       ], '#metrics-graph-container');
+
+      document.body.classList.remove('running');
     }, immediate ? 1 : 500);
   }
 }

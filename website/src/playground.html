@@ -8,6 +8,29 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
     --sidebar-width: 325px;
   }
 
+  #spinner {
+    display: none;
+    position: absolute;
+    top: 11px;
+    width: 23px;
+    left: 58px;
+    animation: spin 0.5s linear infinite;
+  }
+
+  @keyframes spin {
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+
+  body.running #spinner {
+    display: initial;
+  }
+
+  body.running #simulate-button {
+    background-color: #8a939f;
+  }
+
   .runtime_training_tradeoff_enabled {
     width: initial !important;
     margin-bottom: 0 !important;
@@ -390,7 +413,7 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
       <div class="sidebar-header">
         <div id="simulate-button-container">
           <!-- <button id="simulate-button">Simulate</button> -->
-          <button id="simulate-button">Run simulation</button>
+          <button id="simulate-button">Run simulation <img id="spinner" src="spinner.svg"></button>
         </div>
       </div>
 
