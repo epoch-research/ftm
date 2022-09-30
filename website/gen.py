@@ -28,12 +28,15 @@ def generate_sidebar_content():
 
     classes = 'input-parameter'
     additional_inputs = ''
+    label_target = param
 
     if param in ['runtime_training_tradeoff', 'runtime_training_max_tradeoff']:
       classes += ' disabled'
-      additional_inputs += ' <input class="runtime_training_tradeoff_enabled" type="checkbox">'
+      id = "runtime_training_tradeoff_enabled_1" if param == 'runtime_training_tradeoff' else "runtime_training_tradeoff_enabled_2"
+      additional_inputs += f' <input id="{id}" class="runtime_training_tradeoff_enabled" type="checkbox">'
+      label_target = id
 
-    array.append(f'''<div class="{classes}"><label for="{param}">{name}</label>{additional_inputs} <input class="input" id="{param}" value="{value}"></div>''')
+    array.append(f'''<div class="{classes}"><label for="{label_target}">{name}</label>{additional_inputs} <input class="input" id="{param}" value="{value}"></div>''')
     test += 1
 
   # Basic params
