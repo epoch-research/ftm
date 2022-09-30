@@ -316,6 +316,9 @@ class Graph {
     }
 
     this.nodes.plot.innerHTML = "";
+    if (this.nodes.legend) {
+      this.nodes.legend.remove();
+    }
 
     // set the dimensions and margins of the graph
     let margin = {top: 20, right: 10, bottom: 30, left: 40};
@@ -472,13 +475,34 @@ class Graph {
     }
 
     if (legend_objects.length > 0) {
-      let legend = svg_container
-          .append('div')
-            .style('top', margin.top + 20 + 'px')
-            .style('left', margin.left + 20 + 'px')
-            .attr('class', 'legend')
-            .style('position', 'absolute')
-        ;
+      let legend_container;
+      let top = margin.top + 20 + 'px';
+      let left = margin.left + 20 + 'px';
+      if (this.legend_placement == 'outside') {
+        if (!this.nodes.side) {
+          this.nodes.side = document.createElement('div');
+          this.nodes.side.classList.add('graph-side');
+          this.nodes.wrapper.append(this.nodes.side);
+
+          this.nodes.wrapper.classList.add('with-side-panel');
+        }
+
+        legend_container = d3.select(this.nodes.side);
+        left = 0;
+        top = margin.top + 'px';
+      } else {
+        legend_container = svg_container;
+      }
+
+      let legend = legend_container
+        .append('div')
+          .style('top', top)
+          .style('left', left)
+          .attr('class', 'legend')
+          .style('position', 'absolute')
+      ;
+
+      this.nodes.legend = legend;
 
       let add_legend_section = (objects, name) => {
         let section = legend.append('div')
@@ -818,6 +842,10 @@ class Plotter {
     this.graph.set_title(title);
   }
 
+  set_legend_placement(placement) {
+    this.graph.legend_placement = placement;
+  }
+
   set_transform(transform) {
     this.graph.transform = transform;
   }
@@ -986,6 +1014,7 @@ function plot_compute_decomposition(sim, container, crop_after_agi = true) {
 
   plt.set_transform(ui_state.decomposition_graph_transform)
   plt.set_transform_callback((transform) => {ui_state.decomposition_graph_transform = transform});
+  plt.set_legend_placement('outside');
 
   plot_oom_lines();
 
