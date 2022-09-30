@@ -69,7 +69,7 @@ def build():
   four_oh_four = read('404.html')
   four_oh_four = f'''
     <!DOCTYPE html>
-    <title>Ooops</title>
+    <title>Ooops!</title>
     {process_header(header, 'four_oh_four')}
     {four_oh_four}
   '''

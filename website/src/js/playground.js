@@ -40,6 +40,21 @@ metrics_to_show.addEventListener('change',  () => {
     'agi_year': sim.agi_year,
   };
 
+  // Round the metrics
+  for (let metric in all_metrics_table) {
+    let v = all_metrics_table[metric];
+    if (typeof v == 'number') {
+      all_metrics_table[metric] = v.toFixed(1);
+    } else if (Array.isArray(v)) {
+      let new_v = [];
+      for (let x of v) {
+        if (typeof x == 'number') x = x.toFixed(1);
+        new_v.push(x);
+      }
+      all_metrics_table[metric] = new_v;
+    }
+  }
+
   let metrics_table;
 
   if (ui_state.metrics_to_show == 'important-metrics') {
