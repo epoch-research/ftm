@@ -989,7 +989,7 @@ function plot_compute_decomposition(sim, container, crop_after_agi = true) {
       add_data(
         bioanchors.timesteps,
         nj.mult(sim.get_thread('compute_investment'), sim.get_thread('frac_compute.training.v')),
-        {label: 'Training compute investment', color: 'purple', section}
+        {label: 'Training compute investment ($)', color: 'purple', section}
       );
     }
 
@@ -1008,7 +1008,7 @@ function plot_compute_decomposition(sim, container, crop_after_agi = true) {
       // when showing the normalized decomposition.
       let displacement = ui_state.show_normalized_decomposition ? 5 : 0;
 
-      add_data(bioanchors.timesteps, bioanchors.training_investment, {displacement: +displacement, label: 'Training compute investment', color: 'purple', linestyle: linestyle, section});
+      add_data(bioanchors.timesteps, bioanchors.training_investment, {displacement: +displacement, label: 'Training compute investment ($)', color: 'purple', linestyle: linestyle, section});
       add_data(bioanchors.timesteps, bioanchors.hardware,            {displacement: 0, label: 'Hardware (FLOP/$)', color: 'orange', linestyle: linestyle, section});
       add_data(bioanchors.software_timesteps, bioanchors.software,   {displacement: -displacement, label: 'Software (2022-FLOP per FLOP)', color: 'green', linestyle: linestyle, section});
     }
