@@ -19,6 +19,13 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
     margin-left: 0;
   }
 
+  #compute-decomposition-graph-container .graph-header {
+    /* Hack to bring the header closer to the graph */
+    margin-bottom: -10px;
+    z-index: 1;
+    position: relative;
+  }
+
   #bioanchors-button {
     vertical-align: top;
   }
@@ -40,7 +47,6 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
 
   .graph-header {
     text-align: left;
-    margin-left: 45px;
   }
 
   .graph-header .selector label:not(:first-child) {

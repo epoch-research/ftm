@@ -476,8 +476,9 @@ class Graph {
 
     if (legend_objects.length > 0) {
       let legend_container;
-      let top = margin.top + 20 + 'px';
-      let left = margin.left + 20 + 'px';
+      let top = (margin.top + 20) + 'px';
+      let left = (margin.left + 20) + 'px';
+
       if (this.legend_placement == 'outside') {
         if (!this.nodes.side) {
           this.nodes.side = document.createElement('div');
@@ -489,7 +490,7 @@ class Graph {
 
         legend_container = d3.select(this.nodes.side);
         left = 0;
-        top = margin.top + 'px';
+        top = (margin.top + 5) + 'px';
       } else {
         legend_container = svg_container;
       }
@@ -931,10 +932,11 @@ function plot_compute_decomposition(sim, container, crop_after_agi = true) {
   let header = graph.add_header();
   header.innerHTML =
     '<input type="checkbox" id="bioanchors-button"><label for="bioanchors-button">Compare with bioanchors</label>' +
-    '<input type="checkbox" id="normalized-button" style="margin-left: 2em"><label for="normalized-button">Normalized at wake-up year</label>';
+    '<br>' +
+    '<input type="checkbox" id="normalize-button"><label for="normalize-button">Normalize at wake-up year</label>';
 
   let show_bioanchors_button = header.querySelector('#bioanchors-button');
-  let show_normalized_button = header.querySelector('#normalized-button');
+  let show_normalized_button = header.querySelector('#normalize-button');
 
   if (ui_state.show_bioanchors) {
     show_bioanchors_button.checked = true;
