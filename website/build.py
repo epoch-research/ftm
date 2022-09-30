@@ -41,25 +41,30 @@ def build():
 
   header = read('header.html')
 
+  def process_header(header, page):
+    header = header.replace('{{{{playground-link-active}}}}', ' active' if (page == 'playground') else '')
+    header = header.replace('{{{{reports-link-active}}}}', ' active' if (page == 'reports') else '')
+    return header
+
   playground = read('playground.html')
   playground = f'''
     <!DOCTYPE html>
     <title>Playground</title>
-    {header}
+    {process_header(header, 'playground')}
     {playground}
   '''
 
   write(playground, 'playground.html')
 
-  megareport = read('megareport.html')
-  megareport = f'''
+  reports = read('reports.html')
+  reports = f'''
     <!DOCTYPE html>
-    <title>Megareport</title>
-    {header}
-    {megareport}
+    <title>Reports</title>
+    {process_header(header, 'reports')}
+    {reports}
   '''
 
-  write(megareport, 'megareport.html')
+  write(reports, 'reports.html')
 
   four_oh_four = read('404.html')
   four_oh_four = f'''

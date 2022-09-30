@@ -39,11 +39,19 @@
     text-decoration: none;
   }
 
-  .site-nav .page-link:hover {
-    background-color: #35639d;
+  .site-nav .page-link:hover, .site-nav .page-link.active {
     color: white;
     border-radius: var(--border-radius);
   }
+
+  .site-nav .page-link.active {
+    background-color: #35639d;
+  }
+
+  .site-nav .page-link:hover {
+    background-color: #2d6bb9;
+  }
+
 </style>
 
 <style>
@@ -298,8 +306,8 @@
 <header class="site-header" role="banner">
   <div class="header-wrapper">
     <nav class="site-nav">
-        <a class="page-link" href="playground.html">Playground</a>
-        <a class="page-link" href="megareport.html">MEGAREPORT</a>
+      <a class="page-link{{{{playground-link-active}}}}" href="playground.html">Playground</a>
+      <a class="page-link{{{{reports-link-active}}}}" href="reports.html">Reports</a>
     </nav>
   </div>
 </header>
