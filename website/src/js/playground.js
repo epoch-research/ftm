@@ -1294,14 +1294,18 @@ let tippy_instances = [];
 for (let input of document.querySelectorAll('.input-parameter')) {
   let elements = input.querySelectorAll('input');
   let id = elements[elements.length-1].id;
+  let value = elements[elements.length-1].value;
   let meaning = parameter_meanings[id];
   let justification = parameter_justifications[id];
 
   let tooltip = '';
 
   if (meaning) {
-    tooltip += meaning;
+    tooltip += `<span style="font-weight: bold">Meaning:</span> ${meaning}`
   }
+
+  if (tooltip.length > 0) tooltip += '<br><br>';
+  tooltip += `<span style="font-weight: bold">Best guess value:</span> ${value}`;
 
   if (justification) {
     if (tooltip.length > 0) tooltip += '<br><br>';
