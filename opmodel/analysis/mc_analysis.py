@@ -323,7 +323,7 @@ def write_mc_analysis_report(
   for metric in ['full_automation', 'billion_agis']:
     plot_ecdf(results.scalar_metrics[metric], limit = results.t_end - results.t_start, label = metric_id_to_human[metric], color = colors[color_index], normalize = True)
     color_index += 1
-  text = f'p(takeoff before year {results.t_end}) = {np.mean(np.array(results.scalar_metrics["billion_agis"]) < results.t_end - results.t_start):.0%}'
+  text = f'p(takeoff before {results.t_end}) = {np.mean(np.array(results.scalar_metrics["billion_agis"]) < results.t_end - results.t_start):.0%}'
   plt.text(results.t_end - results.t_start - 2, 0.95, text, va = 'top', ha = 'right')
   plt.xlabel('Years')
   plt.ylabel(f'CDF\n(conditional on takeoff happening before {results.t_end})')
