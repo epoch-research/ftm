@@ -12,12 +12,16 @@ let best_guess_sim = null;
 let sim;
 
 let ui_state = {
+  // Graphs
   show_bioanchors: false,
   show_normalized_decomposition: false,
 
-  metrics_to_show: 'important-metrics',
+  decomposition_graph_transform: null,
+  metrics_graph_transform: null,
 
   // Tables
+  metrics_to_show: 'important-metrics',
+
   takeoff_table_scroll_x: 0,
   summary_table_scroll_x: 0,
 
@@ -245,6 +249,8 @@ class Graph {
     this.top_selections = [];
     this.side_selections = [];
     this.on_select_callback = null;
+    this.transform = null;
+    this.transform_update_callback = null;
   }
 
   attach(container) {
@@ -639,7 +645,7 @@ class Graph {
       .attr("height", height)
       .style("fill", "none")
       .style("pointer-events", "all")
-      .call(zoom.transform, self.lastTransform || d3.zoomIdentity)
+      .call(zoom.transform, this.transform || d3.zoomIdentity)
       .call(zoom)
     ;
 
@@ -656,9 +662,12 @@ class Graph {
 
     function updateChart(transform) {
       currentX = d3.event.transform.rescaleX(x);
-      //currentY = d3.event.transform.rescaleY(y);
+      currentY = d3.event.transform.rescaleY(y);
 
-      self.lastTransform = d3.event.transform;
+      self.transform = d3.event.transform;
+      if (self.transform_update_callback) {
+        self.transform_update_callback(self.transform);
+      }
 
       xAxis.call(d3.axisBottom(currentX));
       yAxis.call(d3.axisLeft(currentY));
@@ -807,6 +816,14 @@ class Plotter {
 
   set_title(title) {
     this.graph.set_title(title);
+  }
+
+  set_transform(transform) {
+    this.graph.transform = transform;
+  }
+
+  set_transform_callback(callback) {
+    this.graph.transform_update_callback = callback;
   }
 
   set_top_selections(fields, selection) {
@@ -967,6 +984,9 @@ function plot_compute_decomposition(sim, container, crop_after_agi = true) {
 
   plt.set_title('Compute increase decomposition');
 
+  plt.set_transform(ui_state.decomposition_graph_transform)
+  plt.set_transform_callback((transform) => {ui_state.decomposition_graph_transform = transform});
+
   plot_oom_lines();
 
   plt.show(container);
@@ -979,6 +999,9 @@ function add_multigraph(sim, variables, container, crop_after_agi = true) {
     labels.push(o.label);
     label_to_var[o.label] = o.var;
   }
+
+  plt.set_transform(ui_state.metrics_graph_transform)
+  plt.set_transform_callback((transform) => {ui_state.metrics_graph_transform = transform});
 
   plt.set_top_selections(['raw metric', 'growth per year'], ui_state.metrics_graph_top_selection);
   plt.set_side_selections(labels, ui_state.metrics_graph_side_selection);
