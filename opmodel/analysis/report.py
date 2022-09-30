@@ -78,6 +78,7 @@ class Report:
           display: grid;
           grid-template-columns: [full-start] minmax(4vw,auto) [wide-start] minmax(auto,140px) [main-start] min(640px,calc(100% - 8vw)) [main-end] minmax(auto,140px) [wide-end] minmax(4vw,auto) [full-end];
           padding: 1em;
+          padding-top: 0;
         }
 
         .main > * {
@@ -202,6 +203,7 @@ class Report:
           border: none;
           overflow-y: hidden;
           margin-bottom: -2px;
+          margin-top: 0;
         }
 
         /*----- Tab Links -----*/
