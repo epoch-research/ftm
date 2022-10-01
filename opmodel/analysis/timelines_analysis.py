@@ -36,7 +36,12 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
       table.append(row)
   table = pd.DataFrame(table)
 
-  table_container = report.add_data_frame(table, show_index = False)
+  def nan_format(row, col, index_r, index_c, cell):
+    if index_c in ('rampup_start', 'agi_year'):
+      return f'> {results.scenario_groups[0][0].model.t_end}'
+    return '-'
+
+  table_container = report.add_data_frame(table, show_index = False, nan_format = nan_format)
   report.add_importance_selector(table_container, label = 'metrics', important_columns_to_keep = [0, 1])
 
 
@@ -127,7 +132,7 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
   for group in results.scenario_groups:
     summaries_group = {}
     for scenario in group:
-      summary_table = scenario.model.get_summary_table()
+      summary_table = scenario.model.get_summary_table().fillna('-')
       summary_dict = summary_table.to_dict()
 
       # Humanize periods
@@ -138,6 +143,7 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
         'agi': 'AGI',
       }
       summary_dict['period'] = {k: human_period[v] for k, v in summary_dict['period'].items()}
+      summary_dict['year'] = {k: f'> {scenario.model.t_end}' if (v == '-') else v for k, v in summary_dict['year'].items()}
 
       summaries_group[scenario.name] = summary_dict
       row_count = len(summary_table)

@@ -265,7 +265,7 @@ def write_sensitivity_analysis_report(method="point_comparison", quick_test_mode
   )
 
   report.add_header("Inputs", level = 3)
-  inputs_table = report.add_data_frame(results.parameter_table, show_justifications = True)
+  inputs_table = report.add_data_frame(results.parameter_table, show_justifications = True, nan_format = inputs_nan_format)
   report.add_importance_selector(inputs_table, label = 'parameters', layout = 'vertical')
 
   if new_report:

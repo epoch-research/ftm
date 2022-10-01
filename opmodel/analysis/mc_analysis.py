@@ -327,6 +327,7 @@ def write_mc_analysis_report(
   plt.text(results.t_end - results.t_start - 2, 0.95, text, va = 'top', ha = 'right')
   plt.xlabel('Years')
   plt.ylabel(f'CDF\n(conditional on takeoff happening before {results.t_end})')
+  plt.title('AI Take-off Metrics')
   plt.gca().legend(loc = 'lower right')
 
   report.add_figure()
@@ -338,6 +339,7 @@ def write_mc_analysis_report(
     color_index += 1
   plt.ylabel('CDF')
   plt.xlabel('Year')
+  plt.title('AI Timelines Metrics')
   plt.gca().legend(loc = 'lower right')
 
   report.add_figure()
@@ -376,7 +378,10 @@ def write_mc_analysis_report(
     report.add_data_frame_modal(results.ajeya_cdf, 'ajeya-modal', show_index = False)
 
     # the parameter full_automation_requirements_training is special (we might be sampling from Ajeya's distribution)
-    inputs_table = report.add_data_frame(results.parameter_table.drop(index = 'full_automation_requirements_training', columns = 'Type'), show_justifications = True)
+    inputs_table = report.add_data_frame(
+      results.parameter_table.drop(index = 'full_automation_requirements_training', columns = 'Type'),
+      show_justifications = True,  nan_format = inputs_nan_format,
+    )
     tbody = None
     for element in inputs_table.iter():
       if element.tag == 'tbody':
@@ -389,7 +394,7 @@ def write_mc_analysis_report(
       </tr>
     '''))
   else:
-    inputs_table = report.add_data_frame(results.parameter_table.drop(columns = 'Type'), show_justifications = True)
+    inputs_table = report.add_data_frame(results.parameter_table.drop(columns = 'Type'), show_justifications = True, nan_format = inputs_nan_format)
 
   report.add_importance_selector(inputs_table, label = 'parameters', layout = 'vertical')
 

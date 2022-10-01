@@ -864,6 +864,7 @@ class Report:
   def add_data_frame(
       self, df, index = None, show_index = True, show_index_header = False, use_render = False, parent=None, show_justifications=False,
       show_importance_selector=False, importance_layout = 'horizontal', important_rows_to_keep=[], important_columns_to_keep=[0], label = 'xxx', # TODO Document this
+      nan_format = lambda **args: 'NaN',
       **to_html_args
     ):
     if parent is None: parent = self.default_parent
@@ -880,7 +881,7 @@ class Report:
 
     dataframe_wrapper = et.fromstring(f'<div class="dataframe-container">{html}</div>')
 
-    self.process_table(dataframe_wrapper, show_justifications)
+    self.process_table(dataframe_wrapper, show_justifications, nan_format)
 
     container = et.Element('div', {'class': 'table-container'})
     container.append(dataframe_wrapper)
@@ -900,7 +901,7 @@ class Report:
 
     return container
 
-  def process_table(self, table, show_justifications = False):
+  def process_table(self, table, show_justifications = False, nan_format = lambda **args: 'NaN'):
     # Add data attributes
     for th in table.findall('.//th'):
       if th.text in self.param_names:
@@ -921,6 +922,12 @@ class Report:
         if th.text in self.metric_names:
           human_name = self.metric_names[th.text]
           th.text = human_name
+
+    def format_nans(row, col, index_r, index_c, cell):
+      if cell.text == 'NaN':
+        cell.text = nan_format(row = row, col = col, index_r = index_r, index_c = index_c, cell = cell)
+
+    self.apply_to_table(table, format_nans)
 
   def add_importance_selector(self, table_container,
       layout = 'horizontal', important_rows_to_keep=[], important_columns_to_keep=[], keep_cell = None, # TODO Document all this
@@ -944,6 +951,31 @@ class Report:
           if layout == 'vertical' else \
           (col in important_columns_to_keep) or (index_c in self.most_important_metrics)
 
+    def add_important_class(row, col, index_r, index_c, cell):
+      if keep_cell(row, col, index_r, index_c, cell):
+        self.add_class(cell, 'important')
+
+    self.apply_to_table(table, add_important_class)
+
+    # Create the selector
+    selector = self.create_importance_selector(label)
+
+    # Add the selector
+    self.insert_before(parent, table_container, selector)
+
+  def create_importance_selector(self, label):
+    selector = et.fromstring(f'''
+      <p class="importance-selector">
+        Show
+        <select onchange="onImportanceSelect(this)">
+          <option value="important">the most important {label}</option>
+          <option value="all">all {label}</option>
+        </select>
+      </p>
+    ''')
+    return selector
+
+  def apply_to_table(self, table, func):
     indices_row = {}
     indices_col = {}
 
@@ -963,26 +995,7 @@ class Report:
       for col, cell in enumerate(tr):
         index_r = indices_row[row]
         index_c = indices_col[col]
-        if keep_cell(row, col, index_r, index_c, cell):
-          self.add_class(cell, 'important')
-
-    # Create the selector
-    selector = self.create_importance_selector(label)
-
-    # Add the selector
-    self.insert_before(parent, table_container, selector)
-
-  def create_importance_selector(self, label):
-    selector = et.fromstring(f'''
-      <p class="importance-selector">
-        Show
-        <select onchange="onImportanceSelect(this)">
-          <option value="important">the most important {label}</option>
-          <option value="all">all {label}</option>
-        </select>
-      </p>
-    ''')
-    return selector
+        func(row, col, index_r, index_c, cell)
 
   def add_banner_message(self, message, classes = []):
     element = et.fromstring(f'<div>{message}</div>')

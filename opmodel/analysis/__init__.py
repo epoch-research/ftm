@@ -10,3 +10,5 @@ from ..core.utils import display, log, draw_oom_lines
 from ..core.utils import *
 from .report import Report
 
+def inputs_nan_format(row, col, index_r, index_c, cell):
+  return ''
