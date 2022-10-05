@@ -1474,7 +1474,7 @@ class SimulateTakeOff():
           np.max(self.automation_training_flops_rnd))
     self.takeoff_metrics["billion_agis"] = \
       self._length_between_thresholds(
-          self.frac_automated_tasks > 0.1,
+          self.frac_automated_tasks > 0.2,
           (self.compute >= ten_billion_agi_compute) &\
           (self.biggest_training_run >= full_automation_flops),
       )
