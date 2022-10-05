@@ -6,7 +6,7 @@ from . import log
 from . import *
 
 import json
-import pickle
+import dill as pickle
 import traceback
 import seaborn as sns
 from scipy.stats import rv_continuous
@@ -46,6 +46,11 @@ def mc_analysis(n_trials = 100, max_retries = 100):
 
   last_valid_indices = []
 
+  t_start = get_option('t_start', 2022)
+  t_end   = get_option('t_end',   2100)
+  t_step  = get_option('t_step',  0.1)
+  timesteps = np.arange(t_start, t_end, t_step)
+
   log.info(f'Running simulations...')
   log.indent()
   for trial in range(n_trials):
@@ -57,7 +62,7 @@ def mc_analysis(n_trials = 100, max_retries = 100):
         sample = params_dist.rvs(1)
         mc_params = {param: sample[param][0] for param in sample}
 
-        mc_model = SimulateTakeOff(**mc_params)
+        mc_model = SimulateTakeOff(**mc_params, t_start = t_start, t_end_min = t_end, dynamic_t_end = True)
 
         # Check that no goods task is automatable from the beginning (except for the first one)
         runtime_training_max_tradeoff = mc_model.runtime_training_max_tradeoff if mc_model.runtime_training_tradeoff is not None else 1.
@@ -129,10 +134,10 @@ def mc_analysis(n_trials = 100, max_retries = 100):
   results.state_metrics      = state_metrics
   results.scalar_metrics     = scalar_metrics
   results.n_trials           = n_trials
-  results.timesteps          = mc_model.timesteps
-  results.t_step             = mc_model.t_step
-  results.t_start            = mc_model.t_start
-  results.t_end              = mc_model.t_end
+  results.timesteps          = timesteps
+  results.t_step             = t_step
+  results.t_start            = t_start
+  results.t_end              = t_end
   results.param_samples      = pd.concat(samples, ignore_index = True)
   results.parameter_table    = params_dist.parameter_table
   results.rank_correlations  = params_dist.rank_correlations
@@ -347,7 +352,8 @@ def write_mc_analysis_report(
   # Plot trajectories
   metrics = {'biggest_training_run': 'Biggest training run'}
   for metric in metrics:
-    results.state_metrics[metric] = np.stack(results.state_metrics[metric])
+    print(len(results.timesteps))
+    results.state_metrics[metric] = np.stack([s[:len(results.timesteps)] for s in results.state_metrics[metric]])
     plot_quantiles(results.timesteps, results.state_metrics[metric], "Year", metrics[metric])
     report.add_figure()
 
