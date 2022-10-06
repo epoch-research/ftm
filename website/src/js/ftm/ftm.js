@@ -1099,12 +1099,12 @@ let ftm = {};
       let rnd_automation_multiplier = this.get_thread('hardware_rnd.automation_multiplier');
       takeoff_metrics["cog_output_multiplier"] = this.length_between_thresholds(nj.gt(rnd_automation_multiplier, 2), nj.gt(rnd_automation_multiplier, 10));
 
-      // Time from AI that automates 10% of cognitive tasks to when we have enough compute to run 10 billion AGIs
+      // Time from AI that automates 20% of cognitive tasks to when we have enough compute to run 10 billion AGIs
 
       let ten_billion_agi_compute = Math.max(nj.max(this.consts.goods.automation_runtime_flops), nj.max(this.consts.rnd.automation_runtime_flops)) * 1e10;
       let full_automation_flops = Math.max(nj.max(this.consts.goods.automation_training_flops), nj.max(this.consts.rnd.automation_training_flops));
       takeoff_metrics["billion_agis"] = this.length_between_thresholds(
-        nj.gt(frac_automated_tasks, 0.1),
+        nj.gt(frac_automated_tasks, 0.2),
         nj.and(nj.gte(this.get_thread('compute'), ten_billion_agi_compute),
                nj.gte(this.get_thread('biggest_training_run'), full_automation_flops)
         ),
