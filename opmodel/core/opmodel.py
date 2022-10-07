@@ -125,8 +125,6 @@ class SimulateTakeOff():
     if t_step  is None: t_step  = get_option('t_step',  0.1)
 
     if dynamic_t_end is None: dynamic_t_end = get_option('dynamic_t_end', False)
-    if t_end_max is None: t_end_max = get_option('t_end_max', 3000)
-    if t_end_min is None: t_end_min = get_option('t_end_min', 2100)
 
     if dynamic_t_end:
       # We'll compute it at the end of the simulation
@@ -481,7 +479,7 @@ class SimulateTakeOff():
       if t_idx == 0:
         return True
 
-      # Well, OK, that was enough
+      # OK, that was enough
       if (self.t_end_max is not None and t_year >= self.t_end_max) or t_idx > 100000:
         return False
 
