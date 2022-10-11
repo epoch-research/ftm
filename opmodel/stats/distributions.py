@@ -82,11 +82,11 @@ class ParamsDistribution():
     self.joint_dist = JointDistribution(marginals, pairwise_rank_corr, rank_corr_method = "spearman")
     self.ensure_no_automatable_goods_tasks = ensure_no_automatable_goods_tasks
 
-  def rvs(self, count, conditions={}):
+  def rvs(self, count, random_state = None, conditions = {}):
     # statsmodels.distributions.copula.copulas throws an exception when we ask less than 2 samples from it.
     # We could make this more efficient, but it's probably not worth it.
     actual_count = max(count, 2)
-    samples = self.joint_dist.rvs(actual_count, conditions = conditions)[:count]
+    samples = self.joint_dist.rvs(actual_count, random_state = random_state, conditions = conditions)[:count]
 
     if self.ensure_no_automatable_goods_tasks:
       # Resample the training gap to ensure no tasks is automatable from the beginning
@@ -94,7 +94,7 @@ class ParamsDistribution():
       for i, row in samples.iterrows():
         max_gap = (row['full_automation_requirements_training']/(row['initial_biggest_training_run'] * row['runtime_training_max_tradeoff']))**(7/10.5)
         gap_marginal.set_upper_bound(max_gap)
-        samples.at[i, 'flop_gap_training'] = gap_marginal.rvs()
+        samples.at[i, 'flop_gap_training'] = gap_marginal.rvs(random_state = random_state)
       gap_marginal.set_upper_bound(None)
 
     return samples

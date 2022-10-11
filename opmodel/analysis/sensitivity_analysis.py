@@ -40,7 +40,7 @@ def variance_reduction_comparison(quick_test_mode = False, save_dir = None, meth
   shapley_samples = 1000
 
   if quick_test_mode:
-    mean_samples = 50_000
+    mean_samples = 500
     var_samples = 2
     shapley_samples = 4
     #parameters = ['full_automation_requirements_training', 'flop_gap_training',]
@@ -48,7 +48,7 @@ def variance_reduction_comparison(quick_test_mode = False, save_dir = None, meth
 
   log.info('Running simulations...')
   param_importance, param_stds = get_parameter_importance(
-      params_dist, parameter_importance_metrics, parameters = parameters, metric_arguments = metric_names,
+      params_dist, get_parameter_importance_metrics, parameters = parameters, metric_arguments = metric_names,
       mean_samples = mean_samples, var_samples = var_samples, shapley_samples = shapley_samples,
       save_dir = save_dir, method = method,
   )
@@ -80,8 +80,8 @@ def variance_reduction_comparison(quick_test_mode = False, save_dir = None, meth
 
   return results
 
-def parameter_importance_metrics(params, metric_names):
-  model = SimulateTakeOff(**params, t_step = 1)
+def get_parameter_importance_metrics(params, metric_names):
+  model = SimulateTakeOff(**params, t_step = 1, dynamic_t_end = True)
 
   # Check that no goods task is automatable from the beginning (except for the first one)
   runtime_training_max_tradeoff = model.runtime_training_max_tradeoff if model.runtime_training_tradeoff is not None else 1.
@@ -275,9 +275,9 @@ def write_sensitivity_analysis_report(method="point_comparison", quick_test_mode
   log.info('Done')
 
 def get_parameter_importance(
-    dist, metric,
-    mean_samples = 4, var_samples = 10, shapley_samples = 1, parameters = None, metric_arguments = None,
-    save_dir = None, method = 'variance_reduction_on_margin'
+    dist, get_metrics,
+    mean_samples = 4, var_samples = 10, shapley_samples = 1, parameters = None, metric_arguments = None, processes = None,
+    save_dir = None, restore_dir = None, method = 'variance_reduction_on_margin'
   ):
 
   if parameters is None:
@@ -287,7 +287,8 @@ def get_parameter_importance(
   stds = {}
 
   configured_g = lambda params: \
-    g(dist, metric, params, mean_samples = mean_samples, var_samples = var_samples, metric_arguments = metric_arguments, save_dir = save_dir)
+    g(dist, get_metrics, params, mean_samples = mean_samples, var_samples = var_samples,
+      metric_arguments = metric_arguments, processes = processes, save_dir = save_dir, restore_dir = restore_dir)
 
   if method == 'variance_reduction_on_margin':
     log.info(f'Computing g_empty...')
@@ -295,7 +296,7 @@ def get_parameter_importance(
     g_empty, g_empty_std = configured_g([])
     log.deindent()
     for param in parameters:
-      log.info(f'Running simulations for {param}...')
+      log.info(f'Computing importance of {param}...')
       log.indent()
 
       g_param, g_param_std = configured_g([param])
@@ -313,7 +314,7 @@ def get_parameter_importance(
 
     K = shapley_samples
     for i, param in enumerate(parameters):
-      log.info(f'Running simulations for {param}...')
+      log.info(f'Computing importance of {param}...')
       log.indent()
       r = 0
       v = 0
@@ -348,65 +349,119 @@ def get_parameter_importance(
 
   return importance, stds
 
-def get_metric_values(metric, conditional_samples, metric_arguments):
-  metric_values = [metric(s.to_dict(), metric_arguments) for _, s in conditional_samples.iterrows()]
-  return metric_values
+def get_metric_values(get_metrics, dist, random_state, sample_count, conditions, metric_arguments):
+  conditional_samples = dist.rvs(sample_count, random_state = random_state, conditions = conditions)
+  metric_values = [get_metrics(s.to_dict(), metric_arguments) for _, s in conditional_samples.iterrows()]
+  return metric_values, conditional_samples
 
-def g(dist, metric, parameters, mean_samples = 1, var_samples = 10, processes = None, metric_arguments = None, save_dir = None):
+def g(dist, get_metrics, parameters, mean_samples = 1, var_samples = 10, processes = None, metric_arguments = None, save_dir = None, restore_dir = None):
   """
-  Compute E[var(metric | parameters)]
+  Compute E[var(get_metrics | parameters)]
   """
+
+  if restore_dir:
+    # Try to recover g from the cache files
+    # This is wasteful, but it doesn't matter
+
+    # Find the saved file we are interested in
+    for file in os.listdir(restore_dir):
+      m = re.match(r'g_([0-9]*)_0.gz', file)
+      if m:
+        index = int(m.group(1))
+        with gzip.open(os.path.join(restore_dir, file), 'rb') as f:
+          g_head = json.load(f)
+
+        if g_head['fixed_params'] == parameters:
+          # Found. We'll just read g from the files.
+          log.info(f'Restoring g({parameters}) from {restore_dir}')
+          vars = []
+          for subfile in os.listdir(restore_dir):
+            m = re.match(fr'g_{index}_([0-9]*).gz', subfile)
+            if m:
+              with gzip.open(os.path.join(restore_dir, subfile), 'rb') as f:
+                g_i = json.load(f)
+                vars += [np.var(iter['metric_values'], ddof = 1, axis = 0) for iter in g_i['iterations']]
+          mean = np.mean(vars, axis = 0)
+          std = np.std(vars, ddof = 1, axis = 0)/np.sqrt(len(vars))
+          return mean, std
+        
+
+  if save_dir:
+    if not os.path.exists(save_dir):
+      os.makedirs(save_dir, exist_ok=True)
+
+    save_file_index = 0
+    for file in os.listdir(save_dir):
+      m = re.match(r'g_([0-9]*)_?([0-9]*)*\.gz', file)
+      if m and int(m.group(1)) >= save_file_index:
+        save_file_index = int(m.group(1)) + 1
+
   if processes is None:
     processes = os.cpu_count()
 
   outer_samples = dist.rvs(mean_samples)
 
+  seeder = np.random.SeedSequence()
+
   with Pool(processes = processes) as pool:
     workers = []
 
-    conditional_samples_array = []
-    for row, outer_sample in outer_samples.iterrows():
-      conditional_samples = dist.rvs(var_samples, conditions = {name: outer_sample[name] for name in parameters})
-      conditional_samples_array.append(conditional_samples)
-      worker = pool.apply_async(get_metric_values, (metric, conditional_samples, metric_arguments))
-      workers.append(worker)
-
+    max_batch_size = 1000
+    save_file_subindex = 0
     metric_values_array = []
-    for i, worker in enumerate(workers):
-      log.info(f'Progress: {i:3}/{mean_samples}')
-      metric_values = worker.get()
-      metric_values_array.append(metric_values)
+    conditional_samples_array = []
 
-    if save_dir:
-      # Optionally store this information
+    def flush_batch():
+      nonlocal conditional_samples_array
+      nonlocal metric_values_array
+      nonlocal save_file_subindex
+
+      if len(metric_values_array) == 0:
+        return
 
       save_dict = {}
       save_dict['params'] = list(dist.marginals.keys())
       save_dict['metric_arguments'] = metric_arguments
       save_dict['fixed_params'] = parameters
       save_dict['iterations'] = []
-      for i in range(mean_samples):
+      for i in range(len(conditional_samples_array)):
         iteration = {}
         iteration['iter_sample'] = outer_samples.iloc[i].to_list()
         iteration['param_samples'] = conditional_samples_array[i].to_numpy().tolist()
         iteration['metric_values'] = np.array(metric_values_array[i]).tolist()
         save_dict['iterations'].append(iteration)
 
-      if not os.path.exists(save_dir):
-        os.makedirs(save_dir, exist_ok=True)
-
-      last_file_number = -1
-      for file in os.listdir(save_dir):
-        m = re.match(r'g_([0-9]*).gz', file)
-        if m and int(m.group(1)) > last_file_number:
-          last_file_number = int(m.group(1))
-
-      filename = f'g_{last_file_number+1}.gz'
+      filename = f'g_{save_file_index}_{save_file_subindex}.gz'
       with gzip.open(os.path.join(save_dir, filename), 'wb') as f:
         f.write(json.dumps(save_dict).encode('utf-8'))
+      save_file_subindex += 1
+
+      metric_values_array.clear()
+      conditional_samples_array.clear()
+
+    for row, outer_sample in outer_samples.iterrows():
+      worker = pool.apply_async(get_metric_values, (
+        get_metrics, dist, np.random.default_rng(seeder.spawn(1)[0]), var_samples, {name: outer_sample[name] for name in parameters}, metric_arguments
+      ))
+      workers.append(worker)
+
+    vars = []
+
+    for i, worker in enumerate(workers):
+      log.info(f'Progress: {i:3}/{mean_samples}')
+      metric_values, conditional_samples = worker.get()
+      vars += [np.var(metric_value, ddof = 1, axis = 0) for metric_value in metric_values]
+
+      if save_dir:
+        conditional_samples_array.append(conditional_samples)
+        metric_values_array.append(metric_values)
+        if len(conditional_samples_array) >= max_batch_size:
+          flush_batch()
+
+    if save_dir:
+      flush_batch()
 
     # Compute the mean and the standard error
-    vars = [np.var(metric_values, ddof = 1, axis = 0) for metric_values in metric_values_array]
     mean = np.mean(vars, axis = 0)
     std = np.std(vars, ddof = 1, axis = 0)/np.sqrt(len(vars))
 
