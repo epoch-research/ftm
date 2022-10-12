@@ -12,11 +12,13 @@ from ..core.utils import log, get_parameter_table, get_rank_correlations, get_cl
 class ParamsDistribution():
   """ Joint parameter distribution. """
 
-  def __init__(self, ensure_no_automatable_goods_tasks = True, use_ajeya_dist = True):
+  def __init__(self, ensure_no_automatable_goods_tasks = True, ignore_rank_correlations = False, use_ajeya_dist = True, resampling_method = 'gap_only'):
     """
       If ensure_no_automatable_goods_tasks is True, we'll make sure none of the samples
       represent an scenario in which there is some "goods" task initially automatable.
     """
+
+    self.resampling_method = resampling_method
 
     # Retrieve parameter table
     log.info('Retrieving parameters...')
@@ -70,17 +72,18 @@ class ParamsDistribution():
       )
 
     pairwise_rank_corr = {}
-    for left in marginals.keys():
-      for right in marginals.keys():
-        if right not in rank_correlations or left not in rank_correlations:
-          continue
+    if not ignore_rank_correlations:
+      for left in marginals.keys():
+        for right in marginals.keys():
+          if right not in rank_correlations or left not in rank_correlations:
+            continue
 
-        if isinstance(marginals[right], PointDistribution) or isinstance(marginals[left], PointDistribution):
-          continue
+          if isinstance(marginals[right], PointDistribution) or isinstance(marginals[left], PointDistribution):
+            continue
 
-        r = rank_correlations[right][left]
-        if not np.isnan(r) and r != 0:
-          pairwise_rank_corr[(left, right)] = r * directions[left]*directions[right]
+          r = rank_correlations[right][left]
+          if not np.isnan(r) and r != 0:
+            pairwise_rank_corr[(left, right)] = r * directions[left]*directions[right]
 
     self.marginals = marginals
     self.pairwise_rank_corr = pairwise_rank_corr
@@ -89,11 +92,13 @@ class ParamsDistribution():
     self.joint_dist = JointDistribution(marginals, pairwise_rank_corr, rank_corr_method = "spearman")
     self.ensure_no_automatable_goods_tasks = ensure_no_automatable_goods_tasks
 
-  def rvs(self, count, random_state = None, conditions = {}, method = 'resample_gap'):
+  def rvs(self, count, random_state = None, conditions = {}, resampling_method = None):
     # statsmodels.distributions.copula.copulas throws an exception when we ask less than 2 samples from it.
     # We could make this more efficient, but it's probably not worth it.
 
-    if method == 'resample_gap':
+    if resampling_method is None: resampling_method = self.resampling_method
+
+    if resampling_method == 'gap_only':
       # statsmodels.distributions.copula.copulas throws an exception when we ask less than 2 samples from it
       actual_count = max(count, 2)
       samples = self.joint_dist.rvs(actual_count, random_state = random_state, conditions = conditions)[:count]
