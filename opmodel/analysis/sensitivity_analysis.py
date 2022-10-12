@@ -84,7 +84,7 @@ def variance_reduction_comparison(quick_test_mode = False, save_dir = None, rest
   table = table.sort_values(by='billion_agis', ascending=False)
 
   results = SensitivityAnalysisResults()
-  results.parameter_table = params_dist.parameter_table
+  results.parameter_table = params_dist.parameter_table[['Conservative', 'Best guess', 'Aggressive']]
   results.table = table
   results.std_table = std_table
   results.analysis_params = {
