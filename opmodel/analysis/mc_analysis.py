@@ -289,10 +289,14 @@ def write_mc_analysis_report(
   ''') + '</script>'))
 
   # Metrics quantiles table
+  def keep_cell(row, col, index_r, index_c, cell):
+    col_condition = (col in [0]) or (index_c in most_important_metrics)
+    row_condition = (row in [0]) or (index_r != 'mean')
+    return col_condition and row_condition
   metrics_quantiles = pd.DataFrame(results.metrics_quantiles)
   metrics_quantiles_styled = metrics_quantiles.style.format(lambda x: x if isinstance(x, str) else f'{x:.2f}').hide(axis = 'index')
   report.add_data_frame(metrics_quantiles_styled, show_importance_selector = True,
-      important_columns_to_keep = [0], label = 'metrics', show_index = False,
+      keep_cell = keep_cell, label = 'metrics', show_index = False,
   )
 
   # Plot CDFs of scalar metrics
@@ -323,7 +327,7 @@ def write_mc_analysis_report(
   colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
   color_index = 0
 
-  # Relative metrics
+  # Takeoff metrics
   plt.figure(figsize=(10,6))
   for metric in ['full_automation', 'billion_agis']:
     plot_ecdf(results.scalar_metrics[metric], limit = results.t_end - results.t_start, label = metric_id_to_human[metric], color = colors[color_index], normalize = True)
@@ -337,7 +341,7 @@ def write_mc_analysis_report(
 
   report.add_figure()
 
-  # Absolute metrics
+  # Timelines metrics
   plt.figure(figsize=(10,6))
   for metric in ['rampup_start', 'agi_year']:
     plot_ecdf(results.scalar_metrics[metric], limit = results.t_end, label = metric_id_to_human[metric], color = colors[color_index])
