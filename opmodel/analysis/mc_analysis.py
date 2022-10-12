@@ -352,7 +352,6 @@ def write_mc_analysis_report(
   # Plot trajectories
   metrics = {'biggest_training_run': 'Biggest training run'}
   for metric in metrics:
-    print(len(results.timesteps))
     results.state_metrics[metric] = np.stack([s[:len(results.timesteps)] for s in results.state_metrics[metric]])
     plot_quantiles(results.timesteps, results.state_metrics[metric], "Year", metrics[metric])
     report.add_figure()
