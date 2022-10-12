@@ -40,6 +40,7 @@ def build():
   cpdir('js')
 
   header = read('header.html')
+  footer = read('footer.html')
 
   def process_header(header, page):
     header = header.replace('{{{{playground-link-active}}}}', ' active' if (page == 'playground') else '')
@@ -52,6 +53,7 @@ def build():
     <title>Playground</title>
     {process_header(header, 'playground')}
     {playground}
+    {footer}
   '''
 
   write(playground, 'playground.html')
@@ -62,6 +64,7 @@ def build():
     <title>Reports</title>
     {process_header(header, 'reports')}
     {reports}
+    {footer}
   '''
 
   write(reports, 'reports.html')
@@ -72,6 +75,7 @@ def build():
     <title>Ooops!</title>
     {process_header(header, 'four_oh_four')}
     {four_oh_four}
+    {footer}
   '''
 
   write(four_oh_four, '404.html')
