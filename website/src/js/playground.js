@@ -293,6 +293,14 @@ class Graph {
     this.current_color = 0;
   }
 
+  clear_axvlines(x, options = {}) {
+    this.axvlines = [];
+  }
+
+  clear_axhlines(y, options = {}) {
+    this.axhlines = [];
+  }
+
   set_title(title) {
     this.title = title;
   }
@@ -417,21 +425,6 @@ class Graph {
     let currentX = x;
     let currentY = y;
 
-    // Vertical lines
-    for (let axvline of this.axvlines) {
-      content.append('line')
-        .datum([axvline.x])
-        .attr('class', 'axvline')
-        .attr('x1', d => x(d))
-        .attr('x2', d => x(d))
-        .attr('y1', 0)
-        .attr('y2', height)
-        .attr("stroke", axvline.color || this.defaults.axline_color)
-        .style("stroke-dasharray", this.get_dasharray(axvline.linestyle || this.defaults.axline_linestyle))
-        .attr("stroke-width", 2)
-      ;
-    }
-
     // Horizontal lines
     for (let axhline of this.axhlines) {
       content.append('line')
@@ -443,6 +436,21 @@ class Graph {
         .attr('y2', y(axhline.y))
         .attr("stroke", axhline.color || this.defaults.axline_color)
         .style("stroke-dasharray", this.get_dasharray(axhline.linestyle || this.defaults.axline_linestyle))
+        .attr("stroke-width", 2)
+      ;
+    }
+
+    // Vertical lines
+    for (let axvline of this.axvlines) {
+      content.append('line')
+        .datum([axvline.x])
+        .attr('class', 'axvline')
+        .attr('x1', d => x(d))
+        .attr('x2', d => x(d))
+        .attr('y1', 0)
+        .attr('y2', height)
+        .attr("stroke", axvline.color || this.defaults.axline_color)
+        .style("stroke-dasharray", this.get_dasharray(axvline.linestyle || this.defaults.axline_linestyle))
         .attr("stroke-width", 2)
       ;
     }
@@ -980,6 +988,7 @@ function plot_compute_decomposition(sim, container, crop_after_agi = true) {
 
   function update_graph() {
     graph.clear_dataset();
+    graph.clear_axvlines();
 
     let section = ui_state.show_bioanchors ? 'Our model' : null;
 
@@ -1011,7 +1020,17 @@ function plot_compute_decomposition(sim, container, crop_after_agi = true) {
       add_data(bioanchors.timesteps, bioanchors.training_investment, {displacement: +displacement, label: 'Training compute investment ($)', color: 'purple', linestyle: linestyle, section});
       add_data(bioanchors.timesteps, bioanchors.hardware,            {displacement: 0, label: 'Hardware (FLOP/$)', color: 'orange', linestyle: linestyle, section});
       add_data(bioanchors.software_timesteps, bioanchors.software,   {displacement: -displacement, label: 'Software (2022-FLOP per FLOP)', color: 'green', linestyle: linestyle, section});
+
+      let median_tai_arrival = 2052; // https://www.cold-takes.com/forecasting-transformative-ai-the-biological-anchors-method-in-a-nutshell/
+      graph.axvline(median_tai_arrival, {
+        linestyle: 'dashed',
+        color: 'blue',
+        label: 'Median year of TAI arrival',
+        section: 'Bioanchors',
+      });
     }
+
+    plot_vlines(sim, 'black', graph)
 
     graph.update();
   }
@@ -1027,8 +1046,6 @@ function plot_compute_decomposition(sim, container, crop_after_agi = true) {
   });
 
   update_graph();
-
-  plot_vlines(sim)
 
   plt.set_title('Compute increase decomposition');
 
@@ -1145,9 +1162,11 @@ function plot_oom_lines({line_style = 'dotted', color = 'grey'} = {}) {
   }
 }
 
-function plot_vlines(sim, line_color = 'black') {
+function plot_vlines(sim, line_color = 'black', graph = null) {
+  graph ||= plt;
+
   if (sim.rampup_start) {
-    plt.axvline(sim.rampup_start, {
+    graph.axvline(sim.rampup_start, {
       linestyle: 'dotted',
       color: line_color,
       label: 'Wake-up',
@@ -1155,7 +1174,7 @@ function plot_vlines(sim, line_color = 'black') {
   }
               
   if (sim.rampup_mid) {
-    plt.axvline(sim.rampup_mid, {
+    graph.axvline(sim.rampup_mid, {
       linestyle: '-.',
       color: line_color,
       label: '30% automation',
@@ -1163,7 +1182,7 @@ function plot_vlines(sim, line_color = 'black') {
   }
               
   if (sim.agi_year) {
-    plt.axvline(sim.agi_year, {
+    graph.axvline(sim.agi_year, {
       linestyle: 'dashed',
       color: line_color,
       label: 'Full automation',
