@@ -18,7 +18,7 @@ from ..stats.distributions import ParamsDistribution, PointDistribution, JointDi
 method_human_names = {
   'one_at_a_time': 'One-at-a-time',
   'variance_reduction_on_margin': 'Variance reduction on the margin',
-  'shapley_values': 'Shapley values',
+  'shapley_values': 'Variance reduction with Shapley values',
 }
 
 class SensitivityAnalysisResults:
@@ -64,8 +64,6 @@ def variance_reduction_comparison(quick_test_mode = False, save_dir = None, rest
       mean_samples = mean_samples, var_samples = var_samples, shapley_samples = shapley_samples, processes = processes,
       save_dir = save_dir, restore_dir = restore_dir, method = method,
   )
-
-  print(param_importances)
 
   if save_dir:
     log.info(f'All the samples and metrics have been stored in {save_dir}')
@@ -123,6 +121,8 @@ def one_at_a_time_comparison(quick_test_mode = False):
   best_guess_parameters = {parameter : row["Best guess"] \
                            for parameter, row in parameter_table.iterrows()}
 
+  main_metric = 'billion_agis'
+
   parameter_count = len(parameter_table[parameter_table[['Conservative', 'Aggressive']].notna().all(1)])
 
   table = []
@@ -168,10 +168,7 @@ def one_at_a_time_comparison(quick_test_mode = False):
 
     # Get results
     result = {
-        'Parameter' : parameter,
-        "Conservative value" : low_params[parameter],
-        "Best guess value" : med_params[parameter],
-        "Aggressive value" : high_params[parameter],
+      'Parameter' : parameter,
     }
     for takeoff_metric in low_model.takeoff_metrics:
       result[f"{takeoff_metric}"] = f"[{low_model.takeoff_metrics[takeoff_metric]:0.2f}, {med_model.takeoff_metrics[takeoff_metric]:0.2f}, {high_model.takeoff_metrics[takeoff_metric]:0.2f}]"
@@ -183,8 +180,7 @@ def one_at_a_time_comparison(quick_test_mode = False):
           low_model.takeoff_metrics["billion_agis"]
         )
 
-
-    result["delta"] = np.abs(high_model.takeoff_metrics["combined"] - low_model.takeoff_metrics["combined"])
+    result["importance"] = np.abs(high_model.takeoff_metrics[main_metric] - low_model.takeoff_metrics[main_metric])
 
     def format_year(model, year):
       if year is None or np.isnan(year): return f'> {model.t_end}'
@@ -211,7 +207,12 @@ def one_at_a_time_comparison(quick_test_mode = False):
       break
 
   table = pd.DataFrame(table)
-  table = table.set_index('Parameter').sort_values(by='delta', ascending=False)
+  table = table.set_index('Parameter').sort_values(by='importance', ascending=False)
+
+  # Move the importance column to the beginning
+  importance = table['importance']
+  table.drop(labels = ['importance'], axis = 1, inplace = True)
+  table.insert(0, 'importance', importance)
 
   results = SensitivityAnalysisResults()
   results.parameter_table = parameter_table
@@ -291,16 +292,17 @@ def write_sensitivity_analysis_report(
 
   report.add_header(method_human_names[method], level = 3)
 
-  params_lines = []
-  params_lines.append('<p>')
-  if results.analysis_params:
-    items = list(results.analysis_params.items())
-    for i, (name, value) in enumerate(items):
-      if i > 0:
-        params_lines.append('<br/>')
-      params_lines.append(f'{name}: {value}')
-  params_lines.append('</p>')
-  report.add_html('\n'.join(params_lines))
+  # Add details
+  #params_lines = []
+  #params_lines.append('<p>')
+  #if results.analysis_params:
+  #  items = list(results.analysis_params.items())
+  #  for i, (name, value) in enumerate(items):
+  #    if i > 0:
+  #      params_lines.append('<br/>')
+  #    params_lines.append(f'{name}: {value}')
+  #params_lines.append('</p>')
+  #report.add_html('\n'.join(params_lines))
 
   formatter = (lambda x: f'{max(x, 0):.0%}') if (method != 'one_at_a_time') else None
   table_container = report.add_data_frame(results.table, float_format = formatter)
@@ -335,7 +337,7 @@ def write_sensitivity_analysis_report(
 
   def keep_cell(row, col, index_r, index_c, cell):
     fixed_cols = [0, 1, 2, 3] if method == 'one_at_a_time' else [0]
-    col_condition = (col in fixed_cols) or (index_c in most_important_metrics)
+    col_condition = (col in fixed_cols) or (index_c in most_important_metrics or index_c in 'importance')
     row_condition = (row in [0]) or (index_r in most_important_parameters)
     return col_condition and row_condition
 
