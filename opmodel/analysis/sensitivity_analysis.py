@@ -8,11 +8,18 @@ import os
 import re
 import gzip
 import json
+import dill as pickle
 from multiprocessing import Pool
 
 from . import log
 from . import *
 from ..stats.distributions import ParamsDistribution, PointDistribution, JointDistribution
+
+method_human_names = {
+  'one_at_a_time': 'One-at-a-time',
+  'variance_reduction_on_margin': 'Variance reduction on the margin',
+  'shapley_values': 'Shapley values',
+}
 
 class SensitivityAnalysisResults:
   def __init__(self, parameter_table = None, table = None, analysis_params = None):
@@ -20,9 +27,9 @@ class SensitivityAnalysisResults:
     self.table = table
     self.analysis_params = analysis_params
 
-def sensitivity_analysis(quick_test_mode = False, method = 'point_comparison'):
-  if method == 'point_comparison':
-    return point_comparison(quick_test_mode = quick_test_mode)
+def sensitivity_analysis(quick_test_mode = False, method = 'one_at_a_time'):
+  if method == 'one_at_a_time':
+    return one_at_a_time_comparison(quick_test_mode = quick_test_mode)
 
   if method == 'variance_reduction_on_margin':
     return variance_reduction_comparison(quick_test_mode = quick_test_mode, method = 'variance_reduction_on_margin')
@@ -31,7 +38,7 @@ def sensitivity_analysis(quick_test_mode = False, method = 'point_comparison'):
     return variance_reduction_comparison(quick_test_mode = quick_test_mode, method = 'shapley_values')
 
 def variance_reduction_comparison(quick_test_mode = False, save_dir = None, restore_dir = None, method = 'variance_reduction_on_margin'):
-  params_dist = ParamsDistribution()
+  params_dist = ParamsDistribution(use_ajeya_dist = False, ignore_rank_correlations = True, resampling_method = 'resample_all')
 
   metric_names = SimulateTakeOff.takeoff_metrics + ['rampup_start', 'agi_year']
   parameters = [name for name, marginal in params_dist.marginals.items() if not isinstance(marginal, PointDistribution)]
@@ -46,21 +53,24 @@ def variance_reduction_comparison(quick_test_mode = False, save_dir = None, rest
     processes = 4
     shapley_samples = 4
     parameters = [name for name, marginal in params_dist.marginals.items() if not isinstance(marginal, PointDistribution)]
+    #parameters = ['flop_gap_training',]
     print(parameters)
     #parameters = ['full_automation_requirements_training', 'flop_gap_training',]
     #parameters = ['flop_gap_training',]
 
   log.info('Running importance analysis...')
-  param_importance, param_stds = get_parameter_importance(
+  param_importances, param_stds = get_parameter_importance(
       params_dist, get_parameter_importance_metrics, parameters = parameters, metric_arguments = metric_names,
       mean_samples = mean_samples, var_samples = var_samples, shapley_samples = shapley_samples, processes = processes,
       save_dir = save_dir, restore_dir = restore_dir, method = method,
   )
 
+  print(param_importances)
+
   if save_dir:
     log.info(f'All the samples and metrics have been stored in {save_dir}')
 
-  table = pd.DataFrame.from_dict(param_importance, orient = 'index', columns = metric_names)
+  table = pd.DataFrame.from_dict(param_importances, orient = 'index', columns = metric_names)
   log.info()
   log.info('Importances:')
   log.info(table)
@@ -70,13 +80,16 @@ def variance_reduction_comparison(quick_test_mode = False, save_dir = None, rest
   log.info('Standard errors:')
   log.info(std_table)
 
+  std_table = std_table.sort_values(by='billion_agis', ascending=False, key = lambda x: table['billion_agis'])
+  table = table.sort_values(by='billion_agis', ascending=False)
+
   results = SensitivityAnalysisResults()
   results.parameter_table = params_dist.parameter_table
   results.table = table
   results.std_table = std_table
   results.analysis_params = {
-    'mean_samples': mean_samples,
-    'var_samples': var_samples,
+    'Number of inner (mean) samples': mean_samples,
+    'Number of outer (variance) samples': var_samples,
   }
 
   if method == 'shapley_values':
@@ -102,7 +115,7 @@ def get_parameter_importance_metrics(params, metric_names):
 
   return metrics
 
-def point_comparison(quick_test_mode = False):
+def one_at_a_time_comparison(quick_test_mode = False):
   log.info('Retrieving parameters...')
 
   parameter_table = get_parameter_table()
@@ -206,11 +219,15 @@ def point_comparison(quick_test_mode = False):
 
   return results
 
-def write_sensitivity_analysis_report(method="point_comparison", quick_test_mode=False, report_file_path=None, report_dir_path=None, report=None, analysis_results=None):
+def write_combined_sensitivity_analysis_report(
+    methods=["one_at_a_time", "variance_reduction_on_margin"], quick_test_mode=False,
+    report_file_path=None, report_dir_path=None, report=None,
+    skip_inputs=False,
+    analysis_results=[None,None], output_results_filenames=[None,None]
+  ):
+
   if report_file_path is None:
     report_file_path = 'sensitivity_analysis.html'
-
-  results = analysis_results if analysis_results else sensitivity_analysis(quick_test_mode = quick_test_mode, method = method)
 
   log.info('Writing report...')
 
@@ -218,18 +235,77 @@ def write_sensitivity_analysis_report(method="point_comparison", quick_test_mode
   if new_report:
     report = Report(report_file_path=report_file_path, report_dir_path=report_dir_path)
 
-  header_lines = []
-  header_lines.append('<p>')
-  header_lines.append(f'Method: {method}')
+  last_results = None
+
+  for i in range(len(methods)):
+    log.indent()
+    log.info(f'Generating report for method {methods[i]}')
+
+    saved_results = analysis_results[i] if (i < len(analysis_results)) else None
+    filename_to_save_results = output_results_filenames[i] if (i < len(output_results_filenames)) else None
+    last_results = write_sensitivity_analysis_report(
+      report=report,
+      method=methods[i], quick_test_mode=quick_test_mode,
+      skip_inputs=True,
+      analysis_results=saved_results, output_results_filename=filename_to_save_results
+    )
+
+    log.deindent()
+
+  if not skip_inputs:
+    report.add_header("Inputs", level = 3)
+    inputs_table = report.add_data_frame(last_results.parameter_table, show_justifications = True, nan_format = inputs_nan_format)
+    report.add_importance_selector(inputs_table, label = 'parameters', layout = 'vertical')
+
+  if new_report:
+    report_path = report.write()
+    log.info(f'Report stored in {report_path}')
+
+  log.info('Done')
+
+def write_sensitivity_analysis_report(
+    method="one_at_a_time", quick_test_mode=False,
+    report_file_path=None, report_dir_path=None, report=None,
+    skip_inputs=False,
+    analysis_results=None, output_results_filename=None
+  ):
+
+  if report_file_path is None:
+    report_file_path = 'sensitivity_analysis.html'
+
+  if isinstance(analysis_results, str):
+    with open(analysis_results, 'rb') as f:
+      analysis_results = pickle.load(f)
+
+  results = analysis_results if analysis_results else sensitivity_analysis(quick_test_mode = quick_test_mode, method = method)
+
+  if output_results_filename:
+    with open(output_results_filename, 'wb') as f:
+      pickle.dump(results, f)
+
+  log.info('Writing report...')
+
+  new_report = report is None
+  if new_report:
+    report = Report(report_file_path=report_file_path, report_dir_path=report_dir_path)
+
+  report.add_header(method_human_names[method], level = 3)
+
+  params_lines = []
+  params_lines.append('<p>')
   if results.analysis_params:
-    for name, value in results.analysis_params.items():
-      header_lines.append(f'<br/>{name}: {value}')
-  header_lines.append('</p>')
-  report.add_html('\n'.join(header_lines))
+    items = list(results.analysis_params.items())
+    for i, (name, value) in enumerate(items):
+      if i > 0:
+        params_lines.append('<br/>')
+      params_lines.append(f'{name}: {value}')
+  params_lines.append('</p>')
+  report.add_html('\n'.join(params_lines))
 
-  table_container = report.add_data_frame(results.table)
+  formatter = (lambda x: f'{max(x, 0):.0%}') if (method != 'one_at_a_time') else None
+  table_container = report.add_data_frame(results.table, float_format = formatter)
 
-  # Add "totals" table footer if there are some 'skew' column
+  # Add "totals" table footer if there is some 'skew' column
 
   columns = list(results.table.columns)
   skews = [c for c in columns if c.endswith(' skew')]
@@ -254,12 +330,12 @@ def write_sensitivity_analysis_report(method="point_comparison", quick_test_mode
 
     totals_row = len(table_container.findall('.//tr')) - 1
 
-
   most_important_metrics = get_most_important_metrics()
   most_important_parameters = get_most_important_parameters()
 
   def keep_cell(row, col, index_r, index_c, cell):
-    col_condition = (col in [0, 1, 2, 3]) or (index_c in most_important_metrics)
+    fixed_cols = [0, 1, 2, 3] if method == 'one_at_a_time' else [0]
+    col_condition = (col in fixed_cols) or (index_c in most_important_metrics)
     row_condition = (row in [0]) or (index_r in most_important_parameters)
     return col_condition and row_condition
 
@@ -268,15 +344,18 @@ def write_sensitivity_analysis_report(method="point_comparison", quick_test_mode
     keep_cell = keep_cell,
   )
 
-  report.add_header("Inputs", level = 3)
-  inputs_table = report.add_data_frame(results.parameter_table, show_justifications = True, nan_format = inputs_nan_format)
-  report.add_importance_selector(inputs_table, label = 'parameters', layout = 'vertical')
+  if not skip_inputs:
+    report.add_header("Inputs", level = 3)
+    inputs_table = report.add_data_frame(results.parameter_table, show_justifications = True, nan_format = inputs_nan_format)
+    report.add_importance_selector(inputs_table, label = 'parameters', layout = 'vertical')
 
   if new_report:
     report_path = report.write()
     log.info(f'Report stored in {report_path}')
 
   log.info('Done')
+
+  return results
 
 def get_parameter_importance(
     dist, get_metrics,
@@ -287,7 +366,7 @@ def get_parameter_importance(
   if parameters is None:
     parameters = [name for name, marginal in dist.marginals.items() if not isinstance(marginal, PointDistribution)]
 
-  importance = {}
+  importances = {}
   stds = {}
 
   configured_g = lambda params: \
@@ -305,7 +384,7 @@ def get_parameter_importance(
 
       g_param, g_param_std = configured_g([param])
 
-      importance[param] = 1 - g_param/g_empty
+      importances[param] = 1 - g_param/g_empty
       stds[param] = (g_param/g_empty) * np.sqrt((g_param_std/g_param)**2 + (g_empty_std/g_empty)**2)
 
       log.deindent()
@@ -345,13 +424,13 @@ def get_parameter_importance(
 
         log.level = log_level
       log.deindent()
-      importance[param] = r
+      importances[param] = r
       stds[param] = np.sqrt(v)
 
   else:
-    raise ValueError("method must be one of 'variance_reduction_on_margin' or 'shapley_values'")
+    raise ValueError("method must be 'variance_reduction_on_margin' or 'shapley_values'")
 
-  return importance, stds
+  return importances, stds
 
 def get_metric_values(get_metrics, dist, random_state, sample_count, conditions, metric_arguments):
   conditional_samples = dist.rvs(sample_count, random_state = random_state, conditions = conditions)
@@ -454,7 +533,7 @@ def g(dist, get_metrics, parameters, mean_samples = 1, var_samples = 10, process
     for i, worker in enumerate(workers):
       log.info(f'Progress: {i:3}/{mean_samples}')
       metric_values, conditional_samples = worker.get()
-      vars += [np.var(metric_value, ddof = 1, axis = 0) for metric_value in metric_values]
+      vars += [np.var(metric_values, ddof = 1, axis = 0)]
 
       if save_dir:
         conditional_samples_array.append(conditional_samples)
@@ -481,9 +560,9 @@ if __name__ == '__main__':
   parser.add_argument(
     "-m",
     "--method",
-    default = 'point_comparison',
+    default = 'one_at_a_time',
     choices = [
-      'point_comparison',
+      'one_at_a_time',
       'variance_reduction_on_margin',
       'shapley_values',
     ]
