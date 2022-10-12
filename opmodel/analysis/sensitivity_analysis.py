@@ -30,7 +30,7 @@ def sensitivity_analysis(quick_test_mode = False, method = 'point_comparison'):
   if method == 'shapley_values':
     return variance_reduction_comparison(quick_test_mode = quick_test_mode, method = 'shapley_values')
 
-def variance_reduction_comparison(quick_test_mode = False, save_dir = None, method = 'variance_reduction_on_margin'):
+def variance_reduction_comparison(quick_test_mode = False, save_dir = None, restore_dir = None, method = 'variance_reduction_on_margin'):
   params_dist = ParamsDistribution()
 
   metric_names = SimulateTakeOff.takeoff_metrics + ['rampup_start', 'agi_year']
@@ -38,19 +38,23 @@ def variance_reduction_comparison(quick_test_mode = False, save_dir = None, meth
   mean_samples = 100
   var_samples = 100
   shapley_samples = 1000
+  processes = None
 
   if quick_test_mode:
     mean_samples = 500
     var_samples = 2
+    processes = 4
     shapley_samples = 4
+    parameters = [name for name, marginal in params_dist.marginals.items() if not isinstance(marginal, PointDistribution)]
+    print(parameters)
     #parameters = ['full_automation_requirements_training', 'flop_gap_training',]
-    parameters = ['flop_gap_training',]
+    #parameters = ['flop_gap_training',]
 
-  log.info('Running simulations...')
+  log.info('Running importance analysis...')
   param_importance, param_stds = get_parameter_importance(
       params_dist, get_parameter_importance_metrics, parameters = parameters, metric_arguments = metric_names,
-      mean_samples = mean_samples, var_samples = var_samples, shapley_samples = shapley_samples,
-      save_dir = save_dir, method = method,
+      mean_samples = mean_samples, var_samples = var_samples, shapley_samples = shapley_samples, processes = processes,
+      save_dir = save_dir, restore_dir = restore_dir, method = method,
   )
 
   if save_dir:
