@@ -16,6 +16,7 @@ from xml.etree import ElementTree as et
 import argparse
 
 from . import log, Report, get_option, init_cli_arguments, handle_cli_arguments
+from ..core.dynamic_array import DynamicArray
 
 EPS = 1e-40 # frankly, just some arbitrary number that feels low enough
 DIFF_COL = 'Diff (%)'
@@ -144,12 +145,14 @@ class PythonModel(Model):
   def get_static_variables(self):
     variables = {}
 
-    variables_to_skip = set(['takeoff_metrics'])
+    variables_to_skip = set(['takeoff_metrics', 'dynarrays'])
 
     for attribute in self.sim.__dict__:
       if attribute in variables_to_skip: continue
 
       value = getattr(self.sim, attribute)
+      if isinstance(value, DynamicArray):
+        value = value.data
       if not self.is_dynamic_variable(value):
         variables[attribute] = value
 
@@ -198,6 +201,8 @@ class PythonModel(Model):
 
     for attribute in self.sim.__dict__:
       value = getattr(self.sim, attribute)
+      if isinstance(value, DynamicArray):
+        value = value.data
       if self.is_dynamic_variable(value):
         variables[attribute] = value[step_index]
 

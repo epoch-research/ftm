@@ -7,43 +7,12 @@ from . import log
 from . import *
 
 def write_excel_report(olde_sheet_url, report_file_path=None, report_dir_path=None):
-
-  # -----------------------------------------------------------------------------
-  # Modifify SimulateTakeOff
-  # -----------------------------------------------------------------------------
-
-  log.info(f'Modifying SimulateTakeOff (removing asserts)...')
-
-  # Get source code
-  code = inspect.getsource(SimulateTakeOff)
-
-  # Get rid of asserts
-  modified_code = []
-
-  lines = iter(code.splitlines())
-  for line in lines:
-    # Change the class name
-    if re.match(r'^class SimulateTakeOff', line):
-      line = re.sub(r'class SimulateTakeOff', r'class ModifiedSimulateTakeOff', line)
-
-    # Get rid of asserts
-    if re.match(r'^\s*assert', line):
-      line = re.sub(r'(^\s*)', r'\1if False: ', line)
-    modified_code.append(line)
-
-  modified_code = '\n'.join(modified_code)
-
-  # Optionally save the modified code
-  if True:
-    with open(os.path.join(get_option('report_dir'), 'ModifiedSimulateTakeOff.py'), 'w', encoding = 'utf-8') as f:
-      f.write(modified_code)
-
-  # Load the modified code
-  exec(modified_code, globals(), globals())
+  assert False, 'You need to disable assertions to run this report (pass to Python the -O flag)'
 
   # -----------------------------------------------------------------------------
   # Load Ye Olde Sheet
   # -----------------------------------------------------------------------------
+
   log.info(f'Retrieving the Olde Sheet...')
   olde_workbook = load_workbook(io.BytesIO(get_workbook(olde_sheet_url)), data_only = True)
   olde_sheet = olde_workbook['CES production function']
@@ -69,7 +38,7 @@ def write_excel_report(olde_sheet_url, report_file_path=None, report_dir_path=No
   parameters['n_labour_tasks'] = n_labour_tasks
   parameters['t_end'] = last_year + t_step
 
-  model = ModifiedSimulateTakeOff(**parameters, t_step=t_step)
+  model = SimulateTakeOff(**parameters, t_step=t_step)
 
   log.info(f'Running the simulation...')
   model.run_simulation()

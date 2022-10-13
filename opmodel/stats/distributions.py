@@ -12,11 +12,13 @@ from ..core.utils import log, get_parameter_table, get_rank_correlations, get_cl
 class ParamsDistribution():
   """ Joint parameter distribution. """
 
-  def __init__(self, ensure_no_automatable_goods_tasks = True):
+  def __init__(self, ensure_no_automatable_goods_tasks = True, ignore_rank_correlations = False, use_ajeya_dist = True, resampling_method = 'gap_only'):
     """
       If ensure_no_automatable_goods_tasks is True, we'll make sure none of the samples
       represent an scenario in which there is some "goods" task initially automatable.
     """
+
+    self.resampling_method = resampling_method
 
     # Retrieve parameter table
     log.info('Retrieving parameters...')
@@ -59,21 +61,29 @@ class ParamsDistribution():
 
     lowest_training_requirements = max(lowest_training_requirements_goods, lowest_training_requirements_rnd)
 
-    marginals['full_automation_requirements_training'] = \
-        AjeyaDistribution(lower_bound = lowest_training_requirements)
+    if use_ajeya_dist:
+      marginals['full_automation_requirements_training'] = \
+          AjeyaDistribution(lower_bound = lowest_training_requirements)
+    else:
+      marginals['full_automation_requirements_training'] = SkewedLogUniform(\
+        parameter_table.at['full_automation_requirements_training', 'Conservative'],
+        parameter_table.at['full_automation_requirements_training', 'Best guess'],
+        max(lowest_training_requirements, parameter_table.at['full_automation_requirements_training', 'Aggressive']),
+      )
 
     pairwise_rank_corr = {}
-    for left in marginals.keys():
-      for right in marginals.keys():
-        if right not in rank_correlations or left not in rank_correlations:
-          continue
+    if not ignore_rank_correlations:
+      for left in marginals.keys():
+        for right in marginals.keys():
+          if right not in rank_correlations or left not in rank_correlations:
+            continue
 
-        if isinstance(marginals[right], PointDistribution) or isinstance(marginals[left], PointDistribution):
-          continue
+          if isinstance(marginals[right], PointDistribution) or isinstance(marginals[left], PointDistribution):
+            continue
 
-        r = rank_correlations[right][left]
-        if not np.isnan(r) and r != 0:
-          pairwise_rank_corr[(left, right)] = r * directions[left]*directions[right]
+          r = rank_correlations[right][left]
+          if not np.isnan(r) and r != 0:
+            pairwise_rank_corr[(left, right)] = r * directions[left]*directions[right]
 
     self.marginals = marginals
     self.pairwise_rank_corr = pairwise_rank_corr
@@ -82,22 +92,55 @@ class ParamsDistribution():
     self.joint_dist = JointDistribution(marginals, pairwise_rank_corr, rank_corr_method = "spearman")
     self.ensure_no_automatable_goods_tasks = ensure_no_automatable_goods_tasks
 
-  def rvs(self, count, conditions={}):
+  def rvs(self, count, random_state = None, conditions = {}, resampling_method = None):
     # statsmodels.distributions.copula.copulas throws an exception when we ask less than 2 samples from it.
     # We could make this more efficient, but it's probably not worth it.
-    actual_count = max(count, 2)
-    samples = self.joint_dist.rvs(actual_count, conditions = conditions)[:count]
 
-    if self.ensure_no_automatable_goods_tasks:
-      # Resample the training gap to ensure no tasks is automatable from the beginning
-      gap_marginal = self.marginals['flop_gap_training']
-      for i, row in samples.iterrows():
-        max_gap = (row['full_automation_requirements_training']/(row['initial_biggest_training_run'] * row['runtime_training_max_tradeoff']))**(7/10.5)
-        gap_marginal.set_upper_bound(max_gap)
-        samples.at[i, 'flop_gap_training'] = gap_marginal.rvs()
-      gap_marginal.set_upper_bound(None)
+    if resampling_method is None: resampling_method = self.resampling_method
 
-    return samples
+    if resampling_method == 'gap_only':
+      # statsmodels.distributions.copula.copulas throws an exception when we ask less than 2 samples from it
+      actual_count = max(count, 2)
+      samples = self.joint_dist.rvs(actual_count, random_state = random_state, conditions = conditions)[:count]
+
+      if self.ensure_no_automatable_goods_tasks:
+        # Resample the training gap to ensure no tasks is automatable from the beginning
+        gap_marginal = self.marginals['flop_gap_training']
+        for i, row in samples.iterrows():
+          max_gap = (row['full_automation_requirements_training']/(row['initial_biggest_training_run'] * row['runtime_training_max_tradeoff']))**(7/10.5)
+          gap_marginal.set_upper_bound(max_gap)
+          samples.at[i, 'flop_gap_training'] = gap_marginal.rvs(random_state = random_state)
+        gap_marginal.set_upper_bound(None)
+
+      return samples
+    else:
+      output_samples = pd.DataFrame(columns = [name for name in self.marginals], index = range(count), dtype = np.float64)
+      output_samples_count = 0
+
+      while output_samples_count < count:
+        samples_to_read = count - output_samples_count
+
+        # statsmodels.distributions.copula.copulas throws an exception when we ask less than 2 samples from it
+        # (hence the max)
+        samples = self.joint_dist.rvs(max(2, samples_to_read), random_state = random_state, conditions = conditions)[:samples_to_read]
+
+        for i, sample in samples.iterrows():
+          # Ensure the sample makes sense before adding it
+          if self.ensure_no_automatable_goods_tasks:
+            max_gap_goods = \
+              (sample['full_automation_requirements_training']/(sample['initial_biggest_training_run'] * sample['runtime_training_max_tradeoff']))**(7/10.5)
+            max_gap_rnd = \
+              max_gap_goods/sample['goods_vs_rnd_requirements_training']**(7/10.5)
+            max_gap = min(max_gap_rnd, max_gap_goods)
+
+            if sample['flop_gap_training'] >= max_gap:
+              continue
+
+          # OK, looks good
+          output_samples.loc[output_samples_count] = samples.loc[i]
+          output_samples_count += 1
+
+      return output_samples
 
   def get_marginals(self):
     return self.marginals

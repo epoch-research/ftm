@@ -6,6 +6,7 @@ import math
 
 from . import utils
 from .utils import display, get_option, get_parameter_table, init_cli_arguments, handle_cli_arguments
+from .dynamic_array import DynamicArray
 
 class SimulateTakeOff():
   """ Class to run a simulation of how automation and the economy 
@@ -112,12 +113,22 @@ class SimulateTakeOff():
       t_end = None,
       t_step = None, # Time between steps in years
 
+      dynamic_t_end = False,
+      t_end_max = None, # If dynamic_t_end is True, the simulation won't continue past this year
+      t_end_min = None, # If dynamic_t_end is True, the simulation won't stop before this year
+
       n_labour_tasks = 100,
       ):
 
     if t_start is None: t_start = get_option('t_start', 2022)
     if t_end   is None: t_end   = get_option('t_end',   2100)
-    if t_step  is None: t_step  = get_option('t_step',   0.1)
+    if t_step  is None: t_step  = get_option('t_step',  0.1)
+
+    if dynamic_t_end is None: dynamic_t_end = get_option('dynamic_t_end', False)
+
+    if dynamic_t_end:
+      # We'll compute it at the end of the simulation
+      t_end = None
     
     # Add all inputs to model parameters
     for item in inspect.signature(SimulateTakeOff).parameters:
@@ -139,7 +150,7 @@ class SimulateTakeOff():
 
     assert self.hardware_delay >= 0
 
-    assert self.t_start < self.t_end
+    assert self.dynamic_t_end or self.t_start < self.t_end
     assert self.t_step > 0
 
     assert type(self.n_labour_tasks) is int, "n_labour_tasks must be an integer"
@@ -288,11 +299,11 @@ class SimulateTakeOff():
   ##############################################################################
 
   def create_simulation_state(self):
-    # Create empty vectors of the correct length 
-    # to hold the results of the simulation
+    # Create dynamic empty vectors to hold the results of the simulation
 
-    self.timesteps = np.arange(self.t_start, self.t_end, self.t_step)
-    self.n_timesteps = len(self.timesteps)
+    self.init_dynarrays()
+
+    self.timesteps = self.dynarray()
 
     self.create_simulation_state_investment()
     self.create_simulation_state_automation()
@@ -306,120 +317,122 @@ class SimulateTakeOff():
 
   def create_simulation_state_rnd(self):
     # Hardware RnD
-    self.cumulative_rnd_input_hardware = np.zeros(self.n_timesteps)
-    self.hardware_performance = np.zeros(self.n_timesteps)
+    self.cumulative_rnd_input_hardware = self.dynarray()
+    self.hardware_performance = self.dynarray()
 
     # Software RnD
-    self.cumulative_rnd_input_software = np.zeros(self.n_timesteps)
-    self.software = np.zeros(self.n_timesteps)
+    self.cumulative_rnd_input_software = self.dynarray()
+    self.software = self.dynarray()
   
   def create_simulation_state_fractional_inputs(self):
 
-    self.rampup = np.zeros(self.n_timesteps, dtype=bool)
+    self.rampup = self.dynarray(dtype=bool)
     self.rampup_start = None
     self.rampup_mid = None
 
     # Goods vs compute investment split
-    self.frac_gwp_compute = np.zeros(self.n_timesteps)
+    self.frac_gwp_compute = self.dynarray()
 
     # Total R&D fractional inputs
-    self.frac_capital_hardware_rnd = np.zeros(self.n_timesteps)
-    self.frac_labour_hardware_rnd = np.zeros(self.n_timesteps)
-    self.frac_compute_hardware_rnd = np.zeros(self.n_timesteps)
+    self.frac_capital_hardware_rnd = self.dynarray()
+    self.frac_labour_hardware_rnd = self.dynarray()
+    self.frac_compute_hardware_rnd = self.dynarray()
 
-    self.frac_labour_software_rnd = np.zeros(self.n_timesteps)
-    self.frac_compute_software_rnd = np.zeros(self.n_timesteps)
+    self.frac_labour_software_rnd = self.dynarray()
+    self.frac_compute_software_rnd = self.dynarray()
 
     # Training compute
-    self.frac_compute_training = np.zeros(self.n_timesteps)
+    self.frac_compute_training = self.dynarray()
 
     # Goods production fractional inputs
-    self.frac_capital_goods = np.zeros(self.n_timesteps)
-    self.frac_labour_goods = np.zeros(self.n_timesteps)
-    self.frac_compute_goods = np.zeros(self.n_timesteps)
+    self.frac_capital_goods = self.dynarray()
+    self.frac_labour_goods = self.dynarray()
+    self.frac_compute_goods = self.dynarray()
 
   def create_simulation_state_total_input(self):
-    self.capital = np.zeros(self.n_timesteps)
-    self.labour = np.zeros(self.n_timesteps)
-    self.compute_investment = np.zeros(self.n_timesteps)
-    self.hardware = np.zeros(self.n_timesteps)
-    self.compute = np.zeros(self.n_timesteps)
+    self.capital = self.dynarray()
+    self.labour = self.dynarray()
+    self.compute_investment = self.dynarray()
+    self.hardware = self.dynarray()
+    self.compute = self.dynarray()
 
-    self.tfp_goods = np.zeros(self.n_timesteps)
-    self.tfp_rnd = np.zeros(self.n_timesteps)
-    self.money_spent_training = np.zeros(self.n_timesteps)
+    self.tfp_goods = self.dynarray()
+    self.tfp_rnd = self.dynarray()
+    self.money_spent_training = self.dynarray()
   
   def create_simulation_state_automation(self):
-    self.biggest_training_run = np.zeros(self.n_timesteps)
-    self.automatable_tasks_goods = np.zeros(self.n_timesteps, dtype=int)
-    self.automatable_tasks_rnd = np.zeros(self.n_timesteps, dtype=int)
-    self.frac_automatable_tasks = np.zeros(self.n_timesteps)
-    self.frac_automatable_tasks_goods = np.zeros(self.n_timesteps)
-    self.frac_automatable_tasks_rnd = np.zeros(self.n_timesteps)
-    self.task_compute_to_labour_ratio_goods = \
-      np.zeros((self.n_timesteps, self.n_labour_tasks_goods+1))
-    self.task_compute_to_labour_ratio_rnd = \
-      np.zeros((self.n_timesteps, self.n_labour_tasks_rnd+1))
+    self.biggest_training_run = self.dynarray()
+    self.automatable_tasks_goods = self.dynarray(dtype=int)
+    self.automatable_tasks_rnd = self.dynarray(dtype=int)
+    self.frac_automatable_tasks = self.dynarray()
+    self.frac_automatable_tasks_goods = self.dynarray()
+    self.frac_automatable_tasks_rnd = self.dynarray()
+    self.task_compute_to_labour_ratio_goods = self.dynarray((self.n_labour_tasks_goods+1,))
+    self.task_compute_to_labour_ratio_rnd = self.dynarray((self.n_labour_tasks_rnd+1,))
     self.agi_year = None
 
   def create_simulation_state_production(self):
     # Goods production
-    self.capital_goods = np.zeros(self.n_timesteps)
-    self.labour_goods = np.zeros(self.n_timesteps)
-    self.compute_goods = np.zeros(self.n_timesteps)
+    self.capital_goods = self.dynarray()
+    self.labour_goods = self.dynarray()
+    self.compute_goods = self.dynarray()
 
-    self.labour_task_input_goods = \
-      np.zeros((self.n_timesteps, self.n_labour_tasks_goods+1))
-    self.compute_task_input_goods = \
-      np.zeros((self.n_timesteps, self.n_labour_tasks_goods+1))
-    self.task_input_goods = \
-      np.zeros((self.n_timesteps, self.n_labour_tasks_goods+1))
+    self.labour_task_input_goods = self.dynarray((self.n_labour_tasks_goods+1,))
+    self.compute_task_input_goods = self.dynarray((self.n_labour_tasks_goods+1,))
+    self.task_input_goods = self.dynarray((self.n_labour_tasks_goods+1,))
 
-    self.frac_tasks_automated_goods = np.zeros(self.n_timesteps)
+    self.frac_tasks_automated_goods = self.dynarray()
 
-    self.automation_multiplier_goods = np.zeros(self.n_timesteps)
-    self.gwp = np.zeros(self.n_timesteps)
+    self.automation_multiplier_goods = self.dynarray()
+    self.gwp = self.dynarray()
 
-    self.capital_share_goods = np.zeros(self.n_timesteps)
-    self.cognitive_share_goods = np.zeros(self.n_timesteps)
-    self.labour_share_goods = np.zeros(self.n_timesteps)
-    self.compute_share_goods = np.zeros(self.n_timesteps)
+    self.capital_share_goods = self.dynarray()
+    self.cognitive_share_goods = self.dynarray()
+    self.labour_share_goods = self.dynarray()
+    self.compute_share_goods = self.dynarray()
 
     # Hardware RnD production
-    self.capital_hardware_rnd = np.zeros(self.n_timesteps)
-    self.labour_hardware_rnd = np.zeros(self.n_timesteps)
-    self.compute_hardware_rnd = np.zeros(self.n_timesteps)
+    self.capital_hardware_rnd = self.dynarray()
+    self.labour_hardware_rnd = self.dynarray()
+    self.compute_hardware_rnd = self.dynarray()
 
-    self.labour_task_input_hardware_rnd = \
-      np.zeros((self.n_timesteps, self.n_labour_tasks_rnd + 1))
-    self.compute_task_input_hardware_rnd = \
-      np.zeros((self.n_timesteps, self.n_labour_tasks_rnd + 1))
-    self.task_input_hardware_rnd = \
-      np.zeros((self.n_timesteps, self.n_labour_tasks_rnd + 1))
+    self.labour_task_input_hardware_rnd = self.dynarray((self.n_labour_tasks_rnd + 1,))
+    self.compute_task_input_hardware_rnd = self.dynarray((self.n_labour_tasks_rnd + 1,))
+    self.task_input_hardware_rnd = self.dynarray((self.n_labour_tasks_rnd + 1,))
 
-    self.frac_tasks_automated_rnd = np.zeros(self.n_timesteps)
-    self.rnd_input_hardware = np.zeros(self.n_timesteps)
-    self.automation_multiplier_rnd = np.zeros(self.n_timesteps)
+    self.frac_tasks_automated_rnd = self.dynarray()
+    self.rnd_input_hardware = self.dynarray()
+    self.automation_multiplier_rnd = self.dynarray()
 
-    self.capital_share_hardware_rnd = np.zeros(self.n_timesteps)
-    self.cognitive_share_hardware_rnd = np.zeros(self.n_timesteps)
-    self.labour_share_hardware_rnd = np.zeros(self.n_timesteps)
-    self.compute_share_hardware_rnd = np.zeros(self.n_timesteps)
+    self.capital_share_hardware_rnd = self.dynarray()
+    self.cognitive_share_hardware_rnd = self.dynarray()
+    self.labour_share_hardware_rnd = self.dynarray()
+    self.compute_share_hardware_rnd = self.dynarray()
 
     # Software RnD production
-    self.capital_software_rnd = np.zeros(self.n_timesteps)
-    self.labour_software_rnd = np.zeros(self.n_timesteps)
-    self.compute_software_rnd = np.zeros(self.n_timesteps)
+    self.capital_software_rnd = self.dynarray()
+    self.labour_software_rnd = self.dynarray()
+    self.compute_software_rnd = self.dynarray()
 
-    self.labour_task_input_software_rnd = \
-      np.zeros((self.n_timesteps, self.n_labour_tasks_rnd + 1))
-    self.compute_task_input_software_rnd = \
-      np.zeros((self.n_timesteps, self.n_labour_tasks_rnd + 1))
-    self.task_input_software_rnd = \
-      np.zeros((self.n_timesteps, self.n_labour_tasks_rnd + 1))
+    self.labour_task_input_software_rnd = self.dynarray((self.n_labour_tasks_rnd + 1,))
+    self.compute_task_input_software_rnd = self.dynarray((self.n_labour_tasks_rnd + 1,))
+    self.task_input_software_rnd = self.dynarray((self.n_labour_tasks_rnd + 1,))
 
-    self.rnd_input_software = np.zeros(self.n_timesteps)
+    self.rnd_input_software = self.dynarray()
 
+  def init_dynarrays(self):
+    # Keep track of the dynamic arrays
+    self.dynarrays = []
+
+  def dynarray(self, item_shape = (), dtype = None):
+    array = DynamicArray((0,) + item_shape, dtype = dtype)
+    array.grow_capacity(int(100/self.t_step)) # initalize capacity to 100 years # TODO is this necessary?
+    self.dynarrays.append(array)
+    return array
+
+  def expand_dynarrays(self, add_size):
+    for array in self.dynarrays:
+      array.grow_size(add_size)
   
   ########################################################################
 
@@ -429,7 +442,13 @@ class SimulateTakeOff():
     np.seterr('raise')
 
     try:
-      for t_idx in range(self.n_timesteps):
+      t_idx = 0
+      while self.continue_simulation(t_idx):
+        t_year = self.index_to_time(t_idx)
+
+        self.expand_dynarrays(1) # ensure we have enough space for the arrays
+
+        self.timesteps[t_idx] = t_year
         self.t_idx = t_idx
         if t_idx == 0:
           self.initialize_inputs()
@@ -437,38 +456,91 @@ class SimulateTakeOff():
           self.reinvest_output_in_inputs(t_idx)
         self.automate_tasks(t_idx)
         self.production(t_idx)
+
+        t_idx += 1
       
     except FloatingPointError as e: 
-      import traceback
-
-      print("An overflow has happened and the simulation has stopped.")
-      print(e)
-      print(traceback.format_exc(), end = '')
-
-      # Pickle the model for further inspection
-      import pickle
-      import os
-
-      if not hasattr(SimulateTakeOff, 'dump_count'):
-        SimulateTakeOff.dump_count = 0
-
-      cache_dir = os.path.join(get_option('cache_dir'), 'dumps')
-      os.makedirs(cache_dir, exist_ok=True)
-      self.exception = e
-      pickle_file = os.path.join(cache_dir, f'model_{SimulateTakeOff.dump_count}.pickle')
-      with open(pickle_file, 'wb') as f:
-        pickle.dump(self, f)
-
-      SimulateTakeOff.dump_count = (SimulateTakeOff.dump_count + 1) % 4 # limit the number of pickle files
-
-      print(f"You can find a copy of the model in {pickle_file}")
-      print()
+      self.handle_exception(e)
     finally:
+      self.n_timesteps = t_idx
+      self.t_end = self.index_to_time(t_idx)
+
       # Set default error handling
       np.seterr()
     
     # Compute takeoff metrics
     self.compute_metrics()
+
+  def continue_simulation(self, t_idx):
+    t_year = self.index_to_time(t_idx)
+
+    if not self.dynamic_t_end:
+      # Stop when the caller wants us to stop
+      return t_year < self.t_end
+    else:
+      # Stop when we can compute all metrics
+
+      # Give us a chance
+      if t_idx == 0:
+        return True
+
+      # OK, that was enough
+      if (self.t_end_max is not None and t_year >= self.t_end_max) or t_idx > 100000:
+        return False
+
+      if (self.t_end_min is not None and t_year < self.t_end_min):
+        return True
+
+      # Do we have AGI?
+      if self.agi_year is None:
+        return True
+
+      # Can we already compute the cog_output_multiplier metric?
+      if self.automation_multiplier_rnd[t_idx-1] <= 10:
+        return True
+
+      # Can we already compute the billion_agis metric?
+      ten_billion_agi_compute = \
+        max(np.max(self.automation_runtime_flops_goods), 
+            np.max(self.automation_runtime_flops_rnd))*1e10
+      full_automation_flops = \
+        max(np.max(self.automation_training_flops_goods), 
+            np.max(self.automation_training_flops_rnd))
+
+      if (self.compute[t_idx-1] < ten_billion_agi_compute) or (self.biggest_training_run[t_idx-1] < full_automation_flops):
+        return True
+
+      # Haven't we automated every task yet?
+      if self.frac_tasks_automated_goods[t_idx-1] < 1 or self.frac_tasks_automated_rnd[t_idx-1] < 1:
+        return True
+
+      return False
+
+  def handle_exception(self, e):
+    import traceback
+
+    print("An overflow has happened and the simulation has stopped.")
+    print(e)
+    print(traceback.format_exc(), end = '')
+
+    # Pickle the model for further inspection
+    import dill as pickle
+    import os
+
+    if not hasattr(SimulateTakeOff, 'dump_count'):
+      SimulateTakeOff.dump_count = 0
+
+    cache_dir = os.path.join(get_option('cache_dir'), 'dumps')
+    os.makedirs(cache_dir, exist_ok=True)
+    self.exception = e
+    pickle_file = os.path.join(cache_dir, f'model_{SimulateTakeOff.dump_count}.pickle')
+    with open(pickle_file, 'wb') as f:
+      pickle.dump(self, f)
+
+    SimulateTakeOff.dump_count = (SimulateTakeOff.dump_count + 1) % 4 # limit the number of pickle files
+
+    print(f"You can find a copy of the model in {pickle_file}")
+    print()
   
   ########################################################################
 
@@ -1479,7 +1551,7 @@ class SimulateTakeOff():
           np.max(self.automation_training_flops_rnd))
     self.takeoff_metrics["billion_agis"] = \
       self._length_between_thresholds(
-          self.frac_automated_tasks > 0.1,
+          self.frac_automated_tasks > 0.2,
           (self.compute >= ten_billion_agi_compute) &\
           (self.biggest_training_run >= full_automation_flops),
       )
@@ -1517,7 +1589,7 @@ class SimulateTakeOff():
 
     if self.rampup_start is not None:
       reference_idx = self.time_to_index(self.rampup_start)
-      for idx in range(reference_idx, self.n_timesteps):
+      for idx in range(reference_idx, len(self.timesteps)):
         if self.gwp[idx] > 2*self.gwp[reference_idx]:
           self.doubling_times.append(self.index_to_time(idx) - self.index_to_time(reference_idx))
           reference_idx = idx

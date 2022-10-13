@@ -119,6 +119,7 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
 
   .playground {
     position: relative;
+    min-height: calc(100vh - 80px);
   }
 
   .sidebar-wrapper {
@@ -441,6 +442,8 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
               <div class="input-parameter"><label for="rampup_trigger">Wakeup trigger</label> <input class="input" id="rampup_trigger" value="0.03"></div>
             </div>
             <div class="tab" data-id="additional-parameters">
+              <div class="input-parameter simulation-parameter"><label for="t_step">Simulation timestep</label> <input class="input" id="t_step" value="0.1"></div>
+              <div class="input-parameter simulation-parameter"><label for="t_end">Stop year</label> <input class="input" id="t_end" value="2100"></div>
               <div class="input-parameter"><label for="flop_gap_runtime">FLOP gap (runtime)</label> <input class="input" id="flop_gap_runtime" value="100.0"></div>
               <div class="input-parameter"><label for="goods_vs_rnd_requirements_runtime">Runtime goods vs R&D</label> <input class="input" id="goods_vs_rnd_requirements_runtime" value="10.0"></div>
               <div class="input-parameter" style="display:none"><label for="goods_vs_rnd_requirements_training">Training goods vs R&D</label> <input class="input" id="goods_vs_rnd_requirements_training" value="10.0"></div>
