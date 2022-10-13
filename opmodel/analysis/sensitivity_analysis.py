@@ -78,8 +78,8 @@ def variance_reduction_comparison(quick_test_mode = False, save_dir = None, rest
   log.info('Standard errors:')
   log.info(std_table)
 
-  std_table = std_table.sort_values(by='billion_agis', ascending=False, key = lambda x: table['billion_agis'])
-  table = table.sort_values(by='billion_agis', ascending=False)
+  std_table = std_table.sort_values(by=main_metric, ascending=False, key = lambda x: table[main_metric])
+  table = table.sort_values(by=main_metric, ascending=False)
 
   results = SensitivityAnalysisResults()
   results.parameter_table = params_dist.parameter_table[['Conservative', 'Best guess', 'Aggressive']]
@@ -121,7 +121,7 @@ def one_at_a_time_comparison(quick_test_mode = False):
   best_guess_parameters = {parameter : row["Best guess"] \
                            for parameter, row in parameter_table.iterrows()}
 
-  main_metric = 'billion_agis'
+  main_metric = 'combined'
 
   parameter_count = len(parameter_table[parameter_table[['Conservative', 'Aggressive']].notna().all(1)])
 
@@ -146,15 +146,15 @@ def one_at_a_time_comparison(quick_test_mode = False):
     log.info(f"Running simulations for parameter '{parameter}' ({current_parameter_index + 1}/{parameter_count})...")
 
     log.info('  Conservative simulation...')
-    low_model = SimulateTakeOff(**low_params)
+    low_model = SimulateTakeOff(**low_params, dynamic_t_end = True)
     low_model.run_simulation()
 
     log.info('  Best guess simulation...')
-    med_model = SimulateTakeOff(**med_params)
+    med_model = SimulateTakeOff(**med_params, dynamic_t_end = True)
     med_model.run_simulation()
 
     log.info('  Aggressive simulation...')
-    high_model = SimulateTakeOff(**high_params)
+    high_model = SimulateTakeOff(**high_params, dynamic_t_end = True)
     high_model.run_simulation()
 
     log.info('  Collecting results...')
@@ -228,7 +228,7 @@ def write_combined_sensitivity_analysis_report(
   ):
 
   if report_file_path is None:
-    report_file_path = 'sensitivity_analysis.html'
+    report_file_path = 'combined_sensitivity_analysis.html'
 
   log.info('Writing report...')
 
