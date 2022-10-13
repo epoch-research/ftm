@@ -1355,7 +1355,7 @@ let metric_names = {"cog_output_multiplier": "Time to tenfold cognitive output m
 let metric_meanings = {"cog_output_multiplier": "Years between <a href=\"https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#heading=h.vg16ijfr9w9a/\">AI's cognitive value-add</a> in hardware R&D being 2X and 10X.", "billion_agis": "Years between AI that automates 20% of cognitive tasks in R&D to the point when you can train and run 10 billion AGI-equivalents (taking the AGI runtime compute to be the runtime compute for the most compute-intensive R&D task).", "full_automation": "Years between AI that can perform 50% of cognitive tasks to AI that can perform 100%.", "rampup_to_agi": "Years between AI automating 3% of cognitive tasks in goods and services and AI that can perform 100% of cognitive tasks.", "combined": "Average of previous metrics.", "gwp_growth": "Years between instantaneous gwp growth reaching 5% and reaching 20%.\n\n(Not very meaningful because of zigzagging issues.)", "agi_year": "Year when all cognitive tasks have been automated", "rampup_start": "Year when AI becomes economically significant. This happens when a certain percentage of goods and services cognitive tasks have been automated (usually 3% but depends on the inputs) ", "doubling_times": "Years between successive GWP doublings", "billion_agis skew": "How the intervals are biased towards more aggressive or more conservative takeoffs.\nA more positive value means that the intervals are biased towards shorter takeoffs.\nComputed as |billion_agis_best_guess - billion_agis_conservative| - |billion_agis_aggressive - billion_agis_best_guess| ", "agi_date skew": "How the intervals are biased towards more aggressive or more conservative AGI dates.\nA more positive value means that the intervals are biased towards shorter takeoffs.\nComputed as |agi_date_best_guess - agi_date_conservative| - |agi_date_aggressive - agi_date_best_guess|", "delta": "TODO Influence of this parameter on the combined metric. Computed as |combined_aggressive - combined_conservative|"};
 let variable_names = {"period": "Period", "year": "Year", "biggest_training_run": "Biggest training run", "hardware_performance": "Hardware performance", "software": "Software", "compute_investment": "Investment on compute", "gwp": "GWP", "capital": "Capital", "labour": "Labour", "tfp_rnd": "R&D TFP", "rnd_input_software": "Software R&D input", "cumulative_rnd_input_software": "Cumulative software R&D input", "frac_tasks_automated_goods": "Fraction of goods and services tasks automated", "frac_tasks_automated_rnd": "Fraction of R&D tasks automated", "frac_compute_training": "Fraction of compute invested in training"};
 
-parameter_meanings['t_step'] = 'Duration of each simulation step (in years)';
+parameter_meanings['t_step'] = 'Duration of each simulation step in years';
 parameter_meanings['t_end'] = 'When to stop the simulation';
 
 for (let k of Object.keys(variable_names)) {
@@ -1378,7 +1378,11 @@ for (let input of document.querySelectorAll('.input-parameter')) {
   }
 
   if (tooltip.length > 0) tooltip += '<br><br>';
-  tooltip += `<span style="font-weight: bold">Best guess value:</span> ${value}`;
+  if (input.classList.contains('simulation-parameter')) {
+    tooltip += `<span style="font-weight: bold">Initial value:</span> ${value}`;
+  } else {
+    tooltip += `<span style="font-weight: bold">Best guess value:</span> ${value}`;
+  }
 
   if (justification) {
     if (tooltip.length > 0) tooltip += '<br><br>';
