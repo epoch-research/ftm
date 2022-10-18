@@ -62,7 +62,7 @@ def mc_analysis(n_trials = 100, max_retries = 100):
         sample = params_dist.rvs(1)
         mc_params = {param: sample[param][0] for param in sample}
 
-        mc_model = SimulateTakeOff(**mc_params, t_start = t_start, t_end_min = t_end, dynamic_t_end = True)
+        mc_model = SimulateTakeOff(**mc_params, t_start = t_start, t_end_min = t_end, compute_shares = False)
 
         # Check that no goods task is automatable from the beginning (except for the first one)
         runtime_training_max_tradeoff = mc_model.runtime_training_max_tradeoff if mc_model.runtime_training_tradeoff is not None else 1.
@@ -91,7 +91,7 @@ def mc_analysis(n_trials = 100, max_retries = 100):
     for scalar_metric in scalar_metrics:
       if scalar_metric in SimulateTakeOff.takeoff_metrics:
         metric_value = mc_model.takeoff_metrics[scalar_metric]
-        assert metric_value >= 0, f"{scalar_metric} is negative!"
+        assert (np.isnan(metric_value) or metric_value >= 0), f"{scalar_metric} is negative!"
       else:
         metric_value = getattr(mc_model, scalar_metric)
 
@@ -113,19 +113,22 @@ def mc_analysis(n_trials = 100, max_retries = 100):
 
   log.deindent()
 
+  for scalar_metric in scalar_metrics:
+    scalar_metrics[scalar_metric] = np.array(scalar_metrics[scalar_metric])
+
   # Summary of scalar metrics
   quantiles = [0.01, 0.1, 0.2, 0.5, 0.8, 0.9, 0.99]
   metrics_quantiles = []
   for q in quantiles:
     row = {"Quantile" : q}
     for scalar_metric in scalar_metrics:
-      row[scalar_metric] = np.quantile(scalar_metrics[scalar_metric], q)
+      row[scalar_metric] = np.quantile(filter_nans(scalar_metrics[scalar_metric]), q)
     metrics_quantiles.append(row)
 
   ## Add mean
   row = {"Quantile" : "mean"}
   for scalar_metric in scalar_metrics:
-    row[scalar_metric] = np.mean(scalar_metrics[scalar_metric])
+    row[scalar_metric] = np.mean(filter_nans(scalar_metrics[scalar_metric]))
   metrics_quantiles.append(row)
 
   results = McAnalysisResults()
@@ -293,16 +296,25 @@ def write_mc_analysis_report(
     col_condition = (col in [0]) or (index_c in most_important_metrics)
     row_condition = (row in [0]) or (index_r != 'mean')
     return col_condition and row_condition
+
+  def process_header(row, col, index_r, index_c, cell):
+    if row == 0:
+      if index_c in SimulateTakeOff.takeoff_metrics:
+        cell.attrib['data-meaning-suffix'] = f'<br><br><b>Conditional on takeoff happening before {results.t_end}.</b>'
+
   metrics_quantiles = pd.DataFrame(results.metrics_quantiles)
   metrics_quantiles_styled = metrics_quantiles.style.format(lambda x: x if isinstance(x, str) else f'{x:.2f}').hide(axis = 'index')
-  report.add_data_frame(metrics_quantiles_styled, show_importance_selector = True,
+  table_container = report.add_data_frame(metrics_quantiles_styled, show_importance_selector = True,
       keep_cell = keep_cell, label = 'metrics', show_index = False,
   )
+
+  report.apply_to_table(table_container, process_header)
 
   # Plot CDFs of scalar metrics
   metric_id_to_human = get_metric_names()
 
   def plot_ecdf(x, limit, label, color = None, normalize = False):
+    x = filter_nans(x)
     x = np.sort(x)
 
     ecdf = ECDF(x)(x)
@@ -332,7 +344,7 @@ def write_mc_analysis_report(
   for metric in ['full_automation', 'billion_agis']:
     plot_ecdf(results.scalar_metrics[metric], limit = results.t_end - results.t_start, label = metric_id_to_human[metric], color = colors[color_index], normalize = True)
     color_index += 1
-  text = f'p(takeoff before {results.t_end}) = {np.mean(np.array(results.scalar_metrics["billion_agis"]) < results.t_end - results.t_start):.0%}'
+  text = f'p(takeoff before {results.t_end}) = {np.mean(~np.isnan(results.scalar_metrics["billion_agis"])):.0%}'
   plt.text(results.t_end - results.t_start - 2, 0.95, text, va = 'top', ha = 'right')
   plt.xlabel('Years')
   plt.ylabel(f'CDF\n(conditional on takeoff happening before {results.t_end})')
@@ -451,6 +463,9 @@ def plot_quantiles(ts, data, xlabel, ylabel, n_quantiles = 7, colormap = cm.Blue
   plt.ylabel(ylabel)
   plt.xlabel(xlabel)
   plt.legend(legend_handles, legend_labels, loc='upper left')
+
+def filter_nans(x):
+  return x[~np.isnan(x)]
 
 if __name__ == '__main__':
   parser = init_cli_arguments()
