@@ -479,6 +479,8 @@ class SimulateTakeOff():
       return t_year < self.t_end
     else:
       # Stop when we can compute all metrics
+      # TODO This might be a bit slow?
+      # TODO I don't like this :(
 
       # Give us a chance
       if t_idx == 0:
@@ -512,6 +514,12 @@ class SimulateTakeOff():
 
       # Haven't we automated every task yet?
       if self.frac_tasks_automated_goods[t_idx-1] < 1 or self.frac_tasks_automated_rnd[t_idx-1] < 1:
+        return True
+
+      # Can't we compute the gwp_growth metric?
+      delta = int(1 / self.t_step)
+      gwp_growth = np.log(self.gwp[delta:self.t_idx] / self.gwp[:self.t_idx-delta])
+      if np.all(gwp_growth <= 0.05) or np.all(gwp_growth <= 0.15):
         return True
 
       return False
