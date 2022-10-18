@@ -77,6 +77,7 @@ class Report:
         .main {
           padding: 1em;
           padding-top: 0;
+          padding-bottom: 0;
         }
 
         .main > * {
