@@ -1512,7 +1512,7 @@ class SimulateTakeOff():
         two thresholds being crossed
     """
     if not np.any(series1) or not np.any(series2):
-      return self.t_end - self.t_start
+      return np.nan
     idx1 = np.argmax(series1)
     idx2 = np.argmax(series2)
     return (idx2 - idx1) * self.t_step
