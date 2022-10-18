@@ -197,7 +197,7 @@ def one_at_a_time_comparison(quick_test_mode = False):
     )
 
     # Add GWP doubling times
-    result["GWP doubling times"] = f"[{low_model.doubling_times[:4]}, {med_model.doubling_times[:4]}, {high_model.doubling_times[:4]}]"
+    result["doubling_times"] = f"[{low_model.doubling_times[:4]}, {med_model.doubling_times[:4]}, {high_model.doubling_times[:4]}]"
 
     table.append(result)
 
@@ -298,7 +298,7 @@ def write_sensitivity_analysis_report(
   if method == 'one_at_a_time':
     def process_header(row, col, index_r, index_c, cell):
       if row == 0:
-        if index_c in SimulateTakeOff.takeoff_metrics + ["rampup_start", "agi_year"]:
+        if index_c in SimulateTakeOff.takeoff_metrics + ["doubling_times", "rampup_start", "agi_year"]:
           cell.attrib['data-meaning-suffix'] = f'<br><br>Values of the metric as we set each parameter to their [conservative, best guess, aggressive] values.'
     report.apply_to_table(table_container, process_header)
 
