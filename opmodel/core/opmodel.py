@@ -211,9 +211,8 @@ class SimulateTakeOff():
     self.software_returns = \
       self.software_returns / self.rnd_parallelization_penalty
     
-    # To make the parallel penalty equivalent to the model we need
-    # to adjust the R&D substitution parameters
-    self.labour_substitution_rnd *= self.rnd_parallelization_penalty
+    # To make the parallel penalty equivalent to the original model we need
+    # to adjust the outer R&D substitution parameter
     self.capital_substitution_rnd *= self.rnd_parallelization_penalty
     
     # Hardware delay is adjusted by timestep
