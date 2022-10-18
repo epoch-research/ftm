@@ -14,7 +14,7 @@ from scipy.special import erfinv
 from numpy.random import default_rng
 from matplotlib import cm
 from xml.etree import ElementTree as et
-from ..core.utils import get_clipped_ajeya_dist, get_param_names, get_metric_names
+from ..core.utils import get_clipped_ajeya_dist, get_param_names, get_metric_names, get_most_important_metrics
 from ..stats.distributions import *
 from statsmodels.distributions.empirical_distribution import ECDF
 
@@ -292,6 +292,7 @@ def write_mc_analysis_report(
   ''') + '</script>'))
 
   # Metrics quantiles table
+  most_important_metrics = get_most_important_metrics()
   def keep_cell(row, col, index_r, index_c, cell):
     col_condition = (col in [0]) or (index_c in most_important_metrics)
     row_condition = (row in [0]) or (index_r != 'mean')

@@ -868,7 +868,7 @@ class Report:
 
   def add_data_frame(
       self, df, index = None, show_index = True, show_index_header = False, use_render = False, parent=None, show_justifications=False,
-      show_importance_selector=False, importance_layout = 'horizontal', important_rows_to_keep=[], important_columns_to_keep=[0], label = 'xxx', # TODO Document this
+      show_importance_selector=False, importance_layout = 'horizontal', important_rows_to_keep=[], important_columns_to_keep=[0], keep_cell=None, label = 'xxx', # TODO Document this
       nan_format = lambda **args: 'NaN',
       **to_html_args
     ):
@@ -902,7 +902,7 @@ class Report:
     parent.append(container)
 
     if show_importance_selector:
-      self.add_importance_selector(container, importance_layout, important_rows_to_keep, important_columns_to_keep, label = label, parent = parent)
+      self.add_importance_selector(container, importance_layout, important_rows_to_keep, important_columns_to_keep, keep_cell = keep_cell, label = label, parent = parent)
 
     return container
 
