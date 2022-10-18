@@ -117,6 +117,8 @@ class SimulateTakeOff():
       t_end_max = None, # If dynamic_t_end is True, the simulation won't continue past this year
       t_end_min = None, # If dynamic_t_end is True, the simulation won't stop before this year
 
+      compute_shares = True,
+
       n_labour_tasks = 100,
       ):
 
@@ -761,20 +763,21 @@ class SimulateTakeOff():
     ## We substract 1 to account for the initial compute task
     
     # Keep track of economy share ratios
-    self.capital_share_goods[t_idx],   \
-    self.cognitive_share_goods[t_idx], \
-    self.labour_share_goods[t_idx],    \
-    self.compute_share_goods[t_idx] =  \
-      SimulateTakeOff.compute_shares(
-          self.capital_goods[t_idx],
-          self.labour_task_input_goods[t_idx],
-          self.compute_task_input_goods[t_idx],
-          self.capital_task_weights_goods, \
-          self.labour_task_weights_goods, 
-          self.task_compute_to_labour_ratio_goods[t_idx],
-          self.capital_substitution_goods,
-          self.labour_substitution_goods,
-      )
+    if self.compute_shares:
+      self.capital_share_goods[t_idx],   \
+      self.cognitive_share_goods[t_idx], \
+      self.labour_share_goods[t_idx],    \
+      self.compute_share_goods[t_idx] =  \
+        SimulateTakeOff.compute_shares(
+            self.capital_goods[t_idx],
+            self.labour_task_input_goods[t_idx],
+            self.compute_task_input_goods[t_idx],
+            self.capital_task_weights_goods, \
+            self.labour_task_weights_goods,
+            self.task_compute_to_labour_ratio_goods[t_idx],
+            self.capital_substitution_goods,
+            self.labour_substitution_goods,
+        )
 
     # Compute output
     output = \
@@ -879,20 +882,21 @@ class SimulateTakeOff():
     ## We substract 1 to account for the initial compute task
     
     # Keep track of economy shares
-    self.capital_share_hardware_rnd[t_idx], \
-    self.cognitive_share_hardware_rnd[t_idx], \
-    self.labour_share_hardware_rnd[t_idx], \
-    self.compute_share_hardware_rnd[t_idx] =\
-      SimulateTakeOff.compute_shares(
-          self.capital_hardware_rnd[t_idx],
-          self.labour_task_input_hardware_rnd[t_idx],
-          self.compute_task_input_hardware_rnd[t_idx],
-          self.capital_task_weights_rnd, \
-          self.labour_task_weights_rnd, 
-          self.task_compute_to_labour_ratio_rnd[t_idx],
-          self.capital_substitution_rnd,
-          self.labour_substitution_rnd,
-      )
+    if self.compute_shares:
+      self.capital_share_hardware_rnd[t_idx], \
+      self.cognitive_share_hardware_rnd[t_idx], \
+      self.labour_share_hardware_rnd[t_idx], \
+      self.compute_share_hardware_rnd[t_idx] =\
+        SimulateTakeOff.compute_shares(
+            self.capital_hardware_rnd[t_idx],
+            self.labour_task_input_hardware_rnd[t_idx],
+            self.compute_task_input_hardware_rnd[t_idx],
+            self.capital_task_weights_rnd, \
+            self.labour_task_weights_rnd,
+            self.task_compute_to_labour_ratio_rnd[t_idx],
+            self.capital_substitution_rnd,
+            self.labour_substitution_rnd,
+        )
 
     # Compute output
     
