@@ -681,7 +681,11 @@ class Report:
           }
 
           for (let node of document.querySelectorAll('[data-metric-id]')) {
-            injectMeaningTooltip(node, metricNotes[node.dataset.metricId]);
+            let content = metricNotes[node.dataset.metricId];
+            if ('meaningSuffix' in node.dataset) {
+              content += node.dataset.meaningSuffix;
+            }
+            injectMeaningTooltip(node, content);
           }
         }
 
