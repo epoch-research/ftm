@@ -48,7 +48,7 @@ def variance_reduction_comparison(quick_test_mode = False, save_dir = None, rest
   processes = None
 
   if quick_test_mode:
-    mean_samples = 500
+    mean_samples = 50_000
     var_samples = 2
     processes = 4
     shapley_samples = 4
@@ -292,20 +292,15 @@ def write_sensitivity_analysis_report(
 
   report.add_header(method_human_names[method], level = 3)
 
-  # Add details
-  #params_lines = []
-  #params_lines.append('<p>')
-  #if results.analysis_params:
-  #  items = list(results.analysis_params.items())
-  #  for i, (name, value) in enumerate(items):
-  #    if i > 0:
-  #      params_lines.append('<br/>')
-  #    params_lines.append(f'{name}: {value}')
-  #params_lines.append('</p>')
-  #report.add_html('\n'.join(params_lines))
-
   formatter = (lambda x: f'{max(x, 0):.0%}') if (method != 'one_at_a_time') else None
   table_container = report.add_data_frame(results.table, float_format = formatter)
+
+  if method == 'one_at_a_time':
+    def process_header(row, col, index_r, index_c, cell):
+      if row == 0:
+        if index_c in SimulateTakeOff.takeoff_metrics + ["rampup_start", "agi_year"]:
+          cell.attrib['data-meaning-suffix'] = f'<br><br>Values of the metric as we set each parameter to their [conservative, best guess, aggressive] values.'
+    report.apply_to_table(table_container, process_header)
 
   # Add "totals" table footer if there is some 'skew' column
 
