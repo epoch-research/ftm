@@ -300,7 +300,7 @@ def write_mc_analysis_report(
   def process_header(row, col, index_r, index_c, cell):
     if row == 0:
       if index_c in SimulateTakeOff.takeoff_metrics:
-        cell.attrib['data-meaning-suffix'] = f'<br><br><b>Conditional on takeoff happening before {results.t_end}.</b>'
+        cell.attrib['data-meaning-suffix'] = f'<br><br><i>Conditional on takeoff happening before {results.t_end}.</i>'
 
   metrics_quantiles = pd.DataFrame(results.metrics_quantiles)
   metrics_quantiles_styled = metrics_quantiles.style.format(lambda x: x if isinstance(x, str) else f'{x:.2f}').hide(axis = 'index')
