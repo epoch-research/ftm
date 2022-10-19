@@ -236,6 +236,9 @@ class DynamicArray:
           self.grow_capacity(new_size - self.capacity)
         self.size = new_size
 
+    def clear(self):
+        self.size = 0
+
     @property
     def data(self):
         """ Returns data without extra spaces. """

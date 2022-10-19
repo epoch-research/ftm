@@ -466,6 +466,10 @@ class SimulateTakeOff():
   def expand_dynarrays(self, add_size):
     for array in self.dynarrays:
       array.grow_size(add_size)
+
+  def clear_dynarrays(self):
+    for array in self.dynarrays:
+      array.clear()
   
   ########################################################################
 
@@ -473,6 +477,8 @@ class SimulateTakeOff():
     # Treat numpy warnings as exceptions
     # np.seterr(over='raise')
     np.seterr('raise')
+
+    self.clear_dynarrays()
 
     try:
       t_idx = 0
