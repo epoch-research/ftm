@@ -108,6 +108,10 @@ class SimulateTakeOff():
       compute_depreciation,
       money_cap_training_before_wakeup,
 
+      # Gap steepness (each how many OOM the requirements distribution jumps)
+      training_requirements_steepness = 0,
+      runtime_requirements_steepness = 0,
+
       # Simulation resolution
       t_start = None,
       t_end = None,
@@ -279,6 +283,34 @@ class SimulateTakeOff():
     self.automation_runtime_flops_rnd =\
       SimulateTakeOff.process_quantiles(self.automation_runtime_flops_rnd, 
                                         self.n_labour_tasks_rnd)
+
+    self.automation_training_flops_goods =\
+      SimulateTakeOff.add_steepness(
+          self.full_automation_training_flops_goods,
+          self.automation_training_flop_gap_goods,
+          self.automation_training_flops_goods,
+          self.training_requirements_steepness)
+
+    self.automation_runtime_flops_goods =\
+      SimulateTakeOff.add_steepness(
+          self.full_automation_runtime_flops_goods,
+          self.automation_runtime_flop_gap_goods,
+          self.automation_runtime_flops_goods,
+          self.runtime_requirements_steepness)
+
+    self.automation_training_flops_rnd =\
+      SimulateTakeOff.add_steepness(
+          self.full_automation_training_flops_rnd,
+          self.automation_training_flop_gap_rnd,
+          self.automation_training_flops_rnd,
+          self.training_requirements_steepness)
+
+    self.automation_runtime_flops_rnd =\
+      SimulateTakeOff.add_steepness(
+          self.full_automation_runtime_flops_rnd,
+          self.automation_runtime_flop_gap_rnd,
+          self.automation_runtime_flops_rnd,
+          self.runtime_requirements_steepness)
   
     # The first task is always automatable
     self.automation_training_flops_goods = \
@@ -1206,6 +1238,23 @@ class SimulateTakeOff():
 
     # Logarithmic interpolation
     result = 10**np.interp(q, keys, np.log10(values))
+
+    return result
+
+  @staticmethod
+  def add_steepness(full_requirements, gap, requirements, steepness):
+    """ Takes an array of requirements and converts it into a sum of units
+        steps separated by `steepness` OOMs, but maintaining both ends of the
+        FLOP gap
+    """
+
+    if steepness == 0: return requirements
+
+    gap_low = full_requirements/gap
+    gap_high = full_requirements
+
+    result = 10**(np.log10(gap_low) + np.ceil((np.log10(requirements) - np.log10(gap_low))/steepness) * steepness)
+    result[result > gap_high] = gap_high
 
     return result
 
