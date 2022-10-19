@@ -1,6 +1,8 @@
 from . import log
 from . import *
 
+import matplotlib.ticker as mtick
+
 def plot_compute_increase(scenario_group, title = "Compute increase over time", get_label = lambda scenario: scenario.name, show_legend = True):
   # Plot compute decomposition
   plt.figure(figsize=(14 if show_legend else 12, 8), dpi=80)
@@ -54,6 +56,21 @@ def explore(exploration_target='compare', report_file_path=None, report_dir_path
     med_value = 'Best guess'
     high_value = 'Aggressive'
 
+  elif exploration_target == 'both_requirements_steepness':
+    training_row = parameter_table.loc['training_requirements_steepness', :]
+    runtime_row = parameter_table.loc['runtime_requirements_steepness', :]
+
+    low_params = med_params.copy()
+    low_params['runtime_requirements_steepness'] = runtime_row['Conservative']
+    low_params['training_requirements_steepness'] = training_row['Conservative']
+
+    high_params = med_params.copy()
+    high_params['runtime_requirements_steepness'] = runtime_row['Aggressive']
+    high_params['training_requirements_steepness'] = training_row['Aggressive']
+
+    low_value = 'Conservative'
+    med_value = 'Best guess'
+    high_value = 'Aggressive'
   else:
     row = parameter_table.loc[exploration_target, :]
 
@@ -116,7 +133,7 @@ def explore(exploration_target='compare', report_file_path=None, report_dir_path
   low_model.plot_compute_decomposition(new_figure=False)
   plt.ylabel("Conservative")
   plt.title(f"Compute increase over time");
-  plt.legend(bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0);
+  plt.legend(bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0)
   plt.tight_layout();
   plt.subplot(3, 1, 2)
   med_model.plot_compute_decomposition(new_figure=False)
@@ -125,6 +142,53 @@ def explore(exploration_target='compare', report_file_path=None, report_dir_path
   high_model.plot_compute_decomposition(new_figure=False)
   plt.ylabel("Aggressive")
   report.add_figure()
+
+  # Plot requirements
+  if exploration_target in ['both_requirements_steepness', 'training_requirements_steepness', 'runtime_requirements_steepness']:
+    training = (exploration_target == 'training_requirements_steepness')
+
+    requirements_low = low_model.automation_training_flops_goods if training else low_model.automation_runtime_flops_goods
+    requirements_med = med_model.automation_training_flops_goods if training else med_model.automation_runtime_flops_goods
+    requirements_high = high_model.automation_training_flops_goods if training else high_model.automation_runtime_flops_goods
+
+    lims = [
+      0.1 * min(
+        np.min(requirements_low[1:]),
+        np.min(requirements_med[1:]),
+        np.min(requirements_high[1:]),
+      ),
+      10 * max(
+        np.max(requirements_low[1:]),
+        np.max(requirements_med[1:]),
+        np.max(requirements_high[1:]),
+      )
+    ]
+
+    def plot_requirements(reqs):
+      reqs = reqs[1:]
+      automatable = np.linspace(0, 100, len(reqs))
+
+      reqs = np.append(np.insert(reqs, 0, lims[0]), lims[1])
+      automatable = np.append(np.insert(automatable, 0, automatable[0]), automatable[-1])
+
+      plt.plot(reqs, automatable)
+      plt.xscale('log')
+      plt.xlim(lims)
+      plt.gca().yaxis.set_major_formatter(mtick.PercentFormatter())
+
+    plt.figure(figsize=(14, 8), dpi=80);
+    plt.subplot(3, 1, 1)
+    plot_requirements(requirements_low)
+    plt.ylabel("Conservative")
+    plt.title(f"{'Training' if training else 'Runtime'} requirements for goods and services")
+    plt.tight_layout();
+    plt.subplot(3, 1, 2)
+    plot_requirements(requirements_med)
+    plt.ylabel("Best guess")
+    plt.subplot(3, 1, 3)
+    plot_requirements(requirements_high)
+    plt.ylabel("Aggressive")
+    report.add_figure()
 
   # Plot doubling times
   report.add_header("Model summaries", level = 3)
