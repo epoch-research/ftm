@@ -10,6 +10,8 @@ let nj;
   let exports = {
     nan: NaN,
 
+    isnan: (x) => Number.isNaN(x),
+
     array: (array_or_count) => {
       if (Array.isArray(array_or_count)) return array_or_count;
       return Array(array_or_count);

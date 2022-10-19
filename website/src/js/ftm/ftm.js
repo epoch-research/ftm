@@ -298,6 +298,9 @@ let ftm = {};
       consts.hardware_performance.returns /= consts.rnd.parallelization_penalty;
       consts.software.returns /= consts.rnd.parallelization_penalty;
 
+      // Also, the capital substitution parameter for R&D
+      consts.rnd.capital_substitution *= consts.rnd.parallelization_penalty;
+
       consts.hardware_delay_idx = nj.even_round(consts.hardware_delay/consts.t_step);
 
       return consts;
@@ -1065,7 +1068,7 @@ let ftm = {};
     length_between_thresholds(series1, series2) {
       // Utility function to measure the amount of time between two thresholds being crossed
       if (!nj.any(series1) || !nj.any(series2)) {
-        return this.consts.t_end - this.consts.t_start;
+        return nj.nan;
       }
       let idx1 = nj.argmax(series1);
       let idx2 = nj.argmax(series2);

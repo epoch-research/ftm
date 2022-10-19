@@ -127,6 +127,16 @@ def compare(params):
   js_takeoff_metrics['doubling times'] = [js_takeoff_metrics['doubling_times'][0][:4]]
   del js_takeoff_metrics['doubling_times']
 
+  # Transform to Python notation
+  period = js_summary_table['period']
+  for i, p in enumerate(period):
+    period[i] = {
+      'Pre wake-up': 'prerampup',
+      'Wake-up': 'rampup_start',
+      'Mid rampup': 'mid rampup',
+      'AGI': 'agi',
+    }[p]
+
   compare_tables(python_summary_table, js_summary_table)
   compare_tables(python_takeoff_metrics, js_takeoff_metrics)
 
