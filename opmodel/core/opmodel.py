@@ -129,8 +129,6 @@ class SimulateTakeOff():
 
       compute_shares = True,
 
-      deactivate_hard_soft_dep = False,
-
       n_labour_tasks = 100,
       ):
 
@@ -1035,8 +1033,6 @@ class SimulateTakeOff():
 
     # Combine with experiments
     output_software = \
-      research_output \
-      if self.deactivate_hard_soft_dep else \
       SimulateTakeOff.ces_production_function(
           np.array([research_output, self.compute_software_rnd_experiments[t_idx]]),
           self.research_experiments_task_weights_software,
