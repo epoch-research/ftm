@@ -39,6 +39,8 @@ class SimulateTakeOff():
       labour_substitution_rnd,
       capital_substitution_goods,
       capital_substitution_rnd,
+      research_experiments_substitution_software,
+      research_to_compute_experiments_task_weight_ratio,
 
       # R&D parameters
       hardware_returns,
@@ -55,6 +57,7 @@ class SimulateTakeOff():
 
       frac_labour_software_rnd_growth,
       frac_compute_software_rnd_growth,
+      frac_compute_software_rnd_experiments_growth,
 
       frac_gwp_compute_growth,
       frac_compute_training_growth,
@@ -65,6 +68,7 @@ class SimulateTakeOff():
       
       frac_labour_software_rnd_growth_rampup,
       frac_compute_software_rnd_growth_rampup,
+      frac_compute_software_rnd_experiments_growth_rampup,
 
       frac_gwp_compute_growth_rampup,
       frac_compute_training_growth_rampup,
@@ -75,6 +79,7 @@ class SimulateTakeOff():
 
       frac_labour_software_rnd_ceiling,
       frac_compute_software_rnd_ceiling,
+      frac_compute_software_rnd_experiments_ceiling,
 
       frac_gwp_compute_ceiling,
       frac_compute_training_ceiling,
@@ -99,6 +104,7 @@ class SimulateTakeOff():
       initial_cognitive_share_rnd,
       initial_compute_share_goods,
       initial_compute_share_rnd,
+      initial_compute_software_rnd_experiments,
 
       # Other
       rampup_trigger,
@@ -122,6 +128,8 @@ class SimulateTakeOff():
       t_end_min = None, # If dynamic_t_end is True, the simulation won't stop before this year
 
       compute_shares = True,
+
+      deactivate_hard_soft_dep = False,
 
       n_labour_tasks = 100,
       ):
@@ -164,7 +172,8 @@ class SimulateTakeOff():
 
     # Check that the ceilings are compatible
     assert self.frac_labour_hardware_rnd_ceiling + self.frac_labour_software_rnd_ceiling < 1
-    assert self.frac_compute_hardware_rnd_ceiling + self.frac_compute_software_rnd_ceiling + self.frac_compute_training_ceiling < 1
+    assert self.frac_compute_hardware_rnd_ceiling + self.frac_compute_software_rnd_ceiling \
+         + self.frac_compute_software_rnd_experiments_ceiling + self.frac_compute_training_ceiling < 1
   
   def process_input_parameters(self):
     # Labour tasks
@@ -182,6 +191,9 @@ class SimulateTakeOff():
     self.initial_hardware = \
       self.initial_hardware_production \
       * self.ratio_hardware_to_initial_hardware_production
+
+    self.research_experiments_task_weights_software = \
+        np.array(SimulateTakeOff.odds_to_probs(self.research_to_compute_experiments_task_weight_ratio))
 
     # Set the initial R&D inputs to roughly match their real values
     # (note that the simulation doesn't care about these values; we could set
@@ -373,6 +385,7 @@ class SimulateTakeOff():
 
     self.frac_labour_software_rnd = self.dynarray()
     self.frac_compute_software_rnd = self.dynarray()
+    self.frac_compute_software_rnd_experiments = self.dynarray()
 
     # Training compute
     self.frac_compute_training = self.dynarray()
@@ -446,6 +459,7 @@ class SimulateTakeOff():
     self.capital_software_rnd = self.dynarray()
     self.labour_software_rnd = self.dynarray()
     self.compute_software_rnd = self.dynarray()
+    self.compute_software_rnd_experiments = self.dynarray()
 
     self.labour_task_input_software_rnd = self.dynarray((self.n_labour_tasks_rnd + 1,))
     self.compute_task_input_software_rnd = self.dynarray((self.n_labour_tasks_rnd + 1,))
@@ -655,9 +669,10 @@ class SimulateTakeOff():
     self.frac_compute_software_rnd[0] = self.initial_frac_compute_software_rnd
 
     # Training compute is initialized to match initial largest training run
-    self.frac_compute_training[0] = \
-      self.initial_biggest_training_run \
-      / (self.hardware[0] * self.initial_software)
+    self.frac_compute_training[0] = self.initial_biggest_training_run / self.compute[0]
+
+    # The fraction of experiments compute is initialized to match the initial amount
+    self.frac_compute_software_rnd_experiments[0] = self.initial_compute_software_rnd_experiments / self.compute[0]
     
     ## Initial compute must be greater than initial training run
     if self.initial_biggest_training_run > self.compute[0]:
@@ -670,6 +685,7 @@ class SimulateTakeOff():
       1 - self.frac_labour_hardware_rnd[0] - self.frac_labour_software_rnd[0]
     self.frac_compute_goods[0] = \
       1 - self.frac_compute_hardware_rnd[0] - self.frac_compute_software_rnd[0] \
+        - self.frac_compute_software_rnd_experiments[0] \
         - self.frac_compute_training[0]
 
   #############################################################################
@@ -989,6 +1005,7 @@ class SimulateTakeOff():
     # Compute software rnd production budgets
     self.labour_software_rnd[t_idx] = self.labour[t_idx] * self.frac_labour_software_rnd[t_idx]
     self.compute_software_rnd[t_idx] = self.compute[t_idx] * self.frac_compute_software_rnd[t_idx]
+    self.compute_software_rnd_experiments[t_idx] = self.compute[t_idx] * self.frac_compute_software_rnd_experiments[t_idx]
 
     # Compute optimal task allocation
     self.labour_task_input_software_rnd[t_idx, :], \
@@ -1007,13 +1024,23 @@ class SimulateTakeOff():
       + self.task_compute_to_labour_ratio_rnd[t_idx] \
       * self.compute_task_input_software_rnd[t_idx, :]
     
-    # Compute output
-    output_software = \
+    # Compute research output
+    research_output = \
       SimulateTakeOff.ces_production_function(
           self.task_input_software_rnd[t_idx, :], 
           self.labour_task_weights_rnd,
           self.labour_substitution_rnd,
           self.tfp_rnd[t_idx]
+          )
+
+    # Combine with experiments
+    output_software = \
+      research_output \
+      if self.deactivate_hard_soft_dep else \
+      SimulateTakeOff.ces_production_function(
+          np.array([research_output, self.compute_software_rnd_experiments[t_idx]]),
+          self.research_experiments_task_weights_software,
+          self.research_experiments_substitution_software,
           )
     
     if t_idx == 0:
@@ -1146,6 +1173,7 @@ class SimulateTakeOff():
       'frac_compute_hardware_rnd',
       'frac_labour_software_rnd',
       'frac_compute_software_rnd',
+      'frac_compute_software_rnd_experiments',
       'frac_compute_training'
       ]
     
@@ -1169,7 +1197,9 @@ class SimulateTakeOff():
     self.frac_labour_goods[t_idx] = \
       1 - self.frac_labour_hardware_rnd[t_idx] - self.frac_labour_software_rnd[t_idx]
     self.frac_compute_goods[t_idx] = \
-      1 - self.frac_compute_hardware_rnd[t_idx] - self.frac_compute_software_rnd[t_idx] - self.frac_compute_training[t_idx]
+      1 - self.frac_compute_hardware_rnd[t_idx] - self.frac_compute_software_rnd[t_idx] \
+        - self.frac_compute_software_rnd_experiments[t_idx] \
+        - self.frac_compute_training[t_idx]
   
   def calculate_total_inputs(self, t_idx):
     
