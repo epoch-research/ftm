@@ -157,6 +157,7 @@ function run_simulation(immediate, callback) {
         { label: 'Compute',                 var: 'compute'},
         { label: 'Biggest training run',    var: 'biggest_training_run'},
         { label: 'Money spent on training', var: 'money_spent_training'},
+        { label: 'Fraction of GWP spent on training', var: nj.div(sim.get_thread('money_spent_training'), sim.get_thread('gwp'))},
         { label: 'Fraction of compute invested in training', var: 'frac_compute.training.v'},
       ], '#metrics-graph-container');
 
@@ -1089,7 +1090,7 @@ function add_multigraph(sim, variables, container, crop_after_agi = true) {
       graph.yscale('linear');
     } else {
       x = sim.timesteps;
-      y = sim.get_thread(label_to_var[side]);
+      y = (typeof label_to_var[side] == 'string') ? sim.get_thread(label_to_var[side]) : label_to_var[side];
       graph.yscale('log');
     }
 

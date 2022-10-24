@@ -1051,8 +1051,8 @@ let ftm = {};
       return x;
     }
 
-    get_growth(path) {
-      let thread = this.get_thread(path);
+    get_growth(path_or_thread) {
+      let thread = (typeof path_or_thread == 'string') ? this.get_thread(path_or_thread) : path_or_thread;
 
       let steps_per_year = Math.floor(1 / this.consts.t_step);
       let growth = nj.array(this.states.length - steps_per_year);
