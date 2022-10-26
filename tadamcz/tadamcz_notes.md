@@ -58,7 +58,7 @@ class ConditionalJointDistribution(JointDistribution):
         # ... continuation of your code here
 ```
 
-However, I don't necessarily recommend this, see [other section].(#conditional-distributions)
+However, I don't necessarily recommend this, see [other section](#conditional-distributions).
 
 # Conditional distributions
 You're using conditional distributions in a few places in [`distributions.py`](/opmodel/stats/distributions.py):
