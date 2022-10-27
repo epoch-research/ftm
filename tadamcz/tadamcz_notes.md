@@ -58,7 +58,7 @@ class ConditionalJointDistribution(JointDistribution):
         # ... continuation of your code here
 ```
 
-However, I don't necessarily recommend this, see [other section](#conditional-distributions).
+Your copy and paste approach also forces you to copy and paste the `get_pearsons_rho` function. If you took `copula_wrapper` as a dependency you wouldn't have to worry about its internals.
 
 # Conditional distributions
 You're using conditional distributions in a few places in [`distributions.py`](/opmodel/stats/distributions.py):
@@ -66,17 +66,37 @@ You're using conditional distributions in a few places in [`distributions.py`](/
 - the `.rvs` method of `JointDistribution`
 - the `sample_normal_cond` method of `GaussianCopula`
 
-I may be missing something about your requirements, but I see some problems here.
+There was an extended discussion about this [on Slack](https://tadamcz.slack.com/archives/C03GMA1PC03/p1666795355505989).
 
-You're introducing a complicated new functionality to the `rvs` methods, when this is not necessary. The conditional distribution `D|X=x` is of course another distribution, with `X` fixed at a precise value. So you could create another instance of `JointDistribution` with all parameters unchanged except that `X` is a degenerate distribution with the value `x`. Then you'd be dealing with another "vanilla" `JointDistribution` object. You can more easily rely on the behaviour of that object because of the tests in `copula_wrapper` and `stasmodels`. It's easy to make a mistake when overriding the behaviour of an object (especially if you don't have tests), better to use existing objects if you can. (For convenience, I could add a `conditionalize` method to `JointDistribution` that would return the appropriate new `JointDistribution` object.)
+I originally thought you could achieve what you want without even modifying `JointDistribution`, but this may not be possible (thanks Eduardo!). 
 
-For example, in this line:
+If you _do_ have to access the wrapped `CopulaDistribution`, then you should do this by modifying the functionality of `JointDistribution` (you can subclass, or you can open a PR to `copula_wrapper`), not by accessing `joint_distribution.wrapped` anywhere else (I don't think I've seen you do this anywhere, but just to be clear).
+
+## Meaning of cop_args?
+Have you tested that this line:
 
 ```python
 rvs = self.wrapped.rvs(nobs=nobs, random_state=random_state, cop_args = fixed_values)
 ```
 
-You have to worry about the interpretation of `cop_args`, which I'm not sure of (e.g. would the values need to be transformed in some way?). It's easier not to have to worry about that.
+does what you expect?
 
-# Copulas
-I don't understand why you're re-implementing `GaussianCopula`. The point of my `copula_wrapper` package was to avoid this.
+The following from the `statsmodels` docs makes me think `cop_args` is for parametrising the distribution, not for evaluating it at particular points. But I don't understand copulas well at all, so I may well be wrong. If you've tested this, then great!
+
+```
+cop_args : tuple
+    Copula parameters. If None, then the copula parameters will be
+    taken from the ``cop_args`` attribute created when initiializing
+    the instance.
+marg_args : list of tuples
+    Parameters for the marginal distributions. It can be None if none
+    of the marginal distributions have parameters, otherwise it needs
+    to be a list of tuples with the same length has the number of
+    marginal distributions. The list can contain empty tuples for
+    marginal distributions that do not take parameter arguments.
+```
+
+## Two implementations?
+I don't understand why you have the modified `JointDistribution` _as well as_ the `class GaussianCopula(sm_api.GaussianCopula)`. Is this duplicate functionality? 
+
+The method `sample_normal_cond` is very hard to follow. It makes me think "a mathematician wrote this code" :).
