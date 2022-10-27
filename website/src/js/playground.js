@@ -944,9 +944,11 @@ function nodify(node_or_query) {
 function plot_compute_decomposition(sim, container, crop_after_agi = true) {
   let t = sim.timesteps;
 
+  let median_tai_arrival_bio = 2052; // https://www.cold-takes.com/forecasting-transformative-ai-the-biological-anchors-method-in-a-nutshell/
+
   let bioanchors = run_bioanchors_model({
     t_start: sim.t_start,
-    t_end: sim.timesteps[sim.timesteps.length-1],
+    t_end: Math.max(sim.timesteps[sim.timesteps.length-1], median_tai_arrival_bio + 5),
 
     t_step: best_guess_sim.consts.t_step,
     initial_software: best_guess_sim.states[0].software.v,
@@ -974,9 +976,13 @@ function plot_compute_decomposition(sim, container, crop_after_agi = true) {
   }
 
   function add_data(t, v, line_options) {
+    let crop_year = Infinity;
+    if (crop_after_agi && sim.agi_year != null) crop_year = sim.agi_year + 5;
+    if (ui_state.show_bioanchors)               crop_year = Math.max(crop_year, median_tai_arrival_bio + 5);
+
     let start_idx = 0;
     let reference_idx = (sim.rampup_start != null) ? nj.argmax(nj.gte(t, sim.rampup_start)) : 0;
-    let end_idx = (crop_after_agi && sim.agi_year != null) ? nj.argmax(nj.gte(t, sim.agi_year + 5)) : t.length;
+    let end_idx = (sim.timesteps[sim.timesteps.length-1] >= crop_year) ? nj.argmax(nj.gte(t, crop_year)) : t.length;
 
     t = t.slice(start_idx, end_idx);
     v = v.slice(start_idx, end_idx);
@@ -1022,8 +1028,7 @@ function plot_compute_decomposition(sim, container, crop_after_agi = true) {
       add_data(bioanchors.timesteps, bioanchors.hardware,            {displacement: 0, label: 'Hardware (FLOP/$)', color: 'orange', linestyle: linestyle, section});
       add_data(bioanchors.software_timesteps, bioanchors.software,   {displacement: -displacement, label: 'Software (2022-FLOP per FLOP)', color: 'green', linestyle: linestyle, section});
 
-      let median_tai_arrival = 2052; // https://www.cold-takes.com/forecasting-transformative-ai-the-biological-anchors-method-in-a-nutshell/
-      graph.axvline(median_tai_arrival, {
+      graph.axvline(median_tai_arrival_bio, {
         linestyle: 'dashed',
         color: 'blue',
         label: 'Median year of TAI arrival',
