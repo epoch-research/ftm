@@ -1,5 +1,6 @@
 TODO:
 - Google sheets
+  - does input allow inconsistent rank_corr matrix?
 - general introduction to testing
 - suggested ideas for tests
 - how to write modular code
@@ -143,6 +144,30 @@ This is explained well [on StackOverflow](https://stackoverflow.com/questions/23
 > - Because it puts a lot of stuff into your namespace (might shadow some other object from previous import and you won't know about it).
 > - Because you don't know exactly what is imported and can't easily find from which module a certain thing was imported (readability).
 > - Because you can't use cool tools like pyflakes to statically detect errors in your code.
+
+# Accessing class attributes
+In Python, there's no need to write getter functions like this:
+
+```python
+class ParamsDistribution:
+  # ... more methods here
+    
+  def get_marginals(self):
+    return self.marginals
+
+  def get_rank_correlations(self):
+    return self.pairwise_rank_corr
+```
+
+You can just access the attributes directly:
+
+```python
+pd = ParamsDistribution()
+pd.marginals
+pd.pairwise_rank_corr
+```
+
+It's very rare you would want explicit setters and getters. For those cases, you can look at the [`@property` decorator](https://realpython.com/python-property/).
 
 # Conditional distributions
 You're using conditional distributions in a few places in [`distributions.py`](/opmodel/distributions.py):
