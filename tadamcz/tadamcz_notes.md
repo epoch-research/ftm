@@ -186,4 +186,63 @@ I don't understand why you have the modified `JointDistribution` _as well as_ th
 The method `sample_normal_cond` is very hard to follow. It makes me think "a mathematician wrote this code" :).
 
 # The `ParamsDistribution` class
-TODO
+## Constructor
+From the `__init__` (or constructor) it looks like it's a method specific to your model (e.g. you're calling `get_parameter_table()`). In that case, I would make that more obvious in the name, like `TakeoffParamsDistr`. `ParamsDistribution` makes it seem like something more generic. If it is something more generic, then you should pass in the "parameter table" etc. as arguments, not have them hard-coded in the `__init__`. 
+
+For readability, it would be good to break up the method a bit. 
+
+You're setting up the three dictionaries `pairwise_rank_corr`, `marginals`, and `directions` in one big block. Instead, you could have the methods `marginals` and `correlations` for example. 
+
+Here's an illustration of `correlations` as a method:
+
+```python
+class ParamsDistribution:
+	def __init__(self):
+		# ... more code here
+
+		self.pairwise_rank_corr = self.correlations(ignore_rank_correlations, marginals, rank_correlations, directions)
+
+	def correlations(self, ignore_rank_correlations, marginals, rank_correlations, directions):
+		correlations = {}
+		if not ignore_rank_correlations:
+			for left in marginals.keys():
+				for right in marginals.keys():
+					if right not in rank_correlations or left not in rank_correlations:
+						continue
+
+					if isinstance(marginals[right], PointDistribution) or isinstance(marginals[left],PointDistribution):
+						continue
+
+				r = rank_correlations[right][left]
+				if not np.isnan(r) and r != 0:
+					correlations[(left, right)] = r * directions[left] * directions[right]
+		return correlations
+```
+
+Apart from breaking separate functionality into more readable chunks, this has some other advantages. First, you can explicitly see what the correlations depend on simply by looking at the method signature. Also, you can move the statement `if not ignore_rank_correlations` to a place where it has less impact on readability (imo):
+
+```python
+class ParamsDistribution:
+	def __init__(self):
+		# ... more code here
+		
+		if not ignore_rank_correlations:
+			self.pairwise_rank_corr = self.correlations(marginals, rank_correlations, directions)
+		else:
+			self.pairwise_rank_corr = {}
+
+	def correlations(self, marginals, rank_correlations, directions):
+		correlations = {}
+		for left in marginals.keys():
+			for right in marginals.keys():
+				if right not in rank_correlations or left not in rank_correlations:
+					continue
+
+				if isinstance(marginals[right], PointDistribution) or isinstance(marginals[left],PointDistribution):
+					continue
+
+			r = rank_correlations[right][left]
+			if not np.isnan(r) and r != 0:
+				correlations[(left, right)] = r * directions[left] * directions[right]
+		return correlations
+```
