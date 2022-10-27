@@ -130,6 +130,20 @@ The tutorial [explains](https://docs.python.org/3/tutorial/modules.html#packages
 
 > The `__init__.py` files are required to make Python treat directories containing the file as packages. This prevents directories with a common name, such as string, unintentionally hiding valid modules that occur later on the module search path. In the simplest case, `__init__.py` can just be an empty file, but it can also execute initialization code for the package or set the `__all__` variable, described later.
 
+## Don't `import *`
+
+One should never do this:
+
+```python
+from opmodel.core.utils import *
+```
+
+This is explained well [on StackOverflow](https://stackoverflow.com/questions/2386714/why-is-import-bad) and many other places. Why is `import *` bad?
+
+> - Because it puts a lot of stuff into your namespace (might shadow some other object from previous import and you won't know about it).
+> - Because you don't know exactly what is imported and can't easily find from which module a certain thing was imported (readability).
+> - Because you can't use cool tools like pyflakes to statically detect errors in your code.
+
 # Conditional distributions
 You're using conditional distributions in a few places in [`distributions.py`](/opmodel/distributions.py):
 
