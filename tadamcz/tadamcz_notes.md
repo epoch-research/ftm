@@ -585,7 +585,8 @@ SimulateTakeOff(
 )
 ```
 
-You can nest dataclasses:
+You can also nest dataclasses to specify inputs in an even more structured way:
+ 
 
 ```python
 from dataclasses import dataclass
@@ -626,28 +627,28 @@ x = rnd.software.capital.growth
 y = rnd.hardware.labour.ceiling
 ```
 
-Now we can specify inputs in a more structured way, and the single variable `rnd` replaces these 15 variables:
+The single variable `rnd` replaces these 15 variables:
 ```python
-frac_capital_hardware_rnd_growth,
-frac_labour_hardware_rnd_growth,
-frac_compute_hardware_rnd_growth,
+frac_capital_hardware_rnd_growth
+frac_labour_hardware_rnd_growth
+frac_compute_hardware_rnd_growth
 
-frac_labour_software_rnd_growth,
-frac_compute_software_rnd_growth,
+frac_labour_software_rnd_growth
+frac_compute_software_rnd_growth
 
-frac_capital_hardware_rnd_ceiling,
-frac_labour_hardware_rnd_ceiling,
-frac_compute_hardware_rnd_ceiling,
+frac_capital_hardware_rnd_ceiling
+frac_labour_hardware_rnd_ceiling
+frac_compute_hardware_rnd_ceiling
 
-frac_labour_software_rnd_ceiling,
-frac_compute_software_rnd_ceiling,
+frac_labour_software_rnd_ceiling
+frac_compute_software_rnd_ceiling
 
-initial_frac_capital_hardware_rnd,
-initial_frac_labour_hardware_rnd,
-initial_frac_compute_hardware_rnd,
+initial_frac_capital_hardware_rnd
+initial_frac_labour_hardware_rnd
+initial_frac_compute_hardware_rnd
 
-initial_frac_labour_software_rnd,
-initial_frac_compute_software_rnd,
+initial_frac_labour_software_rnd
+initial_frac_compute_software_rnd
 ```
 
 Whenever you are repeating yourself a lot (like in the names of these variables), it's a sign that there's some _structure_ to the program that you're not exploiting. In this case using the structure of the input data, we've eliminated some repetition and made the code easier to read, test, and maintain.  I think this could be applied in many places in `SimulateTakeOff`.
