@@ -75,7 +75,7 @@ from ..core.utils import log, get_parameter_table, get_rank_correlations, get_cl
 ```
 Are generally considered bad practise. They mean that your code will behave differently depending on where it's being imported/called from! And that may not be the place [you think](https://stackoverflow.com/a/65589847/8010877):
 
-> If you write from . import module, opposite to what you think, module will not be imported from current directory, but from the top level of your package! If you run .py file as a script, it simply doesn't know where the top level is and thus refuses to work.
+> If you write `from . import module`, opposite to what you think, `module` will not be imported from current directory, but from the top level of your package! If you run `.py` file as a script, it simply doesn't know where the top level is and thus refuses to work.
 
 It's generally considered better to do the explicit:
 
