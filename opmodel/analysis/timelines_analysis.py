@@ -1,86 +1,87 @@
 import json
 from xml.etree import ElementTree as et
 
-from . import log
 from . import *
+from . import log
 from .exploration_analysis import plot_compute_increase
 from ..core.scenarios import ScenarioRunner
 
+
 class TimelinesAnalysisResults:
-  pass
+	pass
+
 
 def write_timelines_analysis_report(report_file_path=None, report_dir_path=None, report=None, analysis_results=None):
-  if report_file_path is None:
-    report_file_path = 'timelines_analysis.html'
+	if report_file_path is None:
+		report_file_path = 'timelines_analysis.html'
 
-  results = analysis_results if analysis_results else timelines_analysis()
+	results = analysis_results if analysis_results else timelines_analysis()
 
-  log.info('Writing report...')
-  new_report = report is None
-  if new_report:
-    report = Report(report_file_path=report_file_path, report_dir_path=report_dir_path)
+	log.info('Writing report...')
+	new_report = report is None
+	if new_report:
+		report = Report(report_file_path=report_file_path, report_dir_path=report_dir_path)
 
-  #
-  # Metrics
-  #
+	#
+	# Metrics
+	#
 
-  report.add_header("Metrics", level = 3)
+	report.add_header("Metrics", level=3)
 
-  table = []
+	table = []
 
-  for group in results.scenario_groups:
-    for scenario in group:
-      row = {**{'Timeline' : group.name, 'Scenario' : scenario.name}, **scenario.model.takeoff_metrics}
-      for metric in ['rampup_start', 'agi_year', 'doubling_times']:
-        row[metric] = getattr(scenario.model, metric)
-      table.append(row)
-  table = pd.DataFrame(table)
+	for group in results.scenario_groups:
+		for scenario in group:
+			row = {**{'Timeline': group.name, 'Scenario': scenario.name}, **scenario.model.takeoff_metrics}
+			for metric in ['rampup_start', 'agi_year', 'doubling_times']:
+				row[metric] = getattr(scenario.model, metric)
+			table.append(row)
+	table = pd.DataFrame(table)
 
-  def nan_format(row, col, index_r, index_c, cell):
-    if index_c in ('rampup_start', 'agi_year'):
-      return f'> {results.scenario_groups[0][0].model.t_end}'
-    return '-'
+	def nan_format(row, col, index_r, index_c, cell):
+		if index_c in ('rampup_start', 'agi_year'):
+			return f'> {results.scenario_groups[0][0].model.t_end}'
+		return '-'
 
-  table_container = report.add_data_frame(table, show_index = False, nan_format = nan_format)
-  report.add_importance_selector(table_container, label = 'metrics', important_columns_to_keep = [0, 1])
+	table_container = report.add_data_frame(table, show_index=False, nan_format=nan_format)
+	report.add_importance_selector(table_container, label='metrics', important_columns_to_keep=[0, 1])
 
+	#
+	# Graphs
+	#
 
-  #
-  # Graphs
-  #
+	report.add_header("Compute increase over time", level=3)
 
-  report.add_header("Compute increase over time", level = 3)
+	# Hackily add legend as an independent separate figure
+	plot_compute_increase(results.scenario_groups[0], title=group.name, show_legend=False)
+	ax = plt.gca()
+	legend_fig = plt.figure()
+	plt.figlegend(*ax.get_legend_handles_labels())
+	report.add_figure(legend_fig)
+	plt.close()  # Clear the current figure
 
-  # Hackily add legend as an independent separate figure
-  plot_compute_increase(results.scenario_groups[0], title = group.name, show_legend = False)
-  ax = plt.gca()
-  legend_fig = plt.figure()
-  plt.figlegend(*ax.get_legend_handles_labels())
-  report.add_figure(legend_fig)
-  plt.close() # Clear the current figure
+	graph_container = report.add_html('<div style="display: flex; overflow-x: auto;"></div>')
 
-  graph_container = report.add_html('<div style="display: flex; overflow-x: auto;"></div>')
+	for i, group in enumerate(results.scenario_groups):
+		plot_compute_increase(group, title=group.name, show_legend=False)
+		figure = report.add_figure(parent=graph_container)
+		figure.set('style', 'min-width: 900px')
 
-  for i, group in enumerate(results.scenario_groups):
-    plot_compute_increase(group, title = group.name, show_legend = False)
-    figure = report.add_figure(parent = graph_container)
-    figure.set('style', 'min-width: 900px')
+	#
+	# Model summaries and assumptions
+	#
 
-  #
-  # Model summaries and assumptions
-  #
+	# Summary
 
-  # Summary
+	report.add_header("Model summary", level=3)
 
-  report.add_header("Model summary", level = 3)
+	scenario_options = "\n".join([
+		f'<option value="{group.name} - {scenario.name}">{group.name} - {scenario.name}</option>'
+		for group in results.scenario_groups
+		for scenario in group
+	])
 
-  scenario_options = "\n".join([
-    f'<option value="{group.name} - {scenario.name}">{group.name} - {scenario.name}</option>'
-    for group in results.scenario_groups
-    for scenario in group
-  ])
-
-  report.add_html(f'''
+	report.add_html(f'''
     <p>
       Scenario <br></br>
       <select id="scenario-1-selector">
@@ -89,7 +90,7 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
     </p>
   ''')
 
-  report.add_html(f'''
+	report.add_html(f'''
     <p>
       Compare to <br></br>
       <select id="scenario-2-selector">
@@ -99,62 +100,63 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
     </p>
   ''')
 
-  table_container = et.Element('div', {'class': 'dataframe-container'})
-  table = et.Element('table', {'border': '1', 'class': 'dataframe', 'id': 'timelines-summary-table'})
-  tbody = et.Element('tbody')
-  thead = et.Element('thead')
-  tr = et.Element('tr', {'style': 'text-align: right;'})
+	table_container = et.Element('div', {'class': 'dataframe-container'})
+	table = et.Element('table', {'border': '1', 'class': 'dataframe', 'id': 'timelines-summary-table'})
+	tbody = et.Element('tbody')
+	thead = et.Element('thead')
+	tr = et.Element('tr', {'style': 'text-align: right;'})
 
-  variable_names = get_variable_names()
+	variable_names = get_variable_names()
 
-  scenario = results.scenario_groups[0][0]
-  tr.append(et.fromstring(f'<th>Timeline</th>'))
-  tr.append(et.fromstring(f'<th>Scenario</th>'))
-  for metric in scenario.model.get_summary_table().columns:
-    possible_suffixes = [' growth rate', ' doubling time', '']
-    for suffix in possible_suffixes:
-      if metric.endswith(suffix):
-        prefix = metric[:-len(suffix)] if len(suffix) else metric
-        human_name = f'{variable_names.get(prefix, prefix)} {suffix}'
-        break
+	scenario = results.scenario_groups[0][0]
+	tr.append(et.fromstring(f'<th>Timeline</th>'))
+	tr.append(et.fromstring(f'<th>Scenario</th>'))
+	for metric in scenario.model.get_summary_table().columns:
+		possible_suffixes = [' growth rate', ' doubling time', '']
+		for suffix in possible_suffixes:
+			if metric.endswith(suffix):
+				prefix = metric[:-len(suffix)] if len(suffix) else metric
+				human_name = f'{variable_names.get(prefix, prefix)} {suffix}'
+				break
 
-    tr.append(et.fromstring(f'<th>{Report.escape(human_name)}</th>'))
+		tr.append(et.fromstring(f'<th>{Report.escape(human_name)}</th>'))
 
-  thead.append(tr)
-  table.append(thead)
-  table.append(tbody)
-  table_container.append(table)
+	thead.append(tr)
+	table.append(thead)
+	table.append(tbody)
+	table_container.append(table)
 
-  container = report.add_html('<div style="overflow-x: auto;"></div>')
-  container.append(table_container)
+	container = report.add_html('<div style="overflow-x: auto;"></div>')
+	container.append(table_container)
 
-  summaries = {}
-  for group in results.scenario_groups:
-    summaries_group = {}
-    for scenario in group:
-      summary_table = scenario.model.get_summary_table().fillna('-')
-      summary_dict = summary_table.to_dict()
+	summaries = {}
+	for group in results.scenario_groups:
+		summaries_group = {}
+		for scenario in group:
+			summary_table = scenario.model.get_summary_table().fillna('-')
+			summary_dict = summary_table.to_dict()
 
-      # Humanize periods
-      human_period = {
-        'prerampup' : 'Pre wake-up',
-        'rampup_start': 'Wake-up',
-        'mid rampup': 'Mid rampup',
-        'agi': 'AGI',
-      }
-      summary_dict['period'] = {k: human_period[v] for k, v in summary_dict['period'].items()}
-      summary_dict['year'] = {k: f'> {scenario.model.t_end}' if (v == '-') else v for k, v in summary_dict['year'].items()}
+			# Humanize periods
+			human_period = {
+				'prerampup': 'Pre wake-up',
+				'rampup_start': 'Wake-up',
+				'mid rampup': 'Mid rampup',
+				'agi': 'AGI',
+			}
+			summary_dict['period'] = {k: human_period[v] for k, v in summary_dict['period'].items()}
+			summary_dict['year'] = {k: f'> {scenario.model.t_end}' if (v == '-') else v for k, v in
+									summary_dict['year'].items()}
 
-      summaries_group[scenario.name] = summary_dict
-      row_count = len(summary_table)
-    summaries[group.name] = summaries_group
-  summaries_json = json.dumps(summaries)
+			summaries_group[scenario.name] = summary_dict
+			row_count = len(summary_table)
+		summaries[group.name] = summaries_group
+	summaries_json = json.dumps(summaries)
 
-  # Assumptions
+	# Assumptions
 
-  report.add_header("Assumptions", level = 3)
+	report.add_header("Assumptions", level=3)
 
-  report.add_html(f'''
+	report.add_html(f'''
     <p>
       Scenario <br></br>
       <select id="scenario-1-selector-inputs">
@@ -163,7 +165,7 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
     </p>
   ''')
 
-  report.add_html(f'''
+	report.add_html(f'''
     <p>
       Compare to <br></br>
       <select id="scenario-2-selector-inputs">
@@ -173,18 +175,18 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
     </p>
   ''')
 
-  table_container = et.Element('div', {'class': 'dataframe-container'})
-  table = et.Element('table', {'border': '1', 'class': 'dataframe', 'id': 'timelines-inputs-table'})
-  tbody = et.Element('tbody')
-  thead = et.Element('thead')
-  table.append(thead)
-  table.append(tbody)
-  table_container.append(table)
+	table_container = et.Element('div', {'class': 'dataframe-container'})
+	table = et.Element('table', {'border': '1', 'class': 'dataframe', 'id': 'timelines-inputs-table'})
+	tbody = et.Element('tbody')
+	thead = et.Element('thead')
+	table.append(thead)
+	table.append(tbody)
+	table_container.append(table)
 
-  container = report.add_html('<div style="overflow-x: auto;" class="show-only-important"></div>')
-  container.append(table_container)
+	container = report.add_html('<div style="overflow-x: auto;" class="show-only-important"></div>')
+	container.append(table_container)
 
-  importance_selector = et.fromstring('''
+	importance_selector = et.fromstring('''
     <p class="importance-selector">
       Show
       <br/>
@@ -194,27 +196,26 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
       </select>
     </p>
   ''')
-  report.insert_before(report.default_parent, container, importance_selector)
+	report.insert_before(report.default_parent, container, importance_selector)
 
-  inputs = {}
-  for group in results.scenario_groups:
-    group_inputs = {}
-    for scenario in group:
-      group_inputs[scenario.name] = scenario.params
-    inputs[group.name] = group_inputs
-  inputs_json = json.dumps(inputs)
+	inputs = {}
+	for group in results.scenario_groups:
+		group_inputs = {}
+		for scenario in group:
+			group_inputs[scenario.name] = scenario.params
+		inputs[group.name] = group_inputs
+	inputs_json = json.dumps(inputs)
 
+	#
+	# Add JavaScript
+	#
 
-  #
-  # Add JavaScript
-  #
+	param_names = get_param_names()
+	if not get_option('human_names', False):
+		param_names = {k: k for k in param_names.keys()}
 
-  param_names = get_param_names()
-  if not get_option('human_names', False):
-    param_names = {k: k for k in param_names.keys()}
-
-  script = et.Element('script')
-  script.text = '''
+	script = et.Element('script')
+	script.text = '''
     let summaries = ''' + summaries_json + ''';
     let inputs = ''' + inputs_json + ''';
     let rowCount = ''' + str(row_count) + ''';
@@ -424,32 +425,37 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
     updateSummaries();
     updateInputs();
   '''
-  report.body.append(script)
+	report.body.append(script)
 
-  if new_report:
-    report_path = report.write()
-    log.info(f'Report stored in {report_path}')
+	if new_report:
+		report_path = report.write()
+		log.info(f'Report stored in {report_path}')
 
-  log.info(f'Done')
+	log.info(f'Done')
+
 
 def timelines_analysis(report_file_path=None, report_dir_path=None):
-  log.info(f'Simulating scenarios...')
+	log.info(f'Simulating scenarios...')
 
-  scenarios = ScenarioRunner()
-  scenarios.simulate_all_scenarios()
+	scenarios = ScenarioRunner()
+	scenarios.simulate_all_scenarios()
 
-  results = TimelinesAnalysisResults()
-  results.scenario_groups = [group for group in scenarios.groups if group.name != 'normal']
+	results = TimelinesAnalysisResults()
+	results.scenario_groups = [group for group in scenarios.groups if group.name != 'normal']
 
-  return results
+	return results
+
 
 def plot_best_guesses_compute_increase():
-  results = timelines_analysis()
-  best_guesses_group = [scenario for group in results.scenario_groups for scenario in group if scenario.name == 'Best guess']
-  plot_compute_increase(best_guesses_group, get_label = lambda scenario: f'{scenario.model.full_automation_requirements_training} FLOP')
-  plt.show()
+	results = timelines_analysis()
+	best_guesses_group = [scenario for group in results.scenario_groups for scenario in group if
+						  scenario.name == 'Best guess']
+	plot_compute_increase(best_guesses_group,
+						  get_label=lambda scenario: f'{scenario.model.full_automation_requirements_training} FLOP')
+	plt.show()
+
 
 if __name__ == '__main__':
-  parser = init_cli_arguments()
-  args = handle_cli_arguments(parser)
-  write_timelines_analysis_report(report_file_path=args.output_file, report_dir_path=args.output_dir)
+	parser = init_cli_arguments()
+	args = handle_cli_arguments(parser)
+	write_timelines_analysis_report(report_file_path=args.output_file, report_dir_path=args.output_dir)

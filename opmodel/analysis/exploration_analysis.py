@@ -1,228 +1,235 @@
-from . import log
-from . import *
-
 import matplotlib.ticker as mtick
 
-def plot_compute_increase(scenario_group, title = "Compute increase over time", get_label = lambda scenario: scenario.name, show_legend = True):
-  # Plot compute decomposition
-  plt.figure(figsize=(14 if show_legend else 12, 8), dpi=80)
+from . import *
+from . import log
 
-  for i, scenario in enumerate(scenario_group):
-    plt.subplot(len(scenario_group), 1, i + 1)
-    scenario.model.plot_compute_decomposition(new_figure=False)
-    plt.ylabel(get_label(scenario))
 
-    if i == 0:
-      plt.title(title)
-      if show_legend:
-        plt.legend(bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0)
+def plot_compute_increase(scenario_group, title="Compute increase over time", get_label=lambda scenario: scenario.name,
+						  show_legend=True):
+	# Plot compute decomposition
+	plt.figure(figsize=(14 if show_legend else 12, 8), dpi=80)
 
-  plt.tight_layout()
+	for i, scenario in enumerate(scenario_group):
+		plt.subplot(len(scenario_group), 1, i + 1)
+		scenario.model.plot_compute_decomposition(new_figure=False)
+		plt.ylabel(get_label(scenario))
 
-def explore(exploration_target='compare', report_file_path=None, report_dir_path=None, parameter_table=None, report=None):
-  if report_file_path is None:
-    report_file_path = 'exploration_analysis.html'
+		if i == 0:
+			plt.title(title)
+			if show_legend:
+				plt.legend(bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0)
 
-  if parameter_table is None:
-    # Retrieve parameter table
-    log.info('Retrieving parameters...')
-    parameter_table = get_parameter_table()
+	plt.tight_layout()
 
-  # Define parameters
-  med_params = {
-    parameter : row['Best guess']
-    for parameter, row in parameter_table.iterrows()
-  }
 
-  if exploration_target == 'compare':
+def explore(exploration_target='compare', report_file_path=None, report_dir_path=None, parameter_table=None,
+			report=None):
+	if report_file_path is None:
+		report_file_path = 'exploration_analysis.html'
 
-    low_params = {
-        parameter : row['Conservative'] \
-                    if not np.isnan(row['Conservative']) \
-                    and row["Compare?"] == 'Y'
-                    else row['Best guess']\
-        for parameter, row in parameter_table.iterrows()
-    }
+	if parameter_table is None:
+		# Retrieve parameter table
+		log.info('Retrieving parameters...')
+		parameter_table = get_parameter_table()
 
-    high_params = {
-        parameter : row['Aggressive'] \
-                    if not np.isnan(row['Aggressive']) \
-                    and row["Compare?"] == 'Y'
-                    else row['Best guess']\
-        for parameter, row in parameter_table.iterrows()
-    }
+	# Define parameters
+	med_params = {
+		parameter: row['Best guess']
+		for parameter, row in parameter_table.iterrows()
+	}
 
-    low_value = 'Conservative'
-    med_value = 'Best guess'
-    high_value = 'Aggressive'
+	if exploration_target == 'compare':
 
-  elif exploration_target == 'both_requirements_steepness':
-    training_row = parameter_table.loc['training_requirements_steepness', :]
-    runtime_row = parameter_table.loc['runtime_requirements_steepness', :]
+		low_params = {
+			parameter: row['Conservative'] \
+				if not np.isnan(row['Conservative']) \
+				   and row["Compare?"] == 'Y'
+			else row['Best guess'] \
+			for parameter, row in parameter_table.iterrows()
+		}
 
-    low_params = med_params.copy()
-    low_params['runtime_requirements_steepness'] = runtime_row['Conservative']
-    low_params['training_requirements_steepness'] = training_row['Conservative']
+		high_params = {
+			parameter: row['Aggressive'] \
+				if not np.isnan(row['Aggressive']) \
+				   and row["Compare?"] == 'Y'
+			else row['Best guess'] \
+			for parameter, row in parameter_table.iterrows()
+		}
 
-    high_params = med_params.copy()
-    high_params['runtime_requirements_steepness'] = runtime_row['Aggressive']
-    high_params['training_requirements_steepness'] = training_row['Aggressive']
+		low_value = 'Conservative'
+		med_value = 'Best guess'
+		high_value = 'Aggressive'
 
-    low_value = 'Conservative'
-    med_value = 'Best guess'
-    high_value = 'Aggressive'
-  else:
-    row = parameter_table.loc[exploration_target, :]
+	elif exploration_target == 'both_requirements_steepness':
+		training_row = parameter_table.loc['training_requirements_steepness', :]
+		runtime_row = parameter_table.loc['runtime_requirements_steepness', :]
 
-    low_params = med_params.copy()
-    low_params[exploration_target] = row['Conservative']
+		low_params = med_params.copy()
+		low_params['runtime_requirements_steepness'] = runtime_row['Conservative']
+		low_params['training_requirements_steepness'] = training_row['Conservative']
 
-    high_params = med_params.copy()
-    high_params[exploration_target] = row['Aggressive']
+		high_params = med_params.copy()
+		high_params['runtime_requirements_steepness'] = runtime_row['Aggressive']
+		high_params['training_requirements_steepness'] = training_row['Aggressive']
 
-    low_value = row['Conservative']
-    med_value = row['Best guess']
-    high_value = row['Aggressive']
+		low_value = 'Conservative'
+		med_value = 'Best guess'
+		high_value = 'Aggressive'
+	else:
+		row = parameter_table.loc[exploration_target, :]
 
-  # Run simulations
-  log.info('Running simulations...')
+		low_params = med_params.copy()
+		low_params[exploration_target] = row['Conservative']
 
-  log.info('  Conservative simulation')
-  low_model = SimulateTakeOff(**low_params)
-  low_model.run_simulation()
+		high_params = med_params.copy()
+		high_params[exploration_target] = row['Aggressive']
 
-  log.info('  Best guess simulation')
-  med_model = SimulateTakeOff(**med_params)
-  med_model.run_simulation()
+		low_value = row['Conservative']
+		med_value = row['Best guess']
+		high_value = row['Aggressive']
 
-  log.info('  Aggressive simulation')
-  high_model = SimulateTakeOff(**high_params)
-  high_model.run_simulation()
+	# Run simulations
+	log.info('Running simulations...')
 
-  log.info('Writing report...')
-  new_report = report is None
-  if new_report:
-    report = Report(report_file_path=report_file_path, report_dir_path=report_dir_path)
+	log.info('  Conservative simulation')
+	low_model = SimulateTakeOff(**low_params)
+	low_model.run_simulation()
 
-  report.add_paragraph(f"<span style='font-weight:bold'>Exploration target:</span> {exploration_target}")
+	log.info('  Best guess simulation')
+	med_model = SimulateTakeOff(**med_params)
+	med_model.run_simulation()
 
-  # Print table of metrics
-  low_results = {**{'type' : 'Conservative', 'value' : low_value}, **low_model.takeoff_metrics}
-  med_results = {**{'type' : 'Best guess', 'value' : med_value}, **med_model.takeoff_metrics}
-  high_results = {**{'type' : 'Aggressive', 'value' : high_value}, **high_model.takeoff_metrics}
+	log.info('  Aggressive simulation')
+	high_model = SimulateTakeOff(**high_params)
+	high_model.run_simulation()
 
-  for metric in ['rampup_start', 'agi_year', 'doubling_times']:
-    low_results[metric] = getattr(low_model, metric)
-    med_results[metric] = getattr(med_model, metric)
-    high_results[metric] = getattr(high_model, metric)
+	log.info('Writing report...')
+	new_report = report is None
+	if new_report:
+		report = Report(report_file_path=report_file_path, report_dir_path=report_dir_path)
 
-  results = [low_results, med_results, high_results]
-  results = pd.DataFrame(results)
-  report.add_data_frame(results)
+	report.add_paragraph(f"<span style='font-weight:bold'>Exploration target:</span> {exploration_target}")
 
-  # Plot results
-  metrics = ['gwp'] #, 'compute', 'hardware_performance', 'software', 'frac_gwp_compute', 'frac_training_compute']
-  for metric in metrics:
-    low_model.plot(metric, line_color='red')
-    med_model.plot(metric, new_figure=False, line_color='orange')
-    high_model.plot(metric, new_figure=False, line_color='green')
+	# Print table of metrics
+	low_results = {**{'type': 'Conservative', 'value': low_value}, **low_model.takeoff_metrics}
+	med_results = {**{'type': 'Best guess', 'value': med_value}, **med_model.takeoff_metrics}
+	high_results = {**{'type': 'Aggressive', 'value': high_value}, **high_model.takeoff_metrics}
 
-  # Plot compute decomposition
-  plt.figure(figsize=(14, 8), dpi=80);
-  plt.subplot(3, 1, 1)
-  low_model.plot_compute_decomposition(new_figure=False)
-  plt.ylabel("Conservative")
-  plt.title(f"Compute increase over time");
-  plt.legend(bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0)
-  plt.tight_layout();
-  plt.subplot(3, 1, 2)
-  med_model.plot_compute_decomposition(new_figure=False)
-  plt.ylabel("Best guess")
-  plt.subplot(3, 1, 3)
-  high_model.plot_compute_decomposition(new_figure=False)
-  plt.ylabel("Aggressive")
-  report.add_figure()
+	for metric in ['rampup_start', 'agi_year', 'doubling_times']:
+		low_results[metric] = getattr(low_model, metric)
+		med_results[metric] = getattr(med_model, metric)
+		high_results[metric] = getattr(high_model, metric)
 
-  # Plot requirements
-  if exploration_target in ['both_requirements_steepness', 'training_requirements_steepness', 'runtime_requirements_steepness']:
-    training = (exploration_target == 'training_requirements_steepness')
+	results = [low_results, med_results, high_results]
+	results = pd.DataFrame(results)
+	report.add_data_frame(results)
 
-    requirements_low = low_model.automation_training_flops_goods if training else low_model.automation_runtime_flops_goods
-    requirements_med = med_model.automation_training_flops_goods if training else med_model.automation_runtime_flops_goods
-    requirements_high = high_model.automation_training_flops_goods if training else high_model.automation_runtime_flops_goods
+	# Plot results
+	metrics = ['gwp']  # , 'compute', 'hardware_performance', 'software', 'frac_gwp_compute', 'frac_training_compute']
+	for metric in metrics:
+		low_model.plot(metric, line_color='red')
+		med_model.plot(metric, new_figure=False, line_color='orange')
+		high_model.plot(metric, new_figure=False, line_color='green')
 
-    lims = [
-      0.1 * min(
-        np.min(requirements_low[1:]),
-        np.min(requirements_med[1:]),
-        np.min(requirements_high[1:]),
-      ),
-      10 * max(
-        np.max(requirements_low[1:]),
-        np.max(requirements_med[1:]),
-        np.max(requirements_high[1:]),
-      )
-    ]
+	# Plot compute decomposition
+	plt.figure(figsize=(14, 8), dpi=80);
+	plt.subplot(3, 1, 1)
+	low_model.plot_compute_decomposition(new_figure=False)
+	plt.ylabel("Conservative")
+	plt.title(f"Compute increase over time");
+	plt.legend(bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0)
+	plt.tight_layout();
+	plt.subplot(3, 1, 2)
+	med_model.plot_compute_decomposition(new_figure=False)
+	plt.ylabel("Best guess")
+	plt.subplot(3, 1, 3)
+	high_model.plot_compute_decomposition(new_figure=False)
+	plt.ylabel("Aggressive")
+	report.add_figure()
 
-    def plot_requirements(reqs):
-      reqs = reqs[1:]
-      automatable = np.linspace(0, 100, len(reqs))
+	# Plot requirements
+	if exploration_target in ['both_requirements_steepness', 'training_requirements_steepness',
+							  'runtime_requirements_steepness']:
+		training = (exploration_target == 'training_requirements_steepness')
 
-      reqs = np.append(np.insert(reqs, 0, lims[0]), lims[1])
-      automatable = np.append(np.insert(automatable, 0, automatable[0]), automatable[-1])
+		requirements_low = low_model.automation_training_flops_goods if training else low_model.automation_runtime_flops_goods
+		requirements_med = med_model.automation_training_flops_goods if training else med_model.automation_runtime_flops_goods
+		requirements_high = high_model.automation_training_flops_goods if training else high_model.automation_runtime_flops_goods
 
-      plt.plot(reqs, automatable)
-      plt.xscale('log')
-      plt.xlim(lims)
-      plt.gca().yaxis.set_major_formatter(mtick.PercentFormatter())
+		lims = [
+			0.1 * min(
+				np.min(requirements_low[1:]),
+				np.min(requirements_med[1:]),
+				np.min(requirements_high[1:]),
+			),
+			10 * max(
+				np.max(requirements_low[1:]),
+				np.max(requirements_med[1:]),
+				np.max(requirements_high[1:]),
+			)
+		]
 
-    plt.figure(figsize=(14, 8), dpi=80);
-    plt.subplot(3, 1, 1)
-    plot_requirements(requirements_low)
-    plt.ylabel("Conservative")
-    plt.title(f"{'Training' if training else 'Runtime'} requirements for goods and services")
-    plt.tight_layout();
-    plt.subplot(3, 1, 2)
-    plot_requirements(requirements_med)
-    plt.ylabel("Best guess")
-    plt.subplot(3, 1, 3)
-    plot_requirements(requirements_high)
-    plt.ylabel("Aggressive")
-    report.add_figure()
+		def plot_requirements(reqs):
+			reqs = reqs[1:]
+			automatable = np.linspace(0, 100, len(reqs))
 
-  # Plot doubling times
-  report.add_header("Model summaries", level = 3)
+			reqs = np.append(np.insert(reqs, 0, lims[0]), lims[1])
+			automatable = np.append(np.insert(automatable, 0, automatable[0]), automatable[-1])
 
-  report.add_header("Conservative", level = 4)
-  report.add_data_frame(low_model.get_summary_table())
+			plt.plot(reqs, automatable)
+			plt.xscale('log')
+			plt.xlim(lims)
+			plt.gca().yaxis.set_major_formatter(mtick.PercentFormatter())
 
-  report.add_header("Best guess", level = 4)
-  report.add_data_frame(med_model.get_summary_table())
+		plt.figure(figsize=(14, 8), dpi=80);
+		plt.subplot(3, 1, 1)
+		plot_requirements(requirements_low)
+		plt.ylabel("Conservative")
+		plt.title(f"{'Training' if training else 'Runtime'} requirements for goods and services")
+		plt.tight_layout();
+		plt.subplot(3, 1, 2)
+		plot_requirements(requirements_med)
+		plt.ylabel("Best guess")
+		plt.subplot(3, 1, 3)
+		plot_requirements(requirements_high)
+		plt.ylabel("Aggressive")
+		report.add_figure()
 
-  report.add_header("Aggressive", level = 4)
-  report.add_data_frame(high_model.get_summary_table())
+	# Plot doubling times
+	report.add_header("Model summaries", level=3)
 
-  # Write down the parameters
-  report.add_header("Inputs", level = 3)
-  input_parameters = pd.DataFrame(
-    [low_params, med_params, high_params],
-    index = ['Conservative', 'Best guess', 'Aggressive']
-  ).transpose()
-  report.add_data_frame(input_parameters, show_justifications = True)
+	report.add_header("Conservative", level=4)
+	report.add_data_frame(low_model.get_summary_table())
 
-  if new_report:
-    report_path = report.write()
-    log.info(f'Report stored in {report_path}')
+	report.add_header("Best guess", level=4)
+	report.add_data_frame(med_model.get_summary_table())
 
-  log.info('Done')
+	report.add_header("Aggressive", level=4)
+	report.add_data_frame(high_model.get_summary_table())
+
+	# Write down the parameters
+	report.add_header("Inputs", level=3)
+	input_parameters = pd.DataFrame(
+		[low_params, med_params, high_params],
+		index=['Conservative', 'Best guess', 'Aggressive']
+	).transpose()
+	report.add_data_frame(input_parameters, show_justifications=True)
+
+	if new_report:
+		report_path = report.write()
+		log.info(f'Report stored in {report_path}')
+
+	log.info('Done')
+
 
 if __name__ == '__main__':
-  parser = init_cli_arguments()
-  parser.add_argument(
-    "-t",
-    "--exploration-target",
-    default="compare",
-    help="Choose 'compare' to compare aggressive, best guess and conservative scenario"
-  )
-  args = handle_cli_arguments(parser)
-  explore(exploration_target=args.exploration_target, report_file_path=args.output_file, report_dir_path=args.output_dir)
+	parser = init_cli_arguments()
+	parser.add_argument(
+		"-t",
+		"--exploration-target",
+		default="compare",
+		help="Choose 'compare' to compare aggressive, best guess and conservative scenario"
+	)
+	args = handle_cli_arguments(parser)
+	explore(exploration_target=args.exploration_target, report_file_path=args.output_file,
+			report_dir_path=args.output_dir)
