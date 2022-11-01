@@ -443,10 +443,8 @@ def hardware_rnd_production(
 
 steps = []
 for i in range(100):
-	if i == 0:
-		step = TimeStep(labour, capital)
-	else:
-		step = TimeStep()
+	step = TimeStep()
+	if i > 1:
 		step.hardware_rnd_prod = hardware_rnd_production(labour, capital, steps[i-1], steps[i-2])
 	steps.append(step)
 ```
