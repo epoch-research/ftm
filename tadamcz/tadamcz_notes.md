@@ -508,7 +508,7 @@ assert hardware_rnd_production(labour=1, capital=0, previous_year=previous_year)
 ```
 
 #### Example
-Unit tests of mathematical model code could look something like [this](https://github.com/tadamcz/timing-spend-down-epoch-copy/blob/aa8367a82ff5bbda8ab7da053490a54a917846cc/tests/utility_model/test_utility_givewell.py#L42-L58), where `utility_givewell` is a small function with six parameters, and only these 6 are required in a test: 
+Unit tests of mathematical model code could look something like [this](https://github.com/tadamcz/timing-spend-down-epoch-copy/blob/aa8367a82ff5bbda8ab7da053490a54a917846cc/tests/utility_model/test_utility_givewell.py#L42-L58), where `utility_givewell` is a small function with six arguments, and we only need to define these 6 in a test: 
 
 ```python
 def test_zero_elasticity(givewell_initial, annual_change_rates, learning_factor, year, spending, factor):
