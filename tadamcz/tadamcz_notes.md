@@ -204,9 +204,10 @@ I don't understand why you have the modified `JointDistribution` _as well as_ th
 The method `sample_normal_cond` is very hard to follow. It makes me think "a mathematician wrote this code" :).
 
 # The `ParamsDistribution` class
-## Constructor (`__init__`)
-From the `__init__`, it looks like it's a method specific to your model (e.g. you're calling `get_parameter_table()`). In that case, I would make that more obvious in the name, like `TakeoffParamsDistr`. `ParamsDistribution` makes it seem like something more generic. If it is something more generic, then you should pass in the "parameter table" etc. as arguments, not have them hard-coded in the `__init__`.
+## Name of class
+From the `__init__`, it looks like it's a class specific to your model (e.g. you're calling `get_parameter_table()`). In that case, I would make that more obvious in the name, like `TakeoffParamsDistr`. `ParamsDistribution` makes it seem like something more generic. If it is something more generic, then you should pass in the "parameter table" etc. as arguments, not have them hard-coded in the `__init__`.
 
+## Constructor (`__init__`)
 For readability, it would be good to break up the method a bit.
 
 You're setting up the three dictionaries `pairwise_rank_corr`, `marginals`, and `directions` in one big block. Instead, you could have the methods `marginals` and `correlations` for example.
@@ -237,7 +238,7 @@ class ParamsDistribution:
 		return correlations
 ```
 
-Apart from breaking separate functionality into more readable chunks, this has some other advantages. First, you can explicitly see what the correlations depend on simply by looking at the method signature. Also, you can move the statement `if not ignore_rank_correlations` to a place where it has less impact on readability (imo):
+Apart from breaking separate functionality into more readable chunks, this has some other advantages. First, you can explicitly see what the correlations depend on simply by looking at the method signature. Also, you can move the statement `if not ignore_rank_correlations` to a place where it has less impact on readability (imo), like this:
 
 ```python
 class ParamsDistribution:
@@ -308,7 +309,7 @@ def production(self, t_idx):
 More importantly I think you should also break the class apart, which I will explain in the next section.
 
 ## Suggestion to refactor class into functions
-
+### Summary
 I would lean towards re-writing this as a set of functions instead of methods of a class.
 
 To begin with, this is necessary for splitting up the massive class. But there are several other reasons, some of which are stronger than simply to split up the class: 
@@ -381,6 +382,8 @@ Every method in Python depends on the entire instance object (usually called `se
 
 If your instance is big (has many attributes), then taking `self` as an argument is not very explicit. You are saying this method could potentially depend on and modify any attribute of `self`. In the case of `SimulateTakeOff` instances, which contain all relevant parameters and the entire results of the model for every previous time step, this is approximately as un-explicit as it's possible to be. From looking at method signature like `def hardware_rnd_production(self, t_idx)`, I have no idea what hardware R&D production depends on or modifies in your model, I have to carefully read every line of the method to see which attributes of `self` it accesses. 
 
+### Example refactor for `compute_runtime_requirements`
+In this example, you depend on `self` but are only using `runtime_training_tradeoff`:
 ```python
 class SimulateTakeOff:
 	def compute_runtime_requirements(self, automation_training_flops, automation_runtime_flops, biggest_training_run):
@@ -394,7 +397,7 @@ class SimulateTakeOff:
 		return runtime_requirements
 ```
 
-In the example above, you depend on `self` but are only using `runtime_training_tradeoff`, so you could have written:
+so you could have written:
 
 ```python
 def compute_runtime_requirements(runtime_training_tradeoff, automation_training_flops, automation_runtime_flops, biggest_training_run):
@@ -408,6 +411,7 @@ def compute_runtime_requirements(runtime_training_tradeoff, automation_training_
 		return runtime_requirements
 ```
 
+### Another example of how refactor will make things more explicit 
 Taking all previous time-steps as an argument is a particularly strong example of the "everything object" phenomenon I described above. If I understand correctly what's going on in `reinvest_output_in_inputs` and the three methods (`update_rnd_state`, `allocate_fractional_inputs`, `calculate_total_inputs`) it calls, in your model each time-step depends only on:
 
 1. Constants (model parameters that don't change from one year to another)
@@ -416,7 +420,7 @@ Taking all previous time-steps as an argument is a particularly strong example o
 
 And each time-step modifies only itself. 
 
-This is an important property of the model that I have to dig really deep to find. With a functional approach you could make this explicit with something like this:
+This is an important property of the model that isn't apparent from your code structure or method signatures. With a functional approach you could make this explicit with something like this:
 
 ```python
 class TimeStep:
@@ -458,6 +462,7 @@ _Unit tests_ are tests of a small piece of code like a function or method, while
 
 Just like we want to write modular code, we also want modular tests. Other things being equal, it's better for each test to check a very narrow piece of functionality. In an ideally written test suite, a failing test should immediately point out to you where in your code the problem lies. So you should have many unit tests and fewer integration tests.
 
+#### Easier test creation
 If your method depends on an enormous `self` object, you'll have to instantiate that enormous object in any tests. This will make your tests hard to understand and verbose.
 
 Right now if I run your test suite, many tests fail with:
@@ -475,6 +480,7 @@ TypeError: __init__() missing 62 required positional arguments: 'full_automation
 
 As currently written, you would have to pass in all these arguments in every test.
 
+#### Powerful guarantees without repetition 
 In one of your tests, you make an assertion about growth from step 0 to step 1:
 
 ```python
@@ -501,6 +507,7 @@ previous_year = TimeStep(labour=12, capital=12)
 assert hardware_rnd_production(labour=1, capital=0, previous_year=previous_year) == 42
 ```
 
+#### Example
 Unit tests of mathematical model code could look something like [this](https://github.com/tadamcz/timing-spend-down-epoch-copy/blob/aa8367a82ff5bbda8ab7da053490a54a917846cc/tests/utility_model/test_utility_givewell.py#L42-L58), where `utility_givewell` is a small function with six parameters, and only these 6 are required in a test: 
 
 ```python
@@ -770,16 +777,16 @@ I see that you're using `unittest` (part of the standard library). I use the tes
 
 My most important recommendation regarding testing is that, if I were you, I would refactor the code in a major way first (see [Suggestion to refactor class into functions](#suggestion-to-refactor-class-into-functions)), before investing in testing. Writing  tests for the code in its current form is going to be a nightmare. Writing for testability is a big part of writing good code (though often code that is better in other ways will also be more testable, so it's overdetermined). (It's one you might not develop a taste for as easily if you just read other people's application code without reading the tests.)
 
-There are two main categories of tests I've tended to use in mathematical modelling code. 
+There are two main categories of tests I've tended to use in mathematical modelling code: 
 
-**Testing specific numerical outputs**
+## Testing specific numerical outputs
 This is the simplest kind of test, where you pass in specific values and check that the result is what you expect. e.g.:
 
 ```python
 assert big_calculation(a=1, b=1, c=3, d=42) == 1.234
 ```
 
-**Testing invariants using parametrized tests**
+## Testing invariants using parametrized tests
 This is where we test that some property always holds or holds for a wide variety of inputs. We use [parametrized tests](https://stackoverflow.com/questions/32899/how-do-you-generate-dynamic-parameterized-unit-tests-in-python) to write the test once and run it for some universe of inputs. I use this a lot, e.g. [here](https://github.com/tadamcz/timing-spend-down-epoch-copy/blob/aa8367a82ff5bbda8ab7da053490a54a917846cc/tests/utility_model/test_utility_givewell.py#L12-L36):
 
 ```python
@@ -884,28 +891,24 @@ At the moment, you're taking user input from a spreadsheet.
 
 I can think of three approaches to defining the inputs:
 
+## Spreadsheets
+The downside of these is that you're at the mercy of the spreadsheet format. And have to query arbitrary cell coordinates instead of meaningful key names. If somebody moves a column in the inputs spreadsheet, you may get nonsense.
+
+If collaborating with users who are researchers is of paramount importance, spreadsheets can be a worthwhile trade-off. What I would suggest in that case, however, is to use local spreadsheet files rather than Google Docs. Querying a dynamic external dependency like a Google Sheet is a bad idea from the point of view of security, reproducibility, and testability.
+
+One nice thing is that Pandas has built-in support to import/export a DataFrame as an Excel spreadsheet.
+
+This is [an example of how I've implemented exporting](https://github.com/tadamcz/timing-spend-down-epoch-copy/blob/aa8367a82ff5bbda8ab7da053490a54a917846cc/timing_spend_down/export.py) with a combination of pandas and xlsx writer. 
+
 ## Script
 Take them in as variables in a Python script. The script can be much simpler than your application code, and the user need only interact with the script. [Example of this approach](https://github.com/tadamcz/timing-spend-down-epoch-copy/blob/aa8367a82ff5bbda8ab7da053490a54a917846cc/example.py#L49-L49):
 
 ```python
-from copula_wrapper import JointDistribution
-from nonstd.distributions import FrozenTwoPieceUniform, FrozenCertainty
-from timing_spend_down.simulation_run import simulate, SimulationInputs
-from timing_spend_down.spending_path import SpendingStrategy
-
 marginals = {
 	"ce_givewell_initial": FrozenCertainty(300),
 	"margin_givewell_initial": FrozenCertainty(300),
 	"exogenous_spending_initial": FrozenCertainty(280),
-	"g_exogenous_spending": FrozenTwoPieceUniform(0, 0.1, 0.2),
-	"opportunities_decline": FrozenTwoPieceUniform(2.5 / 100, 4.75 / 100, 7.25 / 100),
-	"flow_through_decline": FrozenTwoPieceUniform(0, 1 / 100, 3 / 100),
-	"incapacitation": FrozenTwoPieceUniform(2 / 1000, 4 / 1000, 17 / 1000),
-	"value_drift": FrozenTwoPieceUniform(-3.5 / 1000, 3.5 / 1000, 20 / 1000),
-	"utility_elasticity": FrozenTwoPieceUniform(.15, .37, .99),
-	"crowd_in_initial": FrozenTwoPieceUniform(0, 0.5, 2),
-	"learning_factor": FrozenTwoPieceUniform(1.15, 1.42, 3.5),
-	"market_r": FrozenTwoPieceUniform(3.5 / 100, 6.1 / 100, 11 / 100),
+	# etc.
 }
 
 rank_correlations = dict()
@@ -930,12 +933,3 @@ run.export()  # Exports to Excel file
 
 ## JSON or similar
 Use a machine-readable format like JSON. This is simple and easily testable approach but requires your users to interact with JSON.
-
-## Spreadsheets
-The downside of these is that you're at the mercy of the spreadsheet format. And have to query arbitrary cell coordinates instead of meaningful key names. If somebody moves a column in the inputs spreadsheet, you may get nonsense.
-
-If collaborating with users who are researchers is of paramount importance, spreadsheets can be an worthwhile trade-off. What I would suggest in that case, however, is to use local spreadsheet files rather than Google Docs. Querying a dynamic external dependency like a Google Sheet is a bad idea from the point of view of security, reproducibility, and testability.
-
-One nice thing is that Pandas has built-in support to import/export a DataFrame as an Excel spreadsheet.
-
-This is [an example of how I've implemented exporting](https://github.com/tadamcz/timing-spend-down-epoch-copy/blob/aa8367a82ff5bbda8ab7da053490a54a917846cc/timing_spend_down/export.py) with a combination of pandas and xlsx writer. 
