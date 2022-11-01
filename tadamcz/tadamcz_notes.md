@@ -651,7 +651,7 @@ initial_frac_labour_software_rnd
 initial_frac_compute_software_rnd
 ```
 
-Whenever you are repeating yourself a lot (like in the names of these variables), it's a sign that there's some _structure_ to the program that you're not exploiting. In this case using the structure of the input data, we've eliminated some repetition and made the code easier to read, test, and maintain.  I think this could be applied in many places in `SimulateTakeOff`.
+Whenever you are repeating yourself a lot (like in the names of these variables), it's a sign that there's some structure to the program that you're not exploiting. In this case using the structure of the input data, we've eliminated some repetition and made the code easier to read, test, and maintain.  I think this could be applied in many places in `SimulateTakeOff`.
 
 I used dataclasses [here](https://github.com/tadamcz/timing-spend-down-epoch-copy/blob/aa8367a82ff5bbda8ab7da053490a54a917846cc/timing_spend_down/containers.py). My comment is a good example that putting lots of parameters in a class that are not used together will create more verbosity, not less:
 
