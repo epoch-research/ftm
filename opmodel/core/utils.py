@@ -444,6 +444,7 @@ def init_cli_arguments():
   parser.add_argument(
     "--human-names",
     action='store_true',
+    default=None,
     help="Show human names for the parameters and metrics",
   )
 
