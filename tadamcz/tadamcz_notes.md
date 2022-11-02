@@ -275,7 +275,7 @@ r = rank_correlations[right][left]
 
 I'm guessing that the `rank_correlations` comes in as an `n * n` dict of dicts (or similar), where `n` is the number of dimensions.
 
-This opens up the possibility that the user provides inconsistent inputs (where `rank_correlations[right][left] != rank_correlations[left][right]`), that are then silently swallowed (your code will just pick one of them, depending on the order of your nested for loops).
+This opens up the possibility that the user provides inconsistent inputs (where `rank_correlations[right][left] != rank_correlations[left][right]`), that are then silently swallowed (your code will just pick one of them, depending on the order of your nested `for` loops).
 
 This could happen pretty easily, you have to assume that the user might be distracted and is dealing with a large matrix of correlations. You could either:
 
