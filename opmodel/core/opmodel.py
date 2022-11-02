@@ -150,7 +150,6 @@ class SimulateTakeOff():
     self.create_simulation_state()
   
   def check_input_validity(self):
-    
     assert self.flop_gap_training > 1
     assert self.flop_gap_runtime > 1
 
@@ -714,26 +713,29 @@ class SimulateTakeOff():
       / (self.n_labour_tasks_goods
          + self.n_labour_tasks_rnd) # We dont count the initial compute task
 
-    runtime_requirements_goods = self.compute_runtime_requirements(
+    runtime_requirements_goods = SimulateTakeOff.compute_runtime_requirements(
+      self.runtime_training_tradeoff,
       self.automation_training_flops_goods,
       self.automation_runtime_flops_goods,
       self.biggest_training_run[t_idx],
     )
     self.task_compute_to_labour_ratio_goods[t_idx] = 1. / runtime_requirements_goods
 
-    runtime_requirements_rnd = self.compute_runtime_requirements(
+    runtime_requirements_rnd = SimulateTakeOff.compute_runtime_requirements(
+      self.runtime_training_tradeoff,
       self.automation_training_flops_rnd,
       self.automation_runtime_flops_rnd,
       self.biggest_training_run[t_idx],
     )
     self.task_compute_to_labour_ratio_rnd[t_idx] = 1. / runtime_requirements_rnd
 
-  def compute_runtime_requirements(self, automation_training_flops, automation_runtime_flops, biggest_training_run):
+  @staticmethod
+  def compute_runtime_requirements(runtime_training_tradeoff, automation_training_flops, automation_runtime_flops, biggest_training_run):
     with np.errstate(under = 'ignore'):
       # Ignore underflows (we are taking care of them below with np.maximum)
       runtime_requirements = automation_runtime_flops
-      if self.runtime_training_tradeoff is not None:
-        runtime_requirements = runtime_requirements * (automation_training_flops/biggest_training_run)**self.runtime_training_tradeoff
+      if runtime_training_tradeoff is not None:
+        runtime_requirements = runtime_requirements * (automation_training_flops/biggest_training_run)**runtime_training_tradeoff
     runtime_requirements = np.maximum(1., runtime_requirements)  # Requirements cannot fall below 1
     return runtime_requirements
   
@@ -1507,24 +1509,28 @@ class SimulateTakeOff():
     
     return capital_share, cognitive_share, labour_share, compute_share
     
-  ces_production_function = lambda inputs, alphas, rho, tfp=1. : \
-    tfp*np.sum(alphas*(inputs**rho) / alphas.sum())**(1./rho)
+  def ces_production_function(inputs, alphas, rho, tfp=1):
+    return tfp*np.sum(alphas*(inputs**rho) / alphas.sum())**(1./rho)
   
-  nested_ces_production_function =        \
-    lambda capital, cognitive_inputs,     \
-           outer_weights, inner_weights,  \
-           outer_rho, inner_rho,          \
-           tfp=1 :                        \
-    tfp*SimulateTakeOff.ces_production_function(
-       np.array([capital, 
-        SimulateTakeOff.ces_production_function(
-            cognitive_inputs,
-            inner_weights,
-            inner_rho
-        )]),
+  def nested_ces_production_function(
+    capital, cognitive_inputs,
+    outer_weights, inner_weights,
+    outer_rho, inner_rho,
+    tfp=1):
+
+    cognitive_output = SimulateTakeOff.ces_production_function(
+      cognitive_inputs,
+      inner_weights,
+      inner_rho
+    )
+
+    production = tfp*SimulateTakeOff.ces_production_function(
+      np.array([capital, cognitive_output]),
       outer_weights,
       outer_rho
-      )
+    )
+
+    return production
 
   @staticmethod
   def first_index(condition):
@@ -1643,11 +1649,11 @@ class SimulateTakeOff():
     
     # Time from 5% GWP growth to 15% GWP growth
     delta = int(1 / self.t_step)
-    gwp_growth = np.log(self.gwp[delta:self.t_idx] / self.gwp[:self.t_idx-delta])
+    self.gwp_growth = np.log(self.gwp[delta:self.t_idx] / self.gwp[:self.t_idx-delta])
     self.takeoff_metrics["gwp_growth"] = \
       self._length_between_thresholds(
-          gwp_growth > 0.05,
-          gwp_growth > 0.15,
+          self.gwp_growth > 0.05,
+          self.gwp_growth > 0.15,
       )
 
   def compute_doubling_times(self):
