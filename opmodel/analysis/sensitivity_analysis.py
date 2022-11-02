@@ -13,7 +13,7 @@ from multiprocessing import Pool
 
 from . import log
 from . import *
-from ..stats.distributions import ParamsDistribution, PointDistribution, JointDistribution
+from ..stats.distributions import TakeoffParamsDist, PointDistribution, JointDistribution
 
 main_metric = 'billion_agis'
 
@@ -47,7 +47,7 @@ def sensitivity_analysis(quick_test_mode = False, method = 'one_at_a_time', vari
     return result
 
 def variance_reduction_comparison(quick_test_mode = False, save_dir = None, restore_dir = None, method = 'variance_reduction_on_margin'):
-  params_dist = ParamsDistribution(use_ajeya_dist = False, ignore_rank_correlations = True, resampling_method = 'resample_all')
+  params_dist = TakeoffParamsDist(use_ajeya_dist = False, ignore_rank_correlations = True, resampling_method = 'resample_all')
 
   metric_names = SimulateTakeOff.takeoff_metrics + ['rampup_start', 'agi_year']
   parameters = [name for name, marginal in params_dist.marginals.items() if not isinstance(marginal, PointDistribution)]

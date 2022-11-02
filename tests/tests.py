@@ -6,7 +6,7 @@ from scipy import stats
 from opmodel.core.utils import *
 from scipy.interpolate import interp1d
 from statsmodels.distributions.empirical_distribution import ECDF
-from opmodel.stats.distributions import ParamsDistribution, PointDistribution, AjeyaDistribution
+from opmodel.stats.distributions import TakeoffParamsDist, PointDistribution, AjeyaDistribution
 
 from opmodel.core.opmodel import *
 
@@ -466,7 +466,7 @@ class TestParamsDistribution(unittest.TestCase):
   def setUpClass(self):
     n_samples = 10000
 
-    TestParamsDistribution.params_dist = ParamsDistribution()
+    TestParamsDistribution.params_dist = TakeoffParamsDist()
     print("Sampling. This could take a while.")
     TestParamsDistribution.samples = TestParamsDistribution.params_dist.rvs(n_samples)
 
@@ -578,7 +578,7 @@ class TestTradeoff(unittest.TestCase):
     best_guess_parameters = {parameter : row['Best guess'] for parameter, row in get_parameter_table().iterrows()}
     self.parameters.append(best_guess_parameters)
 
-    params_dist = ParamsDistribution()
+    params_dist = TakeoffParamsDist()
     for row, sample in params_dist.rvs(10).iterrows():
       parameters = sample.to_dict()
       self.parameters.append(parameters)

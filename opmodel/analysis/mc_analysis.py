@@ -41,7 +41,7 @@ def mc_analysis(n_trials = 100, max_retries = 100):
 
   slow_takeoff_count = 0
 
-  params_dist = ParamsDistribution()
+  params_dist = TakeoffParamsDist()
   samples = []
 
   last_valid_indices = []
