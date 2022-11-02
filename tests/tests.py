@@ -472,8 +472,8 @@ class TestParamsDistribution(unittest.TestCase):
 
   def setUp(self):
     self.samples = TestParamsDistribution.samples
-    self.marginals = TestParamsDistribution.params_dist.get_marginals()
-    self.rank_correlations = TestParamsDistribution.params_dist.get_rank_correlations()
+    self.marginals = TestParamsDistribution.params_dist.marginals
+    self.rank_correlations = TestParamsDistribution.params_dist.pairwise_rank_corr
     self.parameters = list(self.marginals.keys())
 
   def test_rank_correlations(self):

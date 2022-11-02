@@ -142,12 +142,6 @@ class ParamsDistribution():
 
       return output_samples
 
-  def get_marginals(self):
-    return self.marginals
-
-  def get_rank_correlations(self):
-    return self.pairwise_rank_corr
-
 class AjeyaDistribution(rv_continuous):
   def __init__(self, lower_bound = None):
     self.cdf_pd = get_clipped_ajeya_dist(lower_bound)
