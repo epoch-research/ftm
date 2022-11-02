@@ -18,7 +18,7 @@ t_step:   0.1
 ajeya_dist_url: 'https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/edit#gid=1177136586'
 #ajeya_dist_url: 'https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/edit#gid=701812055' # Aggressive dist
 
-human_names: false
+human_names: true
 
 #------------------------------------------------------------------------------
 # Analysis arguments
