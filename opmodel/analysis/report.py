@@ -806,6 +806,7 @@ class Report:
     element = et.Element(f'h{max(1, level)}', {'id': self.convert_to_id(title)})
     element.text = title
     parent.append(element)
+    return element
 
   def add_element(self, element, parent=None):
     if parent is None: parent = self.default_parent
@@ -817,6 +818,10 @@ class Report:
 
     element = et.fromstring(html)
     parent.append(element)
+    return element
+
+  def from_html(self, html):
+    element = et.fromstring(html)
     return element
 
   def add_html_lines(self, html_lines, parent=None):
@@ -1007,12 +1012,14 @@ class Report:
     element.set('class', 'banner ' + ' '.join(classes))
     self.body.insert(0, element)
 
-  def generate_tooltip_html(self, content, on_mount = '', triggers = '', classes = ''):
+  def generate_tooltip_html(self, content, on_mount = None, triggers = None, classes = ''):
     if classes: classes = ' ' + classes
-    return f'''<i class="bi-info-circle super-info-icon{classes}" data-tooltip-triggers="{triggers}" data-tooltip-on-mount="{on_mount}" data-tooltip-content="{Report.escape(content)}"></i>'''
+    data_triggers = '' if triggers is None else f'data-tooltip-triggers="{triggers}"'
+    data_on_mount = '' if on_mount is None else f'data-tooltip-on-mount="{on_mount}"'
+    return f'''<i class="bi-info-circle super-info-icon{classes}" {data_triggers} {data_on_mount} data-tooltip-content="{Report.escape(content)}"></i>'''
 
-  def generate_tooltip(self, content, on_mount = '', triggers = '', classes = ''):
-    return et.fromstring(generate_tooltip_html(content, on_mount))
+  def generate_tooltip(self, content, on_mount = None, triggers = None, classes = ''):
+    return et.fromstring(self.generate_tooltip_html(content, on_mount, triggers, classes))
 
   # ---------------------------------------------------------------------------
   # Tabs

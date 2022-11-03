@@ -141,7 +141,7 @@ class DynamicArray:
         return self.data + a
 
     def __eq__(self, a):
-        if a.__class__ is self.__class__ or a.__class__ in array_type:
+        if isinstance(a, DynamicArray) or a.__class__ in array_type:
             return np.equal(self.data, a)
 
     def __gt__(self, a):

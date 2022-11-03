@@ -517,6 +517,9 @@ def draw_oom_lines():
   for oom in range(math.floor(np.log10(low)), math.ceil(np.log10(high))):
     plt.axhline(10**oom, linestyle='dotted', color='black')
 
+def pluralize(name, count):
+  return name if (count == 1) else name + 's'
+
 # Import display in non IPython environments
 try:
   from IPython.display import display
