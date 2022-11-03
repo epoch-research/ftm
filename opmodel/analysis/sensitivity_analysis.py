@@ -51,8 +51,8 @@ def variance_reduction_comparison(quick_test_mode = False, save_dir = None, rest
 
   metric_names = SimulateTakeOff.takeoff_metrics + ['rampup_start', 'agi_year']
   parameters = [name for name, marginal in params_dist.marginals.items() if not isinstance(marginal, PointDistribution)]
-  mean_samples = 100
-  var_samples = 100
+  mean_samples = 50_000
+  var_samples = 2
   shapley_samples = 1000
   processes = None
 
@@ -584,10 +584,14 @@ if __name__ == '__main__':
   parser.add_argument(
     "--variance_reduction_restore_dir",
   )
+  parser.add_argument(
+    "--variance_reduction_save_dir",
+  )
   args = handle_cli_arguments(parser)
 
   variance_reduction_params = {
-      'restore_dir': args.variance_reduction_restore_dir
+      'restore_dir': args.variance_reduction_restore_dir,
+      'save_dir': args.variance_reduction_save_dir,
   }
 
   write_sensitivity_analysis_report(report_file_path=args.output_file, report_dir_path=args.output_dir,
