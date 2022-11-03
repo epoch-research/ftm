@@ -104,7 +104,7 @@ class SimulateTakeOff():
       initial_cognitive_share_rnd,
       initial_compute_share_goods,
       initial_compute_share_rnd,
-      initial_compute_software_rnd_experiments,
+      initial_frac_compute_software_rnd_experiments,
 
       # Other
       rampup_trigger,
@@ -670,7 +670,7 @@ class SimulateTakeOff():
     self.frac_compute_training[0] = self.initial_biggest_training_run / self.compute[0]
 
     # The fraction of experiments compute is initialized to match the initial amount
-    self.frac_compute_software_rnd_experiments[0] = self.initial_compute_software_rnd_experiments / self.compute[0]
+    self.frac_compute_software_rnd_experiments[0] = self.initial_frac_compute_software_rnd_experiments
     
     ## Initial compute must be greater than initial training run
     if self.initial_biggest_training_run > self.compute[0]:
