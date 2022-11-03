@@ -29,11 +29,39 @@ class TooManyRetries(Exception):
 
 class YearsBeforeAgiMetric:
   """ Metrics for the "years before AGI" quantiles table """
+
+  # This is hacky
   def __init__(self, name, get_values, interpolation = 'log', format_quantile = lambda x: str(x)):
     self.name = name
     self.get_values = get_values
     self.interpolation = interpolation
     self.format_quantile = format_quantile
+
+  def get_value_at_year(self, year, model, no_automation_model):
+    ts, values = self.get_values(model)
+    no_auto_ts, no_auto_vals = self.get_values(no_automation_model)
+
+    interpolator = interp1d(
+      ts,
+      values if (self.interpolation == 'linear') else np.log10(values),
+      fill_value = 'extrapolate'
+    )
+
+    no_auto_interpolator = interp1d(
+      no_auto_ts,
+      no_auto_vals if (self.interpolation == 'linear') else np.log10(no_auto_vals),
+      fill_value = 'extrapolate'
+    )
+
+    if year < model.t_start:
+      # Extrapolate
+      value = no_auto_interpolator(year)
+    else:
+      value = interpolator(year)
+
+    if self.interpolation == 'log': value = 10**value
+
+    return value
 
 def mc_analysis(n_trials = 100, max_retries = 100):
   scalar_metrics = {}
@@ -58,36 +86,32 @@ def mc_analysis(n_trials = 100, max_retries = 100):
     YearsBeforeAgiMetric(
       'gwp growth',
       lambda model: (model.timesteps[:len(model.gwp_growth)], model.gwp_growth),
-      interpolation = 'log',
+      interpolation = 'linear',
       format_quantile = lambda x: f'{x:.03f}',
     )
   )
 
   # Doubling times metrics
-  def evaluate_doubling_times(model, attr):
-    timesteps = model.timesteps
-    values = getattr(model, attr)
+  class DoublingYearsBeforeAgiMetric(YearsBeforeAgiMetric):
+    def __init__(self, attr):
+      self.name = f'{attr} doubling time (years)'
+      self.format_quantile = lambda x: f'{x:.1f}' if x <= 100 else '> 100'
+      self.attr = attr
 
-    # Shift by one year
-    shifted_values = 10**interp1d(timesteps, np.log10(values), fill_value = 'extrapolate')(timesteps + 1)
+    def get_value_at_year(self, year, normal_model, no_automation_model):
+      model = no_automation_model if (year < normal_model.t_start) else normal_model
 
-    denominator = np.log2(shifted_values/values)
-    doubling_times = np.divide(1, denominator, where = (denominator != 0))
+      ts = model.timesteps
+      vals = getattr(model, self.attr)
+      interpolator = interp1d(ts, np.log10(vals), fill_value = 'extrapolate')
 
-    # This is pretty hacky, but we have to get rid of infinities
-    doubling_times[denominator == 0] = 1e10
+      denominator = np.log2(10**interpolator(year+1)/10**interpolator(year))
+      doubling_time = 1/denominator if (denominator != 0) else 1e10
 
-    return timesteps, doubling_times
+      return doubling_time
 
   def add_doubling_time_metric(metric):
-    metrics_before_agi.append(
-      YearsBeforeAgiMetric(
-        f'{metric} doubling time (years)',
-        lambda model, _var=metric: evaluate_doubling_times(model, _var),
-        interpolation = 'linear',
-        format_quantile = lambda x: f'{x:.1f}' if x <= 100 else '> 100',
-      )
-    )
+    metrics_before_agi.append(DoublingYearsBeforeAgiMetric(metric))
 
   add_doubling_time_metric('hardware_performance')
   add_doubling_time_metric('software')
@@ -178,16 +202,17 @@ def mc_analysis(n_trials = 100, max_retries = 100):
       state_metrics[state_metric].append(metric_value)
 
     if model.agi_year is not None:
+      no_automation_mc_params = mc_params.copy()
+      no_automation_mc_params['full_automation_requirements_training'] = 1e100
+      no_automation_mc_params['flop_gap_training'] = 2
+      no_automation_model = SimulateTakeOff(**no_automation_mc_params, t_start = t_start, t_end = t_start + (2 + t_step))
+      no_automation_model.run_simulation()
+
+      assert(np.all(no_automation_model.frac_tasks_automated_goods < 1) and np.all(no_automation_model.frac_tasks_automated_rnd < 1))
+
       for metric in metrics_before_agi:
-        ts, values = metric.get_values(model)
-        interpolator = interp1d(
-          ts,
-          values if (metric.interpolation == 'linear') else np.log10(values),
-          fill_value = 'extrapolate'
-        )
         for year, year_values in metrics_before_agi_values[metric].items():
-          value = interpolator(model.agi_year - year)
-          if metric.interpolation == 'log': value = 10**value
+          value = metric.get_value_at_year(model.agi_year - year, model, no_automation_model)
           year_values.append(value)
 
     last_valid_indices.append(model.t_idx)
