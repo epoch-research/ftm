@@ -522,6 +522,7 @@ def write_mc_analysis_report(
   metrics_before_agi_names = []
 
   id_to_name = get_variable_names()
+  id_to_name['GWP growth'] = 'GWP doubling time'
   for i, (metric, table) in enumerate(results.metrics_before_agi_quantiles.items()):
     metric_name = metric.name
     if get_option('human_names'):
