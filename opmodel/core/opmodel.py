@@ -1024,11 +1024,11 @@ class SimulateTakeOff():
 
   ## REINVEST OUTPUT IN INPUTS
   def reinvest_output_in_inputs(self, t_idx):
-    self.update_rnd_state(t_idx)
+    self.update_rnd(t_idx)
     self.allocate_fractional_inputs(t_idx)
     self.calculate_total_inputs(t_idx)
   
-  def update_rnd_state(self, t_idx):
+  def update_rnd(self, t_idx):
     
     def _update_rnd(
         current_performance, 
