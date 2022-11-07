@@ -474,37 +474,33 @@ class SimulateTakeOff():
 
   def run_simulation(self):
     # Treat NumPy's floating-point warnings as exceptions
-    np.seterr('raise')
+    with np.errstate(invalid = 'raise'):
+      self.clear_dynarrays()
 
-    self.clear_dynarrays()
+      try:
+        t_idx = 0
+        while self.continue_simulation(t_idx):
+          t_year = self.index_to_time(t_idx)
 
-    try:
-      t_idx = 0
-      while self.continue_simulation(t_idx):
-        t_year = self.index_to_time(t_idx)
+          self.expand_dynarrays(1) # ensure we have enough space for the arrays
 
-        self.expand_dynarrays(1) # ensure we have enough space for the arrays
+          self.timesteps[t_idx] = t_year
+          self.t_idx = t_idx
+          if t_idx == 0:
+            self.initialize_inputs()
+          else:
+            self.reinvest_output_in_inputs(t_idx)
+          self.automate_tasks(t_idx)
+          self.production(t_idx)
 
-        self.timesteps[t_idx] = t_year
-        self.t_idx = t_idx
-        if t_idx == 0:
-          self.initialize_inputs()
-        else:
-          self.reinvest_output_in_inputs(t_idx)
-        self.automate_tasks(t_idx)
-        self.production(t_idx)
-
-        t_idx += 1
+          t_idx += 1
+        
+      except FloatingPointError as e: 
+        self.handle_exception(e)
+      finally:
+        self.n_timesteps = t_idx
+        self.t_end = self.index_to_time(t_idx)
       
-    except FloatingPointError as e: 
-      self.handle_exception(e)
-    finally:
-      self.n_timesteps = t_idx
-      self.t_end = self.index_to_time(t_idx)
-
-      # Set default error handling
-      np.seterr()
-    
     # Compute takeoff metrics
     self.compute_metrics()
 
