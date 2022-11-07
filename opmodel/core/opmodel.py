@@ -473,8 +473,7 @@ class SimulateTakeOff():
   ########################################################################
 
   def run_simulation(self):
-    # Treat numpy warnings as exceptions
-    # np.seterr(over='raise')
+    # Treat NumPy's floating-point warnings as exceptions
     np.seterr('raise')
 
     self.clear_dynarrays()
