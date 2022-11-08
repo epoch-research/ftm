@@ -9,7 +9,10 @@ import json
 import dill as pickle
 import traceback
 import seaborn as sns
-from scipy.stats import rv_continuous
+import colorsys
+import matplotlib.colors as mc
+from matplotlib.ticker import StrMethodFormatter
+from scipy.stats import rv_continuous, gaussian_kde
 from scipy.interpolate import interp1d
 from scipy.special import erfinv
 from numpy.random import default_rng
@@ -31,11 +34,12 @@ class YearsBeforeAgiMetric:
   """ Metrics for the "years before AGI" quantiles table """
 
   # This is hacky
-  def __init__(self, name, get_values, interpolation = 'log', format_quantile = lambda x: str(x)):
+  def __init__(self, name, get_values, interpolation = 'log', format_quantile = lambda x: str(x), remarks = None):
     self.name = name
     self.get_values = get_values
     self.interpolation = interpolation
     self.format_quantile = format_quantile
+    self.remarks = remarks
 
   def get_value_at_year(self, year, model, no_automation_model):
     ts, values = self.get_values(model)
@@ -81,22 +85,13 @@ def mc_analysis(n_trials = 100, max_retries = 100):
   years_before_agi = [0, 1, 2, 5, 10]
   metrics_before_agi = []
 
-  # Normal growth metrics
-  metrics_before_agi.append(
-    YearsBeforeAgiMetric(
-      'gwp growth',
-      lambda model: (model.timesteps[:len(model.gwp_growth)], model.gwp_growth),
-      interpolation = 'linear',
-      format_quantile = lambda x: f'{x:.03f}',
-    )
-  )
-
   # Doubling times metrics
   class DoublingYearsBeforeAgiMetric(YearsBeforeAgiMetric):
-    def __init__(self, attr):
+    def __init__(self, attr, remarks = None):
       self.name = f'{attr} doubling time (years)'
-      self.format_quantile = lambda x: f'{x:.1f}' if x <= 100 else '> 100'
+      self.format_quantile = lambda x: f'{x:.1f}' if x <= 100 else 'N/A'
       self.attr = attr
+      self.remarks = remarks
 
     def get_value_at_year(self, year, normal_model, no_automation_model):
       model = no_automation_model if (year < normal_model.t_start) else normal_model
@@ -110,11 +105,12 @@ def mc_analysis(n_trials = 100, max_retries = 100):
 
       return doubling_time
 
-  def add_doubling_time_metric(metric):
-    metrics_before_agi.append(DoublingYearsBeforeAgiMetric(metric))
+  def add_doubling_time_metric(metric, remarks = None):
+    metrics_before_agi.append(DoublingYearsBeforeAgiMetric(metric, remarks))
 
+  add_doubling_time_metric('gwp')
   add_doubling_time_metric('hardware_performance')
-  add_doubling_time_metric('software')
+  add_doubling_time_metric('software', 'N/A: at physical limit')
 
   # Rest of the metric
   def add_model_var_metric(var, format_quantile):
@@ -440,7 +436,7 @@ def write_mc_analysis_report(
   # Plot CDFs of scalar metrics
   metric_id_to_human = get_metric_names()
 
-  def plot_ecdf(x, limit, label, color = None, normalize = False):
+  def plot_ecdf(x, limits, label, color = None, normalize = False):
     x = filter_nans(x)
     x = np.sort(x)
 
@@ -449,48 +445,125 @@ def write_mc_analysis_report(
     ecdf = np.insert(ecdf, 0, 0)
     x = np.insert(x, 0, x[0])
 
-    ecdf = ecdf[x < limit]
-    x = x[x < limit]
+    ecdf = ecdf[x < limits[1]]
+    x = x[x < limits[1]]
+
+    ecdf = ecdf[x >= limits[0]]
+    x = x[x >= limits[0]]
 
     ecdf = np.append(ecdf, ecdf[-1])
-    x = np.append(x, limit)
+    x = np.append(x, limits[1])
 
     if normalize:
       ecdf /= ecdf[-1]
 
     plt.step(x, ecdf, where = 'post', label = label, color = color)
     plt.ylim(0, 1)
+    plt.gca().yaxis.set_major_formatter(StrMethodFormatter('{x:,.2f}'))
+
+  def plot_epdf(x, limits, label, color = None, normalize = False):
+    x = filter_nans(x)
+    x = x[x < limits[1]]
+    x = x[x >= limits[0]]
+
+    t = np.linspace(limits[0], limits[1], 500)
+    t0 = t[0] - 0.1
+
+    plt.plot(t, 1/(t - t0) * gaussian_kde(np.log(x - t0))(np.log(t - t0)), label = label, color = color)
+
+    c = colorsys.rgb_to_hls(*mc.to_rgb(color))
+    hist_color = colorsys.hls_to_rgb(c[0], 0.4 * c[1], c[2])
+
+    plt.gca().yaxis.set_major_formatter(StrMethodFormatter('{x:,.2f}'))
 
   sns.reset_defaults()
 
   colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
   color_index = 0
 
-  # Takeoff metrics
-  plt.figure(figsize=(10,6))
-  for metric in ['full_automation', 'billion_agis']:
-    plot_ecdf(results.scalar_metrics[metric], limit = results.t_end - results.t_start, label = metric_id_to_human[metric], color = colors[color_index], normalize = True)
-    color_index += 1
-  text = f'p(takeoff before {results.t_end}) = {np.mean(~np.isnan(results.scalar_metrics["billion_agis"])):.0%}'
-  plt.text(results.t_end - results.t_start - 2, 0.95, text, va = 'top', ha = 'right')
-  plt.xlabel('Years')
-  plt.ylabel(f'CDF\n(conditional on takeoff happening before {results.t_end})')
-  plt.title('AI Take-off Metrics')
-  plt.gca().legend(loc = 'lower right')
+  # CDFs and PDFs
+  pdf_cdf_container = report.add_html('<div style="display: flex; overflow-x: auto;"></div>')
 
-  report.add_figure()
+  def add_pdf_cdf_sub_container(default):
+    pdf_cdf_sub_container = report.add_html('<div class="pdf-cdf-sub-container"></div>', parent = pdf_cdf_container)
+    report.add_html(f'''
+      <p>
+        Show
+        <select class="pdf-cdf-selector">
+          <option value="pdf" {'selected="true"' if (default == 'pdf') else ''}>probability density function (smoothed)</option>
+          <option value="cdf" {'selected="true"' if (default == 'cdf') else ''}>cumulative density function</option>
+        </select>
+      </p>
+    ''', parent = pdf_cdf_sub_container)
+    return pdf_cdf_sub_container
+
+  # Takeoff metrics
+  pdf_cdf_sub_container = add_pdf_cdf_sub_container('pdf')
+  for method in ['cdf', 'pdf']:
+    plt.figure(figsize=(10,6))
+    metric = 'billion_agis'
+    plot = plot_ecdf if (method == 'cdf') else plot_epdf
+    plot(results.scalar_metrics[metric], limits = [0, results.t_end - results.t_start], label = metric_id_to_human[metric], color = colors[color_index])
+    plt.xlabel('Years')
+    plt.ylabel(f'{method.upper()}\n(conditional on takeoff happening before {results.t_end})')
+    plt.title(metric_id_to_human['billion_agis'])
+
+    container = report.add_figure(parent = pdf_cdf_sub_container)
+    report.add_class(container, method)
+    if method == 'pdf':
+      report.add_class(container, 'selected')
+  color_index += 1
 
   # Timelines metrics
-  plt.figure(figsize=(10,6))
-  for metric in ['rampup_start', 'agi_year']:
-    plot_ecdf(results.scalar_metrics[metric], limit = results.t_end, label = metric_id_to_human[metric], color = colors[color_index])
-    color_index += 1
-  plt.ylabel('CDF')
-  plt.xlabel('Year')
-  plt.title('AI Timelines Metrics')
-  plt.gca().legend(loc = 'lower right')
+  pdf_cdf_sub_container = add_pdf_cdf_sub_container('cdf')
+  for method in ['cdf', 'pdf']:
+    plt.figure(figsize=(10,6))
+    for i, metric in enumerate(['rampup_start', 'agi_year']):
+      plot = plot_ecdf if method == 'cdf' else plot_epdf
+      plot(results.scalar_metrics[metric], limits = [results.t_start, results.t_end], label = metric_id_to_human[metric], color = colors[color_index + i])
+    plt.ylabel(method.upper())
+    plt.xlabel('Year')
+    plt.title('AI Timelines Metrics')
+    plt.gca().legend(loc = (0.75, 0.15))
 
-  report.add_figure()
+    container = report.add_figure(parent = pdf_cdf_sub_container)
+    report.add_class(container, method)
+    if method == 'cdf':
+      report.add_class(container, 'selected')
+
+  report.head.append(report.from_html('''
+    <script>
+      window.addEventListener('load', () => {
+        for (let selector of document.querySelectorAll('.pdf-cdf-selector')) {
+          let container = selector.parentElement.parentElement;
+          selector.addEventListener('input', () => {
+            for (let node of container.querySelectorAll('.selected')) {
+              node.classList.remove('selected');
+            }
+            for (let node of container.querySelectorAll(`.${selector.value}`)) {
+              node.classList.add('selected');
+            }
+          })
+        }
+      })
+    </script>
+  '''))
+
+  report.head.append(report.from_html('''
+    <style>
+      .pdf-cdf-sub-container {
+        min-width: 800px
+      }
+
+      .pdf-cdf-sub-container > .figure-container {
+        display: none;
+      }
+
+      .pdf-cdf-sub-container > .figure-container.selected {
+        display: unset;
+      }
+    </style>
+  '''))
 
   # Plot trajectories
   metrics = {'biggest_training_run': 'Biggest training run'}
@@ -522,7 +595,7 @@ def write_mc_analysis_report(
   metrics_before_agi_names = []
 
   id_to_name = get_variable_names()
-  id_to_name['GWP growth'] = 'GWP doubling time'
+  id_to_name['biggest_training_run'] = 'Biggest training run (measured in 2022-FLOP)'
   for i, (metric, table) in enumerate(results.metrics_before_agi_quantiles.items()):
     metric_name = metric.name
     if get_option('human_names'):
@@ -547,6 +620,8 @@ def write_mc_analysis_report(
     table_container.attrib['id'] = metrics_before_agi_names[i]
     if i == 0:
       report.add_class(table_container, 'selected')
+    if metric.remarks:
+      report.add_html(f'<p class="years-before-agi-remarks">{metric.remarks}</p>', parent = table_container)
 
   report.head.append(report.from_html('''
     <script>
@@ -572,6 +647,10 @@ def write_mc_analysis_report(
 
       #years-before-agi-container > .selected {
         display: unset;
+      }
+
+      .years-before-agi-remarks {
+        font-style: italic;
       }
     </style>
   '''))
