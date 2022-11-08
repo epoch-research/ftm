@@ -71,7 +71,7 @@ if __name__ == '__main__':
   )
 
   parser.add_argument(
-    "--variance_reduction_restore_dir",
+    "--variance-reduction-restore-dir",
   )
 
   args = handle_cli_arguments(parser)
