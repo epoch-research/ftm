@@ -53,6 +53,15 @@ class Report:
           margin-left: 0.5em;
         }
 
+        .header-link {
+          color: grey;
+        }
+
+        .header-link:hover {
+          color: initial;
+          cursor: pointer;
+        }
+
         .super-info-icon {
           position: relative;
           font-size: 0.8em;
@@ -516,6 +525,7 @@ class Report:
 
     self.head.append(et.fromstring('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.9.0/font/bootstrap-icons.css"></link>'))
     self.head.append(et.fromstring('<link rel="stylesheet" href="https://unpkg.com/tippy.js@6/themes/light-border.css" />'))
+    self.head.append(et.fromstring('<script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.10/dist/clipboard.min.js"></script>'))
     self.head.append(et.fromstring('<script defer="true" src="https://cdn.jsdelivr.net/npm/clipboard@2.0.10/dist/clipboard.min.js"></script>'))
     self.head.append(et.fromstring('<script defer="true" src="https://unpkg.com/micromodal/dist/micromodal.min.js"></script>'))
     self.head.append(et.fromstring('<script defer="true" src="https://unpkg.com/panzoom@9.4.0/dist/panzoom.min.js"></script>'))
@@ -555,6 +565,22 @@ class Report:
         };
       </script>
     '''));
+
+    self.head.append(et.fromstring('''
+      <script>
+          window.addEventListener('load', () => {
+          for (let link of document.querySelectorAll('.header-link')) {
+            link.addEventListener('click', () => {
+              window.history.pushState({}, "", `#${link.parentElement.id}`);
+              link.parentElement.scrollIntoView({
+                behavior: 'smooth',
+              });
+            });
+            //new ClipboardJS('.header-link');
+          }
+          });
+      </script>
+    '''))
 
     self.head.append(et.fromstring('''
       <script>
@@ -804,6 +830,7 @@ class Report:
     if parent is None: parent = self.default_parent
 
     element = et.Element(f'h{max(1, level)}', {'id': self.convert_to_id(title)})
+    self.add_html('<i class="header-link bi bi-link-45deg"></i>', parent = element)
     element.text = title
     parent.append(element)
     return element
@@ -1102,7 +1129,7 @@ class Report:
     el.attrib['class'] = (el.attrib['class'] + ' ' + clazz).strip()
 
   def convert_to_id(self, s):
-    s = re.sub(' +', '-', s.lower())
+    s = re.sub(' +()"', '-', s.lower())
 
     if self.current_tab:
       s = f'{self.current_tab.id}-{s}'
