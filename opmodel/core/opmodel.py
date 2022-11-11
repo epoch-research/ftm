@@ -1873,6 +1873,42 @@ class SimulateTakeOff():
   def display_takeoff_metrics(self):
     display(self.get_takeoff_metrics())
 
+  def plot_fractional_inputs(self):
+    fracs = {
+      'capital_fracs': {
+        'frac_capital_hardware_rnd': self.frac_capital_hardware_rnd,
+      },
+
+      'compute_fracs': {
+        'frac_compute_hardware_rnd': self.frac_compute_hardware_rnd,
+        'frac_compute_software_rnd': self.frac_compute_software_rnd,
+        'frac_compute_training': self.frac_compute_training,
+      },
+
+      'gwp_fracs': {
+        'frac_gwp_compute': self.frac_gwp_compute,
+      },
+
+      'labour_fracs': {
+        'frac_labour_hardware_rnd': self.frac_labour_hardware_rnd,
+        'frac_labour_software_rnd': self.frac_labour_software_rnd,
+      },
+    }
+
+    agi_idx = self.time_to_index(self.agi_year + 5)
+
+    colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+    color_index = 0
+
+    for type_index, frac_list in enumerate(fracs.values()):
+      plt.subplot(len(fracs.values()), 1, type_index + 1)
+      for frac_index, (name, frac) in enumerate(frac_list.items()):
+        plt.plot(self.timesteps.data[:agi_idx], frac.data[:agi_idx], label = name, color = colors[color_index])
+        color_index += 1
+      plt.legend()
+
+    # Set the title for the whole plot
+    plt.suptitle('Fractional inputs')
     
 if __name__ == "__main__":
   # Handle CLI arguments
