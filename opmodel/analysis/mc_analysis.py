@@ -229,7 +229,8 @@ def mc_analysis(n_trials = 100, max_retries = 100):
   for q in quantiles:
     row = {"Quantile" : q}
     for scalar_metric in scalar_metrics:
-      row[scalar_metric] = np.quantile(filter_nans(scalar_metrics[scalar_metric]), q)
+      value = np.quantile(filter_nans(scalar_metrics[scalar_metric]), q)
+      row[scalar_metric] = value if (value < t_end) else f'≥ {t_end}'
     metrics_quantiles.append(row)
 
   # Summary of the "years before AGI" quantiles
