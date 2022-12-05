@@ -34,7 +34,7 @@ class ScenarioRunner:
 
       log.indent()
       scenarios = self.simulate_scenario_group(parameter_table)
-      groups.append(ScenarioGroup(timeline, scenarios, parameter_table))
+      groups.append(ScenarioGroup(timeline, scenarios, parameter_table, parameters['Full automation requirements']))
       log.deindent()
 
       log.info('')
@@ -113,10 +113,12 @@ class ScenarioRunner:
     return scenarios
 
 class ScenarioGroup:
-  def __init__(self, name, scenarios, parameter_table):
+  def __init__(self, name, scenarios, parameter_table, full_automation_reqs = None):
     self.name = name
     self.scenarios = scenarios
     self.parameter_table = parameter_table
+    self.full_automation_reqs = full_automation_reqs
+    self.reqs_label = f'{full_automation_reqs:.0e}'.replace('+', '') if (full_automation_reqs is not None) else '--'
 
   def __getitem__(self, index):
     return self.scenarios[index]

@@ -30,7 +30,7 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
 
   for group in results.scenario_groups:
     for scenario in group:
-      row = {**{'Timeline' : group.name, 'Scenario' : scenario.name}, **scenario.model.takeoff_metrics}
+      row = {**{f'FLOP to train AGI using {scenario.model.t_start} algorithms': f'{group.full_automation_reqs:.0e}'.replace('+', ''), 'Scenario' : scenario.name}, **scenario.model.takeoff_metrics}
       for metric in ['rampup_start', 'agi_year', 'doubling_times']:
         row[metric] = getattr(scenario.model, metric)
       table.append(row)
@@ -75,7 +75,7 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
   report.add_header("Model summary", level = 3)
 
   scenario_options = "\n".join([
-    f'<option value="{group.name} - {scenario.name}">{group.name} - {scenario.name}</option>'
+    f'''<option value="{group.name} - {scenario.name}">{format(group.full_automation_reqs).replace('+', '')} - {scenario.name}</option>'''
     for group in results.scenario_groups
     for scenario in group
   ])
@@ -108,7 +108,7 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
   variable_names = get_variable_names()
 
   scenario = results.scenario_groups[0][0]
-  tr.append(et.fromstring(f'<th>Timeline</th>'))
+  tr.append(et.fromstring(f'<th>FLOP to train AGI using {scenario.model.t_start} algorithms</th>'))
   tr.append(et.fromstring(f'<th>Scenario</th>'))
   for metric in scenario.model.get_summary_table().columns:
     possible_suffixes = [' growth rate', ' doubling time', '']
@@ -129,6 +129,7 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
   container.append(table_container)
 
   summaries = {}
+  requirements = {}
   for group in results.scenario_groups:
     summaries_group = {}
     for scenario in group:
@@ -148,7 +149,9 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
       summaries_group[scenario.name] = summary_dict
       row_count = len(summary_table)
     summaries[group.name] = summaries_group
+    requirements[group.name] = group.full_automation_reqs
   summaries_json = json.dumps(summaries)
+  requirements_json = json.dumps(requirements)
 
   # Assumptions
 
@@ -216,6 +219,7 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
   script = et.Element('script')
   script.text = '''
     let summaries = ''' + summaries_json + ''';
+    let requirements = ''' + requirements_json + ''';
     let inputs = ''' + inputs_json + ''';
     let rowCount = ''' + str(row_count) + ''';
     let param_names = ''' + json.dumps(get_param_names()) + ''';
@@ -325,6 +329,7 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
         let timeline = scenarioId[0];
         let name = scenarioId[1];
         let summary = summaries[timeline][name];
+        let reqs = requirements[timeline].toExponential().replace('+', '')
 
         let formattedCols = {};
         for (let col in summary) {
@@ -333,7 +338,7 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
 
         for (let rowIndex = 0; rowIndex < rowCount; rowIndex++) {
           html += '<tr>';
-          html += `<td>${timeline}</td>`;
+          html += `<td>${reqs}</td>`;
           html += `<td>${name}</td>`;
           for (let col in summary) {
             let important = (col in most_important_metrics);
