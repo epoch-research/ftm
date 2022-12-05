@@ -52,7 +52,7 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
   report.add_header("Compute increase over time", level = 3)
 
   # Hackily add legend as an independent separate figure
-  plot_compute_increase(results.scenario_groups[0], title = group.name, show_legend = False)
+  plot_compute_increase(results.scenario_groups[0], title = '', show_legend = False)
   ax = plt.gca()
   legend_fig = plt.figure()
   plt.figlegend(*ax.get_legend_handles_labels())
@@ -62,7 +62,7 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
   graph_container = report.add_html('<div style="display: flex; overflow-x: auto;"></div>')
 
   for i, group in enumerate(results.scenario_groups):
-    plot_compute_increase(group, title = group.name, show_legend = False)
+    plot_compute_increase(group, title = f'Training requirements: {group.reqs_label} FLOP', show_legend = False)
     figure = report.add_figure(parent = graph_container)
     figure.set('style', 'min-width: 900px')
 
@@ -75,7 +75,7 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
   report.add_header("Model summary", level = 3)
 
   scenario_options = "\n".join([
-    f'''<option value="{group.name} - {scenario.name}">{format(group.full_automation_reqs).replace('+', '')} - {scenario.name}</option>'''
+    f'''<option value="{group.name} - {scenario.name}">{format(group.full_automation_reqs).replace('+', '')} FLOP - {scenario.name}</option>'''
     for group in results.scenario_groups
     for scenario in group
   ])
