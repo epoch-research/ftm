@@ -12,7 +12,8 @@ from ..core.utils import log, get_parameter_table, get_rank_correlations, get_cl
 class TakeoffParamsDist():
   """ Joint parameter distribution. """
 
-  def __init__(self, ensure_no_automatable_goods_tasks = True, ignore_rank_correlations = False, use_ajeya_dist = True, resampling_method = 'gap_only'):
+  def __init__(self, ensure_no_automatable_goods_tasks = True, ignore_rank_correlations = False, use_ajeya_dist = True, resampling_method = 'gap_only',
+          parameter_table = None):
     """
       If ensure_no_automatable_goods_tasks is True, we'll make sure none of the samples
       represent an scenario in which there is some "goods" task initially automatable.
@@ -21,18 +22,19 @@ class TakeoffParamsDist():
     self.resampling_method = resampling_method
 
     # Retrieve parameter table
-    log.info('Retrieving parameters...')
-    parameter_table = get_parameter_table()
-    parameter_table = parameter_table[['Conservative', 'Best guess', 'Aggressive', 'Type']]
+    if parameter_table is None:
+      log.info('Retrieving parameters...')
+      parameter_table = get_parameter_table()
+      parameter_table = parameter_table[['Conservative', 'Best guess', 'Aggressive', 'Type']]
 
-    # Disable the runtime-training tradeoff for the MC analysis
-    parameter_table.at['runtime_training_tradeoff', 'Conservative'] = None
-    parameter_table.at['runtime_training_tradeoff', 'Best guess']   = 0
-    parameter_table.at['runtime_training_tradeoff', 'Aggressive']   = None
+      # Disable the runtime-training tradeoff for the MC analysis
+      parameter_table.at['runtime_training_tradeoff', 'Conservative'] = None
+      parameter_table.at['runtime_training_tradeoff', 'Best guess']   = 0
+      parameter_table.at['runtime_training_tradeoff', 'Aggressive']   = None
 
-    parameter_table.at['runtime_training_max_tradeoff', 'Conservative'] = None
-    parameter_table.at['runtime_training_max_tradeoff', 'Best guess']   = 1
-    parameter_table.at['runtime_training_max_tradeoff', 'Aggressive']   = None
+      parameter_table.at['runtime_training_max_tradeoff', 'Conservative'] = None
+      parameter_table.at['runtime_training_max_tradeoff', 'Best guess']   = 1
+      parameter_table.at['runtime_training_max_tradeoff', 'Aggressive']   = None
 
     self.parameter_table = parameter_table
 

@@ -132,7 +132,20 @@ def mc_analysis(n_trials = 100, max_retries = 100):
 
   slow_takeoff_count = 0
 
-  params_dist = TakeoffParamsDist()
+  parameter_table = get_parameter_table()
+  parameter_table = parameter_table[['Conservative', 'Best guess', 'Aggressive', 'Type']]
+
+  # Disable the runtime-training tradeoff for the MC analysis
+  parameter_table.at['runtime_training_tradeoff', 'Conservative'] = 3
+  parameter_table.at['runtime_training_tradeoff', 'Best guess']   = 1.5
+  parameter_table.at['runtime_training_tradeoff', 'Aggressive']   = 0.5
+
+  parameter_table.at['runtime_training_max_tradeoff', 'Conservative'] = 10**0
+  parameter_table.at['runtime_training_max_tradeoff', 'Best guess']   = 10**1.5
+  parameter_table.at['runtime_training_max_tradeoff', 'Aggressive']   = 10**3
+  parameter_table.at['runtime_training_max_tradeoff', 'Type']         = 'pos'
+
+  params_dist = TakeoffParamsDist(parameter_table=parameter_table)
   samples = []
 
   last_valid_indices = []
