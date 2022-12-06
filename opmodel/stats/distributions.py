@@ -61,7 +61,7 @@ class TakeoffParamsDist():
   def get_marginals(self, parameter_table, use_ajeya_dist):
     marginals = {}
     for parameter, row in parameter_table.iterrows():
-      if not np.isnan(row['Conservative']) and not np.isnan(row['Aggressive']):
+      if not np.isnan(row['Conservative']) and not np.isnan(row['Aggressive']) and not row['Type'] == 'delta':
         marginal = SkewedLogUniform(
           row['Conservative'],
           row['Best guess'],
