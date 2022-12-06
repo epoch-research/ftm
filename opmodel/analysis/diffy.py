@@ -370,7 +370,16 @@ class ModelManager:
 
     file_path = os.path.join(project_path, relative_module_path)
 
-    sys.path.append(project_path)
+    sys.path.insert(0, project_path)
+
+    # HACK for the old versions: Load the dynamic_array module, if this version of the model uses it
+    dynarray_module_name = '.'.join(relative_module_path[:-len('.py')].split('/')[:-1]) + '.dynamic_array'
+    dynarray_module_path = os.path.join(project_path, os.path.split(relative_module_path)[0], 'dynamic_array.py')
+    if os.path.exists(dynarray_module_path):
+        spec = importlib.util.spec_from_file_location(dynarray_module_name, dynarray_module_path)
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[dynarray_module_name] = module
+        spec.loader.exec_module(module)
 
     spec = importlib.util.spec_from_file_location(module_name, file_path)
     module = importlib.util.module_from_spec(spec)
