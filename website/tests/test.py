@@ -10,7 +10,7 @@ from numpy.random import uniform
 
 from opmodel.core.utils import *
 from opmodel.core.opmodel import *
-from opmodel.analysis.mc_analysis import ParamsDistribution
+from opmodel.analysis.mc_analysis import TakeoffParamsDist
 
 MODULE_DIR = os.path.dirname(os.path.realpath(__file__))
 
@@ -142,7 +142,7 @@ def compare(params):
 
   print("All good!!")
 
-params_dist = ParamsDistribution()
+params_dist = TakeoffParamsDist()
 
 for i in range(100):
   sample = params_dist.rvs(1)

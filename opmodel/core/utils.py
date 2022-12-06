@@ -444,6 +444,7 @@ def init_cli_arguments():
   parser.add_argument(
     "--human-names",
     action='store_true',
+    default=None,
     help="Show human names for the parameters and metrics",
   )
 
@@ -515,6 +516,9 @@ def draw_oom_lines():
   low, high = plt.gca().get_ylim()
   for oom in range(math.floor(np.log10(low)), math.ceil(np.log10(high))):
     plt.axhline(10**oom, linestyle='dotted', color='black')
+
+def pluralize(name, count):
+  return name if (count == 1) else name + 's'
 
 # Import display in non IPython environments
 try:

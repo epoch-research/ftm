@@ -13,12 +13,15 @@ from multiprocessing import Pool
 
 from . import log
 from . import *
-from ..stats.distributions import ParamsDistribution, PointDistribution, JointDistribution
+from ..stats.distributions import TakeoffParamsDist, PointDistribution, JointDistribution
+
+main_metric = 'billion_agis'
 
 method_human_names = {
   'one_at_a_time': 'One-at-a-time',
   'variance_reduction_on_margin': 'Variance reduction on the margin',
   'shapley_values': 'Variance reduction with Shapley values',
+  'combined': 'One-at-a-time (with variance reduction)',
 }
 
 class SensitivityAnalysisResults:
@@ -27,23 +30,29 @@ class SensitivityAnalysisResults:
     self.table = table
     self.analysis_params = analysis_params
 
-def sensitivity_analysis(quick_test_mode = False, method = 'one_at_a_time'):
+def sensitivity_analysis(quick_test_mode = False, method = 'one_at_a_time', variance_reduction_params = {}):
   if method == 'one_at_a_time':
     return one_at_a_time_comparison(quick_test_mode = quick_test_mode)
 
   if method == 'variance_reduction_on_margin':
-    return variance_reduction_comparison(quick_test_mode = quick_test_mode, method = 'variance_reduction_on_margin')
+    return variance_reduction_comparison(quick_test_mode = quick_test_mode, method = 'variance_reduction_on_margin', **variance_reduction_params)
 
   if method == 'shapley_values':
     return variance_reduction_comparison(quick_test_mode = quick_test_mode, method = 'shapley_values')
 
+  if method == 'combined':
+    var = variance_reduction_comparison(quick_test_mode = quick_test_mode, method = 'variance_reduction_on_margin', **variance_reduction_params)
+    result = one_at_a_time_comparison(quick_test_mode = quick_test_mode)
+    result.table.insert(1, 'variance_reduction', var.table[main_metric]) # after importance
+    return result
+
 def variance_reduction_comparison(quick_test_mode = False, save_dir = None, restore_dir = None, method = 'variance_reduction_on_margin'):
-  params_dist = ParamsDistribution(use_ajeya_dist = False, ignore_rank_correlations = True, resampling_method = 'resample_all')
+  params_dist = TakeoffParamsDist(use_ajeya_dist = False, ignore_rank_correlations = True, resampling_method = 'resample_all')
 
   metric_names = SimulateTakeOff.takeoff_metrics + ['rampup_start', 'agi_year']
   parameters = [name for name, marginal in params_dist.marginals.items() if not isinstance(marginal, PointDistribution)]
-  mean_samples = 100
-  var_samples = 100
+  mean_samples = 50_000
+  var_samples = 2
   shapley_samples = 1000
   processes = None
 
@@ -52,7 +61,8 @@ def variance_reduction_comparison(quick_test_mode = False, save_dir = None, rest
     var_samples = 2
     processes = 4
     shapley_samples = 4
-    parameters = [name for name, marginal in params_dist.marginals.items() if not isinstance(marginal, PointDistribution)]
+    #parameters = [name for name, marginal in params_dist.marginals.items() if not isinstance(marginal, PointDistribution)]
+    parameters = parameters[:2]
     #parameters = ['flop_gap_training',]
     print(parameters)
     #parameters = ['full_automation_requirements_training', 'flop_gap_training',]
@@ -120,8 +130,6 @@ def one_at_a_time_comparison(quick_test_mode = False):
   parameter_table = parameter_table[['Conservative', 'Best guess', 'Aggressive']]
   best_guess_parameters = {parameter : row["Best guess"] \
                            for parameter, row in parameter_table.iterrows()}
-
-  main_metric = 'combined'
 
   parameter_count = len(parameter_table[parameter_table[['Conservative', 'Aggressive']].notna().all(1)])
 
@@ -203,7 +211,7 @@ def one_at_a_time_comparison(quick_test_mode = False):
 
     current_parameter_index += 1
 
-    if quick_test_mode and current_parameter_index >= 1:
+    if quick_test_mode and current_parameter_index >= 2:
       break
 
   table = pd.DataFrame(table)
@@ -267,8 +275,9 @@ def write_combined_sensitivity_analysis_report(
 def write_sensitivity_analysis_report(
     method="one_at_a_time", quick_test_mode=False,
     report_file_path=None, report_dir_path=None, report=None,
+    variance_reduction_params={},
     skip_inputs=False,
-    analysis_results=None, output_results_filename=None
+    analysis_results=None, output_results_filename=None,
   ):
 
   if report_file_path is None:
@@ -278,7 +287,9 @@ def write_sensitivity_analysis_report(
     with open(analysis_results, 'rb') as f:
       analysis_results = pickle.load(f)
 
-  results = analysis_results if analysis_results else sensitivity_analysis(quick_test_mode = quick_test_mode, method = method)
+  results = \
+    analysis_results if analysis_results else \
+    sensitivity_analysis(quick_test_mode = quick_test_mode, method = method, variance_reduction_params=variance_reduction_params)
 
   if output_results_filename:
     with open(output_results_filename, 'wb') as f:
@@ -292,8 +303,13 @@ def write_sensitivity_analysis_report(
 
   report.add_header(method_human_names[method], level = 3)
 
-  formatter = (lambda x: f'{max(x, 0):.0%}') if (method != 'one_at_a_time') else None
-  table_container = report.add_data_frame(results.table, float_format = formatter)
+  float_format = None
+  formatters = None
+  if method in ['variance_reduction_on_margin', 'shapley_values']:
+    float_format = lambda x: f'{max(x, 0):.0%}'
+  elif method == 'combined':
+    formatters = {'variance_reduction': lambda x: f'{max(x, 0):.0%}'}
+  table_container = report.add_data_frame(results.table, float_format = float_format, formatters = formatters)
 
   if method == 'one_at_a_time':
     def process_header(row, col, index_r, index_c, cell):
@@ -332,7 +348,7 @@ def write_sensitivity_analysis_report(
 
   def keep_cell(row, col, index_r, index_c, cell):
     fixed_cols = [0, 1, 2, 3] if method == 'one_at_a_time' else [0]
-    col_condition = (col in fixed_cols) or (index_c in most_important_metrics or index_c in 'importance')
+    col_condition = (col in fixed_cols) or (index_c in most_important_metrics or index_c in ['importance', 'variance_reduction'])
     row_condition = (row in [0]) or (index_r in most_important_parameters)
     return col_condition and row_condition
 
@@ -562,8 +578,22 @@ if __name__ == '__main__':
       'one_at_a_time',
       'variance_reduction_on_margin',
       'shapley_values',
+      'combined',
     ]
   )
+  parser.add_argument(
+    "--variance_reduction_restore_dir",
+  )
+  parser.add_argument(
+    "--variance_reduction_save_dir",
+  )
   args = handle_cli_arguments(parser)
-  write_sensitivity_analysis_report(report_file_path=args.output_file, report_dir_path=args.output_dir, quick_test_mode=args.quick_test_mode, method=args.method)
+
+  variance_reduction_params = {
+      'restore_dir': args.variance_reduction_restore_dir,
+      'save_dir': args.variance_reduction_save_dir,
+  }
+
+  write_sensitivity_analysis_report(report_file_path=args.output_file, report_dir_path=args.output_dir,
+      quick_test_mode=args.quick_test_mode, method=args.method, variance_reduction_params=variance_reduction_params)
 

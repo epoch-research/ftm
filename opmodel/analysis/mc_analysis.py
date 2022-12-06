@@ -9,12 +9,16 @@ import json
 import dill as pickle
 import traceback
 import seaborn as sns
-from scipy.stats import rv_continuous
+import colorsys
+import matplotlib.colors as mc
+from matplotlib.ticker import StrMethodFormatter
+from scipy.stats import rv_continuous, gaussian_kde
+from scipy.interpolate import interp1d
 from scipy.special import erfinv
 from numpy.random import default_rng
 from matplotlib import cm
 from xml.etree import ElementTree as et
-from ..core.utils import get_clipped_ajeya_dist, get_param_names, get_metric_names, get_most_important_metrics
+from ..core.utils import get_clipped_ajeya_dist, get_param_names, get_metric_names, get_most_important_metrics, pluralize
 from ..stats.distributions import *
 from statsmodels.distributions.empirical_distribution import ECDF
 
@@ -25,6 +29,43 @@ class McAnalysisResults:
 
 class TooManyRetries(Exception):
   pass
+
+class YearsBeforeAgiMetric:
+  """ Metrics for the "years before AGI" quantiles table """
+
+  # This is hacky
+  def __init__(self, name, get_values, interpolation = 'log', format_quantile = lambda x: str(x), remarks = None):
+    self.name = name
+    self.get_values = get_values
+    self.interpolation = interpolation
+    self.format_quantile = format_quantile
+    self.remarks = remarks
+
+  def get_value_at_year(self, year, model, no_automation_model):
+    ts, values = self.get_values(model)
+    no_auto_ts, no_auto_vals = self.get_values(no_automation_model)
+
+    interpolator = interp1d(
+      ts,
+      values if (self.interpolation == 'linear') else np.log10(values),
+      fill_value = 'extrapolate'
+    )
+
+    no_auto_interpolator = interp1d(
+      no_auto_ts,
+      no_auto_vals if (self.interpolation == 'linear') else np.log10(no_auto_vals),
+      fill_value = 'extrapolate'
+    )
+
+    if year < model.t_start:
+      # Extrapolate
+      value = no_auto_interpolator(year)
+    else:
+      value = interpolator(year)
+
+    if self.interpolation == 'log': value = 10**value
+
+    return value
 
 def mc_analysis(n_trials = 100, max_retries = 100):
   scalar_metrics = {}
@@ -39,9 +80,70 @@ def mc_analysis(n_trials = 100, max_retries = 100):
       metric : [] for metric in ['biggest_training_run', 'gwp']
   }
 
+  # Metrics for the "years before AGI" tables
+
+  years_before_agi = [0, 1, 2, 5, 10]
+  metrics_before_agi = []
+
+  # Doubling times metrics
+  class DoublingYearsBeforeAgiMetric(YearsBeforeAgiMetric):
+    def __init__(self, attr, remarks = None):
+      self.name = f'{attr} doubling time (years)'
+      self.format_quantile = lambda x: f'{x:.1f}' if x <= 100 else 'N/A'
+      self.attr = attr
+      self.remarks = remarks
+
+    def get_value_at_year(self, year, normal_model, no_automation_model):
+      model = no_automation_model if (year < normal_model.t_start) else normal_model
+
+      ts = model.timesteps
+      vals = getattr(model, self.attr)
+      interpolator = interp1d(ts, np.log10(vals), fill_value = 'extrapolate')
+
+      denominator = np.log2(10**interpolator(year+1)/10**interpolator(year))
+      doubling_time = 1/denominator if (denominator != 0) else 1e10
+
+      return doubling_time
+
+  def add_doubling_time_metric(metric, remarks = None):
+    metrics_before_agi.append(DoublingYearsBeforeAgiMetric(metric, remarks))
+
+  add_doubling_time_metric('gwp')
+  add_doubling_time_metric('hardware_performance')
+  add_doubling_time_metric('software', 'N/A: at physical limit')
+
+  # Rest of the metric
+  def add_model_var_metric(var, format_quantile):
+    metrics_before_agi.append(
+      YearsBeforeAgiMetric(
+        f'{var}',
+        lambda model, _var=var: (model.timesteps, getattr(model, _var)),
+        interpolation = 'log',
+        format_quantile = format_quantile,
+      )
+    )
+  add_model_var_metric('biggest_training_run', format_quantile = lambda x: f'{x:.1e}')
+  add_model_var_metric('frac_compute_training', format_quantile = lambda x: f'{x:.2%}')
+  add_model_var_metric('frac_gwp_compute', format_quantile = lambda x: f'{x:.2%}')
+
+  metrics_before_agi_values = {
+      metric: {year: [] for year in years_before_agi} for metric in metrics_before_agi
+  }
+
   slow_takeoff_count = 0
 
-  params_dist = ParamsDistribution()
+  parameter_table = get_parameter_table()
+  parameter_table = parameter_table[['Conservative', 'Best guess', 'Aggressive', 'Type']]
+
+  parameter_table.at['runtime_training_tradeoff', 'Conservative'] = 3
+  parameter_table.at['runtime_training_tradeoff', 'Best guess']   = 1.5
+  parameter_table.at['runtime_training_tradeoff', 'Aggressive']   = 0.5
+
+  parameter_table.at['runtime_training_max_tradeoff', 'Conservative'] = 10**0.001
+  parameter_table.at['runtime_training_max_tradeoff', 'Best guess']   = 10**1.5
+  parameter_table.at['runtime_training_max_tradeoff', 'Aggressive']   = 10**3
+
+  params_dist = TakeoffParamsDist(parameter_table=parameter_table)
   samples = []
 
   last_valid_indices = []
@@ -62,13 +164,13 @@ def mc_analysis(n_trials = 100, max_retries = 100):
         sample = params_dist.rvs(1)
         mc_params = {param: sample[param][0] for param in sample}
 
-        mc_model = SimulateTakeOff(**mc_params, t_start = t_start, t_end_min = t_end, compute_shares = False)
+        model = SimulateTakeOff(**mc_params, t_start = t_start, t_end_min = t_end, compute_shares = False)
 
         # Check that no goods task is automatable from the beginning (except for the first one)
-        runtime_training_max_tradeoff = mc_model.runtime_training_max_tradeoff if mc_model.runtime_training_tradeoff is not None else 1.
-        assert(not np.any(mc_model.automation_training_flops_goods[1:] < mc_model.initial_biggest_training_run * runtime_training_max_tradeoff))
+        runtime_training_max_tradeoff = model.runtime_training_max_tradeoff if model.runtime_training_tradeoff is not None else 1.
+        assert(not np.any(model.automation_training_flops_goods[1:] < model.initial_biggest_training_run * runtime_training_max_tradeoff))
 
-        mc_model.run_simulation()
+        model.run_simulation()
       except Exception as e:
         # This was a bad sample. We'll just discard it and try again.
         log.indent()
@@ -90,25 +192,39 @@ def mc_analysis(n_trials = 100, max_retries = 100):
     # Collect results
     for scalar_metric in scalar_metrics:
       if scalar_metric in SimulateTakeOff.takeoff_metrics:
-        metric_value = mc_model.takeoff_metrics[scalar_metric]
+        metric_value = model.takeoff_metrics[scalar_metric]
         assert (np.isnan(metric_value) or metric_value >= 0), f"{scalar_metric} is negative!"
       else:
-        metric_value = getattr(mc_model, scalar_metric)
+        metric_value = getattr(model, scalar_metric)
 
       if scalar_metric == "rampup_start" and metric_value is None:
-        metric_value = mc_model.t_end
+        metric_value = model.t_end
       elif scalar_metric == "agi_year" and metric_value is None:
-        metric_value = mc_model.t_end
+        metric_value = model.t_end
       scalar_metrics[scalar_metric].append(metric_value)
 
     for state_metric in state_metrics:
-      metric_value = getattr(mc_model, state_metric)
-      assert metric_value.shape == (mc_model.n_timesteps,)
+      metric_value = getattr(model, state_metric)
+      assert metric_value.shape == (model.n_timesteps,)
       state_metrics[state_metric].append(metric_value)
 
-    last_valid_indices.append(mc_model.t_idx)
+    if model.agi_year is not None:
+      no_automation_mc_params = mc_params.copy()
+      no_automation_mc_params['full_automation_requirements_training'] = 1e100
+      no_automation_mc_params['flop_gap_training'] = 2
+      no_automation_model = SimulateTakeOff(**no_automation_mc_params, t_start = t_start, t_end = t_start + (2 + t_step))
+      no_automation_model.run_simulation()
 
-    if is_slow_takeoff(mc_model):
+      assert(np.all(no_automation_model.frac_tasks_automated_goods < 1) and np.all(no_automation_model.frac_tasks_automated_rnd < 1))
+
+      for metric in metrics_before_agi:
+        for year, year_values in metrics_before_agi_values[metric].items():
+          value = metric.get_value_at_year(model.agi_year - year, model, no_automation_model)
+          year_values.append(value)
+
+    last_valid_indices.append(model.t_idx)
+
+    if is_slow_takeoff(model):
       slow_takeoff_count += 1
 
   log.deindent()
@@ -116,14 +232,32 @@ def mc_analysis(n_trials = 100, max_retries = 100):
   for scalar_metric in scalar_metrics:
     scalar_metrics[scalar_metric] = np.array(scalar_metrics[scalar_metric])
 
-  # Summary of scalar metrics
+  ## Summaries
   quantiles = [0.01, 0.1, 0.2, 0.5, 0.8, 0.9, 0.99]
+
+  # Summary of scalar metrics
   metrics_quantiles = []
   for q in quantiles:
     row = {"Quantile" : q}
     for scalar_metric in scalar_metrics:
-      row[scalar_metric] = np.quantile(filter_nans(scalar_metrics[scalar_metric]), q)
+      value = np.quantile(filter_nans(scalar_metrics[scalar_metric]), q)
+      row[scalar_metric] = value if (value < t_end) else f'≥ {t_end}'
     metrics_quantiles.append(row)
+
+  # Summary of the "years before AGI" quantiles
+  metrics_before_agi_quantiles = {}
+  import dill as pickle
+  with open('/home/edu/.tmp/trash/metrics.pickle', 'wb') as f:
+    pickle.dump(metrics_before_agi_values, f)
+  for metric, metric_samples in metrics_before_agi_values.items():
+    table = []
+    for q in quantiles:
+      row = {"Percentile" : f'{q:.0%}'}
+      for year, values in metric_samples.items():
+        column_name = 'At time of AGI' if (year == 0) else f'{year} {pluralize("year", year)} before AGI'
+        row[column_name] = np.quantile(values, q)
+      table.append(row)
+    metrics_before_agi_quantiles[metric] = table
 
   ## Add mean
   row = {"Quantile" : "mean"}
@@ -132,20 +266,21 @@ def mc_analysis(n_trials = 100, max_retries = 100):
   metrics_quantiles.append(row)
 
   results = McAnalysisResults()
-  results.quantiles          = quantiles
-  results.metrics_quantiles  = metrics_quantiles
-  results.state_metrics      = state_metrics
-  results.scalar_metrics     = scalar_metrics
-  results.n_trials           = n_trials
-  results.timesteps          = timesteps
-  results.t_step             = t_step
-  results.t_start            = t_start
-  results.t_end              = t_end
-  results.param_samples      = pd.concat(samples, ignore_index = True)
-  results.parameter_table    = params_dist.parameter_table
-  results.rank_correlations  = params_dist.rank_correlations
-  results.slow_takeoff_count = slow_takeoff_count
-  results.last_valid_indices = last_valid_indices
+  results.quantiles                    = quantiles
+  results.metrics_quantiles            = metrics_quantiles
+  results.state_metrics                = state_metrics
+  results.scalar_metrics               = scalar_metrics
+  results.n_trials                     = n_trials
+  results.timesteps                    = timesteps
+  results.t_step                       = t_step
+  results.t_start                      = t_start
+  results.t_end                        = t_end
+  results.param_samples                = pd.concat(samples, ignore_index = True)
+  results.parameter_table              = params_dist.parameter_table
+  results.rank_correlations            = params_dist.rank_correlations
+  results.slow_takeoff_count           = slow_takeoff_count
+  results.last_valid_indices           = last_valid_indices
+  results.metrics_before_agi_quantiles = metrics_before_agi_quantiles
 
   reqs_marginal = params_dist.marginals['full_automation_requirements_training']
   results.ajeya_cdf = reqs_marginal.cdf_pd if isinstance(reqs_marginal, AjeyaDistribution) else None
@@ -308,13 +443,12 @@ def write_mc_analysis_report(
   table_container = report.add_data_frame(metrics_quantiles_styled, show_importance_selector = True,
       keep_cell = keep_cell, label = 'metrics', show_index = False,
   )
-
   report.apply_to_table(table_container, process_header)
 
   # Plot CDFs of scalar metrics
   metric_id_to_human = get_metric_names()
 
-  def plot_ecdf(x, limit, label, color = None, normalize = False):
+  def plot_ecdf(x, limits, label, color = None, normalize = False):
     x = filter_nans(x)
     x = np.sort(x)
 
@@ -323,48 +457,125 @@ def write_mc_analysis_report(
     ecdf = np.insert(ecdf, 0, 0)
     x = np.insert(x, 0, x[0])
 
-    ecdf = ecdf[x < limit]
-    x = x[x < limit]
+    ecdf = ecdf[x < limits[1]]
+    x = x[x < limits[1]]
+
+    ecdf = ecdf[x >= limits[0]]
+    x = x[x >= limits[0]]
 
     ecdf = np.append(ecdf, ecdf[-1])
-    x = np.append(x, limit)
+    x = np.append(x, limits[1])
 
     if normalize:
       ecdf /= ecdf[-1]
 
     plt.step(x, ecdf, where = 'post', label = label, color = color)
     plt.ylim(0, 1)
+    plt.gca().yaxis.set_major_formatter(StrMethodFormatter('{x:,.2f}'))
+
+  def plot_epdf(x, limits, label, color = None, normalize = False):
+    x = filter_nans(x)
+    x = x[x < limits[1]]
+    x = x[x >= limits[0]]
+
+    t = np.linspace(limits[0], limits[1], 500)
+    t0 = t[0] - 0.1
+
+    plt.plot(t, 1/(t - t0) * gaussian_kde(np.log(x - t0))(np.log(t - t0)), label = label, color = color)
+
+    c = colorsys.rgb_to_hls(*mc.to_rgb(color))
+    hist_color = colorsys.hls_to_rgb(c[0], 0.4 * c[1], c[2])
+
+    plt.gca().yaxis.set_major_formatter(StrMethodFormatter('{x:,.2f}'))
 
   sns.reset_defaults()
 
   colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
   color_index = 0
 
-  # Takeoff metrics
-  plt.figure(figsize=(10,6))
-  for metric in ['full_automation', 'billion_agis']:
-    plot_ecdf(results.scalar_metrics[metric], limit = results.t_end - results.t_start, label = metric_id_to_human[metric], color = colors[color_index], normalize = True)
-    color_index += 1
-  text = f'p(takeoff before {results.t_end}) = {np.mean(~np.isnan(results.scalar_metrics["billion_agis"])):.0%}'
-  plt.text(results.t_end - results.t_start - 2, 0.95, text, va = 'top', ha = 'right')
-  plt.xlabel('Years')
-  plt.ylabel(f'CDF\n(conditional on takeoff happening before {results.t_end})')
-  plt.title('AI Take-off Metrics')
-  plt.gca().legend(loc = 'lower right')
+  # CDFs and PDFs
+  pdf_cdf_container = report.add_html('<div style="display: flex; overflow-x: auto;"></div>')
 
-  report.add_figure()
+  def add_pdf_cdf_sub_container(default):
+    pdf_cdf_sub_container = report.add_html('<div class="pdf-cdf-sub-container"></div>', parent = pdf_cdf_container)
+    report.add_html(f'''
+      <p>
+        Show
+        <select class="pdf-cdf-selector">
+          <option value="pdf" {'selected="true"' if (default == 'pdf') else ''}>probability density function (smoothed)</option>
+          <option value="cdf" {'selected="true"' if (default == 'cdf') else ''}>cumulative density function</option>
+        </select>
+      </p>
+    ''', parent = pdf_cdf_sub_container)
+    return pdf_cdf_sub_container
+
+  # Takeoff metrics
+  pdf_cdf_sub_container = add_pdf_cdf_sub_container('pdf')
+  for method in ['cdf', 'pdf']:
+    plt.figure(figsize=(10,6))
+    metric = 'billion_agis'
+    plot = plot_ecdf if (method == 'cdf') else plot_epdf
+    plot(results.scalar_metrics[metric], limits = [0, results.t_end - results.t_start], label = metric_id_to_human[metric], color = colors[color_index])
+    plt.xlabel('Years')
+    plt.ylabel(f'{method.upper()}\n(conditional on takeoff happening before {results.t_end})')
+    plt.title(metric_id_to_human['billion_agis'])
+
+    container = report.add_figure(parent = pdf_cdf_sub_container)
+    report.add_class(container, method)
+    if method == 'pdf':
+      report.add_class(container, 'selected')
+  color_index += 1
 
   # Timelines metrics
-  plt.figure(figsize=(10,6))
-  for metric in ['rampup_start', 'agi_year']:
-    plot_ecdf(results.scalar_metrics[metric], limit = results.t_end, label = metric_id_to_human[metric], color = colors[color_index])
-    color_index += 1
-  plt.ylabel('CDF')
-  plt.xlabel('Year')
-  plt.title('AI Timelines Metrics')
-  plt.gca().legend(loc = 'lower right')
+  pdf_cdf_sub_container = add_pdf_cdf_sub_container('cdf')
+  for method in ['cdf', 'pdf']:
+    plt.figure(figsize=(10,6))
+    for i, metric in enumerate(['rampup_start', 'agi_year']):
+      plot = plot_ecdf if method == 'cdf' else plot_epdf
+      plot(results.scalar_metrics[metric], limits = [results.t_start, results.t_end], label = metric_id_to_human[metric], color = colors[color_index + i])
+    plt.ylabel(method.upper())
+    plt.xlabel('Year')
+    plt.title('AI Timelines Metrics')
+    plt.gca().legend(loc = (0.75, 0.15))
 
-  report.add_figure()
+    container = report.add_figure(parent = pdf_cdf_sub_container)
+    report.add_class(container, method)
+    if method == 'cdf':
+      report.add_class(container, 'selected')
+
+  report.head.append(report.from_html('''
+    <script>
+      window.addEventListener('load', () => {
+        for (let selector of document.querySelectorAll('.pdf-cdf-selector')) {
+          let container = selector.parentElement.parentElement;
+          selector.addEventListener('input', () => {
+            for (let node of container.querySelectorAll('.selected')) {
+              node.classList.remove('selected');
+            }
+            for (let node of container.querySelectorAll(`.${selector.value}`)) {
+              node.classList.add('selected');
+            }
+          })
+        }
+      })
+    </script>
+  '''))
+
+  report.head.append(report.from_html('''
+    <style>
+      .pdf-cdf-sub-container {
+        min-width: 800px
+      }
+
+      .pdf-cdf-sub-container > .figure-container {
+        display: none;
+      }
+
+      .pdf-cdf-sub-container > .figure-container.selected {
+        display: unset;
+      }
+    </style>
+  '''))
 
   # Plot trajectories
   metrics = {'biggest_training_run': 'Biggest training run'}
@@ -381,6 +592,80 @@ def write_mc_analysis_report(
     param_stats.append(stats)
   param_names = results.param_samples.columns
   columns = [['mean'] + results.quantiles]
+
+  # "Years before AGI" tables
+
+  header = report.add_header('"Years before AGI" tables', level = 3)
+  header.append(report.generate_tooltip(f"""
+    The distributions below are conditional on AGI actually happening before the end of the simulations ({results.t_end}).
+    <br><br>
+    When AGI happens early, we need to compute the value of the metrics before the start of the simulation
+    (e.g., if AGI happens in {results.t_start + 5} years, we need their values for the year {results.t_start - 5} to generate the last column).
+    We do so using a geometric extrapolation (except for the doubling time metrics, where we use a linear interpolation).
+  """))
+
+  metrics_before_agi_names = []
+
+  id_to_name = get_variable_names()
+  id_to_name['biggest_training_run'] = 'Biggest training run (measured in 2022-FLOP)'
+  for i, (metric, table) in enumerate(results.metrics_before_agi_quantiles.items()):
+    metric_name = metric.name
+    if get_option('human_names'):
+      metric_id = metric.name.split()[0]
+      metric_name = f'{id_to_name[metric_id]} {metric.name[len(metric_id):].strip()}'
+    metrics_before_agi_names.append(metric_name)
+
+  metric_options = '\n'.join([f'<option value="{name}">{name}</option>' for name in metrics_before_agi_names])
+  report.add_html(f'''
+    <p>
+      <select id="years-before-agi-selector">
+        {metric_options}
+      </select>
+    </p>
+  ''')
+
+  years_before_agi_container = report.add_html('<div id="years-before-agi-container"></div>')
+
+  for i, (metric, table) in enumerate(results.metrics_before_agi_quantiles.items()):
+    dataframe = pd.DataFrame(table)
+    table_container = report.add_data_frame(dataframe, show_index = False, float_format = metric.format_quantile, parent = years_before_agi_container)
+    table_container.attrib['id'] = metrics_before_agi_names[i]
+    if i == 0:
+      report.add_class(table_container, 'selected')
+    if metric.remarks:
+      report.add_html(f'<p class="years-before-agi-remarks">{metric.remarks}</p>', parent = table_container)
+
+  report.head.append(report.from_html('''
+    <script>
+      window.addEventListener('load', () => {
+        let selector = document.getElementById('years-before-agi-selector');
+        let container = document.getElementById('years-before-agi-container');
+        selector.addEventListener('input', () => {
+          let selected = container.querySelector('.selected');
+          if (selected) {
+            selected.classList.remove('selected');
+          }
+          document.getElementById(selector.value).classList.add('selected');
+        })
+      })
+    </script>
+  '''))
+
+  report.head.append(report.from_html('''
+    <style>
+      #years-before-agi-container > * {
+        display: none;
+      }
+
+      #years-before-agi-container > .selected {
+        display: unset;
+      }
+
+      .years-before-agi-remarks {
+        font-style: italic;
+      }
+    </style>
+  '''))
 
   # Write down the parameters
   report.add_header("Inputs", level = 3)
@@ -511,4 +796,3 @@ if __name__ == '__main__':
     output_results_filename=args.output_results_file,
     input_results_filename=args.input_results_file,
   )
-

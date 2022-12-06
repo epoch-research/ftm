@@ -7,7 +7,8 @@ from .sensitivity_analysis import write_sensitivity_analysis_report
 from .timelines_analysis import write_timelines_analysis_report
 from .mc_analysis import write_mc_analysis_report, McAnalysisResults
 
-def megareport(report_file_path=None, report_dir_path=None, quick_test_mode=False, report=None, mc_trials=None, mc_input_results_filename=None):
+def megareport(report_file_path=None, report_dir_path=None, quick_test_mode=False, report=None,
+    mc_trials=None, mc_input_results_filename=None, variance_reduction_params={}):
   if mc_trials is None: mc_trials = 100
   if report_file_path is None:
     report_file_path = 'megareport.html'
@@ -27,7 +28,7 @@ def megareport(report_file_path=None, report_dir_path=None, quick_test_mode=Fals
   log.info('Generating parameter importance analysis tab')
   log.indent()
   report.begin_tab('Parameter importance analysis', 'parameter_importance_analysis')
-  write_sensitivity_analysis_report(report = report, quick_test_mode = quick_test_mode)
+  write_sensitivity_analysis_report(report = report, method = 'combined', quick_test_mode = quick_test_mode, variance_reduction_params=variance_reduction_params)
   log.deindent()
   log.info()
 
@@ -69,10 +70,19 @@ if __name__ == '__main__':
     help = 'Read the MC results from this file (pickle) instead of regenerating them',
   )
 
+  parser.add_argument(
+    "--variance-reduction-restore-dir",
+  )
+
   args = handle_cli_arguments(parser)
+
+  variance_reduction_params = {
+      'restore_dir': args.variance_reduction_restore_dir
+  }
 
   megareport(
     report_file_path=args.output_file, report_dir_path=args.output_dir,
     quick_test_mode=args.quick_test_mode, mc_trials=args.mc_trials,
     mc_input_results_filename=args.input_results_file,
+    variance_reduction_params=variance_reduction_params,
   )

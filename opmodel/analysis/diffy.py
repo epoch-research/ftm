@@ -770,7 +770,7 @@ def diff_table_to_html(diff_table, return_as_string = False):
       tr.append(et.fromstring(f'<th>{var}</th>'))
 
       for col, e in zip(diff_table.columns, row):
-        td = et.fromstring(f'<td>{e if col == "lineno" else format(e)}</td>')
+        td = et.fromstring(f'<td>{e if col == "lineno" else Report.escape(format(e))}</td>')
         if isinstance(e, str) and e == '(missing)':
           some_missing = True
           td.set('class', 'missing')

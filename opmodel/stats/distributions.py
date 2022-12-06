@@ -9,10 +9,11 @@ import statsmodels.distributions.copula.copulas as sm_copulas
 
 from ..core.utils import log, get_parameter_table, get_rank_correlations, get_clipped_ajeya_dist
 
-class ParamsDistribution():
+class TakeoffParamsDist():
   """ Joint parameter distribution. """
 
-  def __init__(self, ensure_no_automatable_goods_tasks = True, ignore_rank_correlations = False, use_ajeya_dist = True, resampling_method = 'gap_only'):
+  def __init__(self, ensure_no_automatable_goods_tasks = True, ignore_rank_correlations = False, use_ajeya_dist = True, resampling_method = 'gap_only',
+          parameter_table = None):
     """
       If ensure_no_automatable_goods_tasks is True, we'll make sure none of the samples
       represent an scenario in which there is some "goods" task initially automatable.
@@ -21,26 +22,46 @@ class ParamsDistribution():
     self.resampling_method = resampling_method
 
     # Retrieve parameter table
-    log.info('Retrieving parameters...')
-    parameter_table = get_parameter_table()
-    parameter_table = parameter_table[['Conservative', 'Best guess', 'Aggressive', 'Type']]
+    if parameter_table is None:
+      log.info('Retrieving parameters...')
+      parameter_table = get_parameter_table()
+      parameter_table = parameter_table[['Conservative', 'Best guess', 'Aggressive', 'Type']]
 
-    # Disable the runtime-training tradeoff for the MC analysis
-    parameter_table.at['runtime_training_tradeoff', 'Conservative'] = None
-    parameter_table.at['runtime_training_tradeoff', 'Best guess']   = 0
-    parameter_table.at['runtime_training_tradeoff', 'Aggressive']   = None
+      # By defaul, disable the runtime-training tradeoff
+      parameter_table.at['runtime_training_tradeoff', 'Conservative'] = None
+      parameter_table.at['runtime_training_tradeoff', 'Best guess']   = 0
+      parameter_table.at['runtime_training_tradeoff', 'Aggressive']   = None
 
-    parameter_table.at['runtime_training_max_tradeoff', 'Conservative'] = None
-    parameter_table.at['runtime_training_max_tradeoff', 'Best guess']   = 1
-    parameter_table.at['runtime_training_max_tradeoff', 'Aggressive']   = None
+      parameter_table.at['runtime_training_max_tradeoff', 'Conservative'] = None
+      parameter_table.at['runtime_training_max_tradeoff', 'Best guess']   = 1
+      parameter_table.at['runtime_training_max_tradeoff', 'Aggressive']   = None
 
-    rank_correlations = get_rank_correlations()
+    self.parameter_table = parameter_table
 
-    marginals = {}
+    self.rank_correlations = get_rank_correlations()
+
+    self.marginals = self.get_marginals(parameter_table, use_ajeya_dist)
+
+    if ignore_rank_correlations:
+      self.pairwise_rank_corr = {}
+    else:
+      marginal_directions = self.get_marginal_directions(parameter_table)
+      self.pairwise_rank_corr = self.process_correlations(self.marginals, self.rank_correlations, marginal_directions)
+
+    self.joint_dist = JointDistribution(self.marginals, self.pairwise_rank_corr, rank_corr_method = "spearman")
+    self.ensure_no_automatable_goods_tasks = ensure_no_automatable_goods_tasks
+
+  def get_marginal_directions(self, parameter_table):
     directions = {}
     for parameter, row in parameter_table.iterrows():
       if not np.isnan(row['Conservative']) and not np.isnan(row['Aggressive']):
         directions[parameter] = +1 if (row['Conservative'] < row['Aggressive']) else -1
+    return directions
+
+  def get_marginals(self, parameter_table, use_ajeya_dist):
+    marginals = {}
+    for parameter, row in parameter_table.iterrows():
+      if not np.isnan(row['Conservative']) and not np.isnan(row['Aggressive']):
         marginal = SkewedLogUniform(
           row['Conservative'],
           row['Best guess'],
@@ -71,26 +92,22 @@ class ParamsDistribution():
         max(lowest_training_requirements, parameter_table.at['full_automation_requirements_training', 'Aggressive']),
       )
 
-    pairwise_rank_corr = {}
-    if not ignore_rank_correlations:
-      for left in marginals.keys():
-        for right in marginals.keys():
-          if right not in rank_correlations or left not in rank_correlations:
-            continue
+    return marginals
 
-          if isinstance(marginals[right], PointDistribution) or isinstance(marginals[left], PointDistribution):
-            continue
+  def process_correlations(self, marginals, rank_correlations_matrix, directions):
+    correlations = {}
+    for left in marginals.keys():
+      for right in marginals.keys():
+        if right not in rank_correlations_matrix or left not in rank_correlations_matrix:
+          continue
 
-          r = rank_correlations[right][left]
-          if not np.isnan(r) and r != 0:
-            pairwise_rank_corr[(left, right)] = r * directions[left]*directions[right]
+        if isinstance(marginals[right], PointDistribution) or isinstance(marginals[left], PointDistribution):
+          continue
 
-    self.marginals = marginals
-    self.pairwise_rank_corr = pairwise_rank_corr
-    self.parameter_table = parameter_table
-    self.rank_correlations = rank_correlations
-    self.joint_dist = JointDistribution(marginals, pairwise_rank_corr, rank_corr_method = "spearman")
-    self.ensure_no_automatable_goods_tasks = ensure_no_automatable_goods_tasks
+        r = rank_correlations_matrix[right][left]
+        if not np.isnan(r) and r != 0:
+          correlations[(left, right)] = r * directions[left]*directions[right]
+    return correlations
 
   def rvs(self, count, random_state = None, conditions = {}, resampling_method = None):
     # statsmodels.distributions.copula.copulas throws an exception when we ask less than 2 samples from it.
@@ -141,12 +158,6 @@ class ParamsDistribution():
           output_samples_count += 1
 
       return output_samples
-
-  def get_marginals(self):
-    return self.marginals
-
-  def get_rank_correlations(self):
-    return self.pairwise_rank_corr
 
 class AjeyaDistribution(rv_continuous):
   def __init__(self, lower_bound = None):
@@ -308,7 +319,7 @@ class JointDistribution(scipy.stats.rv_continuous):
         as_df = pd.DataFrame()
 
         if np.any(np.isnan(fixed_values)):
-          rvs = self.wrapped.rvs(nobs=nobs, random_state=random_state, cop_args = fixed_values)
+          rvs = self.wrapped.rvs(nobs=nobs, random_state=random_state, cop_args=fixed_values)
           for name, i in self.dimension_names.items():
               column = rvs[:, i]
               as_df[name] = column

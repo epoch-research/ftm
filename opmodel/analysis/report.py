@@ -53,6 +53,15 @@ class Report:
           margin-left: 0.5em;
         }
 
+        .header-link {
+          color: grey;
+        }
+
+        .header-link:hover {
+          color: initial;
+          cursor: pointer;
+        }
+
         .super-info-icon {
           position: relative;
           font-size: 0.8em;
@@ -516,6 +525,7 @@ class Report:
 
     self.head.append(et.fromstring('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.9.0/font/bootstrap-icons.css"></link>'))
     self.head.append(et.fromstring('<link rel="stylesheet" href="https://unpkg.com/tippy.js@6/themes/light-border.css" />'))
+    self.head.append(et.fromstring('<script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.10/dist/clipboard.min.js"></script>'))
     self.head.append(et.fromstring('<script defer="true" src="https://cdn.jsdelivr.net/npm/clipboard@2.0.10/dist/clipboard.min.js"></script>'))
     self.head.append(et.fromstring('<script defer="true" src="https://unpkg.com/micromodal/dist/micromodal.min.js"></script>'))
     self.head.append(et.fromstring('<script defer="true" src="https://unpkg.com/panzoom@9.4.0/dist/panzoom.min.js"></script>'))
@@ -555,6 +565,22 @@ class Report:
         };
       </script>
     '''));
+
+    self.head.append(et.fromstring('''
+      <script>
+          window.addEventListener('load', () => {
+          for (let link of document.querySelectorAll('.header-link')) {
+            link.addEventListener('click', () => {
+              window.history.pushState({}, "", `#${link.parentElement.id}`);
+              link.parentElement.scrollIntoView({
+                behavior: 'smooth',
+              });
+            });
+            //new ClipboardJS('.header-link');
+          }
+          });
+      </script>
+    '''))
 
     self.head.append(et.fromstring('''
       <script>
@@ -804,8 +830,10 @@ class Report:
     if parent is None: parent = self.default_parent
 
     element = et.Element(f'h{max(1, level)}', {'id': self.convert_to_id(title)})
+    self.add_html('<i class="header-link bi bi-link-45deg"></i>', parent = element)
     element.text = title
     parent.append(element)
+    return element
 
   def add_element(self, element, parent=None):
     if parent is None: parent = self.default_parent
@@ -817,6 +845,10 @@ class Report:
 
     element = et.fromstring(html)
     parent.append(element)
+    return element
+
+  def from_html(self, html):
+    element = et.fromstring(html)
     return element
 
   def add_html_lines(self, html_lines, parent=None):
@@ -868,7 +900,7 @@ class Report:
 
   def add_data_frame(
       self, df, index = None, show_index = True, show_index_header = False, use_render = False, parent=None, show_justifications=False,
-      show_importance_selector=False, importance_layout = 'horizontal', important_rows_to_keep=[], important_columns_to_keep=[0], keep_cell=None, label = 'xxx', # TODO Document this
+      show_importance_selector=False, importance_layout='horizontal', important_rows_to_keep=[], important_columns_to_keep=[0], keep_cell=None, label = 'xxx', # TODO Document this
       nan_format = lambda **args: 'NaN',
       **to_html_args
     ):
@@ -1007,12 +1039,14 @@ class Report:
     element.set('class', 'banner ' + ' '.join(classes))
     self.body.insert(0, element)
 
-  def generate_tooltip_html(self, content, on_mount = '', triggers = '', classes = ''):
+  def generate_tooltip_html(self, content, on_mount = None, triggers = None, classes = ''):
     if classes: classes = ' ' + classes
-    return f'''<i class="bi-info-circle super-info-icon{classes}" data-tooltip-triggers="{triggers}" data-tooltip-on-mount="{on_mount}" data-tooltip-content="{Report.escape(content)}"></i>'''
+    data_triggers = '' if triggers is None else f'data-tooltip-triggers="{triggers}"'
+    data_on_mount = '' if on_mount is None else f'data-tooltip-on-mount="{on_mount}"'
+    return f'''<i class="bi-info-circle super-info-icon{classes}" {data_triggers} {data_on_mount} data-tooltip-content="{Report.escape(content)}"></i>'''
 
-  def generate_tooltip(self, content, on_mount = '', triggers = '', classes = ''):
-    return et.fromstring(generate_tooltip_html(content, on_mount))
+  def generate_tooltip(self, content, on_mount = None, triggers = None, classes = ''):
+    return et.fromstring(self.generate_tooltip_html(content, on_mount, triggers, classes))
 
   # ---------------------------------------------------------------------------
   # Tabs
@@ -1095,7 +1129,7 @@ class Report:
     el.attrib['class'] = (el.attrib['class'] + ' ' + clazz).strip()
 
   def convert_to_id(self, s):
-    s = re.sub(' +', '-', s.lower())
+    s = re.sub(' +()"', '-', s.lower())
 
     if self.current_tab:
       s = f'{self.current_tab.id}-{s}'
