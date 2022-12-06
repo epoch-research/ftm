@@ -27,7 +27,7 @@ class TakeoffParamsDist():
       parameter_table = get_parameter_table()
       parameter_table = parameter_table[['Conservative', 'Best guess', 'Aggressive', 'Type']]
 
-      # Disable the runtime-training tradeoff for the MC analysis
+      # By defaul, disable the runtime-training tradeoff
       parameter_table.at['runtime_training_tradeoff', 'Conservative'] = None
       parameter_table.at['runtime_training_tradeoff', 'Best guess']   = 0
       parameter_table.at['runtime_training_tradeoff', 'Aggressive']   = None
