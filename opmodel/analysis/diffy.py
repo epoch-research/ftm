@@ -16,7 +16,8 @@ from xml.etree import ElementTree as et
 import argparse
 
 from . import log, Report, get_option, init_cli_arguments, handle_cli_arguments
-from ..core.dynamic_array import DynamicArray
+
+VARIABLES_TO_SKIP = set(['takeoff_metrics', 'dynarrays', 'state_lists', 'state_def'])
 
 EPS = 1e-40 # frankly, just some arbitrary number that feels low enough
 DIFF_COL = 'Diff (%)'
@@ -145,13 +146,11 @@ class PythonModel(Model):
   def get_static_variables(self):
     variables = {}
 
-    variables_to_skip = set(['takeoff_metrics', 'dynarrays'])
-
     for attribute in self.sim.__dict__:
-      if attribute in variables_to_skip: continue
+      if attribute in VARIABLES_TO_SKIP: continue
 
       value = getattr(self.sim, attribute)
-      if isinstance(value, DynamicArray):
+      if type(value).__name__ == 'DynamicArray':
         value = value.data
       if not self.is_dynamic_variable(value):
         variables[attribute] = value
@@ -201,7 +200,7 @@ class PythonModel(Model):
 
     for attribute in self.sim.__dict__:
       value = getattr(self.sim, attribute)
-      if isinstance(value, DynamicArray):
+      if type(value) == 'DynamicArray':
         value = value.data
       if self.is_dynamic_variable(value):
         variables[attribute] = value[step_index]
@@ -828,12 +827,14 @@ def compare_dicts(dict_a, dict_b, var_to_lineno, name_a = 'Model a', name_b = 'M
     Returns the maximum relative difference (or a string)
     """
 
-    if isinstance(a, bool): a = 1 if a else 0
-    if isinstance(b, bool): b = 1 if b else 0
-    if isinstance(a, (list, tuple)): a = np.array(a)
-    if isinstance(b, (list, tuple)): b = np.array(b)
-    if isinstance(a, (float, int)): a = np.array([a])
-    if isinstance(b, (float, int)): b = np.array([b])
+    def convert(x):
+      if isinstance(x, bool):          return 1 if x else 0
+      if isinstance(x, (list, tuple)): return np.array(x)
+      if isinstance(x, (float, int)):  return np.array([x])
+      return x
+
+    a = convert(a)
+    b = convert(b)
 
     diff = ''
 
