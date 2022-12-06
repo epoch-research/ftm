@@ -12,6 +12,9 @@ from opmodel.core.utils import *
 from opmodel.core.opmodel import *
 from opmodel.analysis.mc_analysis import TakeoffParamsDist
 
+parser = init_cli_arguments()
+args = handle_cli_arguments(parser)
+
 MODULE_DIR = os.path.dirname(os.path.realpath(__file__))
 
 js_model_path = os.path.join(MODULE_DIR, '../src/js/ftm')

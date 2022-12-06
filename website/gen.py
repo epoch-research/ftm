@@ -71,7 +71,7 @@ def generate_dictionaries():
   print(f'let variable_names = {json.dumps(get_variable_names())};')
 
 def generate_arrays():
-  print(f'let important_metrics = {json.dumps(important_params_and_metrics["Metric id"].tolist())};')
+  print(f'let important_metrics = {json.dumps([x for x in important_params_and_metrics["Metric id"] if not pd.isnull(x)])};')
 
 if __name__ == '__main__':
   # Handle CLI arguments

@@ -426,15 +426,15 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
           <div class="tab-content">
             <div class="tab active" data-id="main-parameters">
               <div class="input-parameter"><label for="full_automation_requirements_training">AGI training requirements</label> <input class="input" id="full_automation_requirements_training" value="1e36"></div>
-              <div class="input-parameter"><label for="goods_vs_rnd_requirements_training">Training goods vs R&D</label> <input class="input" id="goods_vs_rnd_requirements_training" value="3.0"></div>
               <div class="input-parameter"><label for="flop_gap_training">FLOP gap (training)</label> <input class="input" id="flop_gap_training" value="100000.0"></div>
-              <div class="input-parameter"><label for="full_automation_requirements_runtime">AGI runtime requirements</label> <input class="input" id="full_automation_requirements_runtime" value="5.256e23"></div>
+              <div class="input-parameter"><label for="goods_vs_rnd_requirements_training">Training goods vs R&D</label> <input class="input" id="goods_vs_rnd_requirements_training" value="3.0"></div>
+              <div class="input-parameter"><label for="full_automation_requirements_runtime">AGI runtime requirements</label> <input class="input" id="full_automation_requirements_runtime" value="1.66667e16"></div>
               <div class="input-parameter disabled"><label for="runtime_training_tradeoff_enabled_1">Trade-off efficiency</label> <input id="runtime_training_tradeoff_enabled_1" class="runtime_training_tradeoff_enabled" type="checkbox"> <input class="input" id="runtime_training_tradeoff" value="1"></div>
               <div class="input-parameter"><label for="labour_substitution_rnd">Labour substitution R&D</label> <input class="input" id="labour_substitution_rnd" value="-0.5"></div>
               <div class="input-parameter"><label for="hardware_returns">Returns to hardware</label> <input class="input" id="hardware_returns" value="5.2"></div>
               <div class="input-parameter"><label for="software_returns">Returns to software</label> <input class="input" id="software_returns" value="1.25"></div>
               <div class="input-parameter"><label for="frac_gwp_compute_growth">Growth rate fraction GWP compute</label> <input class="input" id="frac_gwp_compute_growth" value="0.19"></div>
-              <div class="input-parameter"><label for="frac_compute_training_growth">Growth rate fraction compute training</label> <input class="input" id="frac_compute_training_growth" value="0.547528364331348"></div>
+              <div class="input-parameter"><label for="frac_compute_training_growth">Growth rate fraction compute training</label> <input class="input" id="frac_compute_training_growth" value="0.5475283643"></div>
               <div class="input-parameter"><label for="frac_gwp_compute_growth_rampup">Wake-up growth rate fraction of GWP buying compute</label> <input class="input" id="frac_gwp_compute_growth_rampup" value="0.19"></div>
               <div class="input-parameter"><label for="frac_compute_training_growth_rampup">Wake-up growth rate fraction compute training AI models</label> <input class="input" id="frac_compute_training_growth_rampup" value="1.1"></div>
               <div class="input-parameter"><label for="frac_gwp_compute_ceiling">Max fraction GWP compute</label> <input class="input" id="frac_gwp_compute_ceiling" value="0.3"></div>
@@ -443,11 +443,9 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
               <div class="input-parameter"><label for="rampup_trigger">Wakeup trigger</label> <input class="input" id="rampup_trigger" value="0.03"></div>
             </div>
             <div class="tab" data-id="additional-parameters">
-              <div class="input-parameter simulation-parameter"><label for="t_step">Simulation timestep</label> <input class="input" id="t_step" value="0.1"></div>
-              <div class="input-parameter simulation-parameter"><label for="t_end">Stop year</label> <input class="input" id="t_end" value="2100"></div>
               <div class="input-parameter"><label for="flop_gap_runtime">FLOP gap (runtime)</label> <input class="input" id="flop_gap_runtime" value="100.0"></div>
               <div class="input-parameter"><label for="goods_vs_rnd_requirements_runtime">Runtime goods vs R&D</label> <input class="input" id="goods_vs_rnd_requirements_runtime" value="10.0"></div>
-              <div class="input-parameter disabled"><label for="runtime_training_tradeoff_enabled_2">Maximum trade-off</label> <input id="runtime_training_tradeoff_enabled_2" class="runtime_training_tradeoff_enabled" type="checkbox"> <input class="input" id="runtime_training_max_tradeoff" value="1e3"></div>
+              <div class="input-parameter disabled"><label for="runtime_training_tradeoff_enabled_2">Maximum trade-off</label> <input id="runtime_training_tradeoff_enabled_2" class="runtime_training_tradeoff_enabled" type="checkbox"> <input class="input" id="runtime_training_max_tradeoff" value="1e100"></div>
               <div class="input-parameter"><label for="labour_substitution_goods">Labour substitution goods</label> <input class="input" id="labour_substitution_goods" value="-0.5"></div>
               <div class="input-parameter"><label for="capital_substitution_goods">Substitution between capital and cognitive tasks for goods and services</label> <input class="input" id="capital_substitution_goods" value="-0.4"></div>
               <div class="input-parameter"><label for="capital_substitution_rnd">Substitution between capital and cognitive tasks for R&D</label> <input class="input" id="capital_substitution_rnd" value="-0.25"></div>
@@ -462,9 +460,9 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
               <div class="input-parameter"><label for="frac_compute_software_rnd_growth">Growth rate fraction compute software R&D</label> <input class="input" id="frac_compute_software_rnd_growth" value="0.18"></div>
               <div class="input-parameter"><label for="frac_capital_hardware_rnd_growth_rampup">Wake-up growth rate fraction capital hardware R&D</label> <input class="input" id="frac_capital_hardware_rnd_growth_rampup" value="0.14"></div>
               <div class="input-parameter"><label for="frac_labour_hardware_rnd_growth_rampup">Wake-up growth rate fraction labour hardware R&D</label> <input class="input" id="frac_labour_hardware_rnd_growth_rampup" value="0.14"></div>
-              <div class="input-parameter"><label for="frac_compute_hardware_rnd_growth_rampup">Wake-up growth rate fraction compute hardware R&D</label> <input class="input" id="frac_compute_hardware_rnd_growth_rampup" value="0.6699999999999999"></div>
+              <div class="input-parameter"><label for="frac_compute_hardware_rnd_growth_rampup">Wake-up growth rate fraction compute hardware R&D</label> <input class="input" id="frac_compute_hardware_rnd_growth_rampup" value="0.67"></div>
               <div class="input-parameter"><label for="frac_labour_software_rnd_growth_rampup">Wake-up growth rate fraction labour software R&D</label> <input class="input" id="frac_labour_software_rnd_growth_rampup" value="0.22"></div>
-              <div class="input-parameter"><label for="frac_compute_software_rnd_growth_rampup">Wake-up growth rate fraction of compute software R&D</label> <input class="input" id="frac_compute_software_rnd_growth_rampup" value="0.6699999999999999"></div>
+              <div class="input-parameter"><label for="frac_compute_software_rnd_growth_rampup">Wake-up growth rate fraction of compute software R&D</label> <input class="input" id="frac_compute_software_rnd_growth_rampup" value="0.67"></div>
               <div class="input-parameter"><label for="frac_capital_hardware_rnd_ceiling">Max fraction capital hardware R&D</label> <input class="input" id="frac_capital_hardware_rnd_ceiling" value="0.03"></div>
               <div class="input-parameter"><label for="frac_labour_hardware_rnd_ceiling">Max fraction of labour dedicated to hardware R&D</label> <input class="input" id="frac_labour_hardware_rnd_ceiling" value="0.03"></div>
               <div class="input-parameter"><label for="frac_compute_hardware_rnd_ceiling">Max fraction of compute dedicated to hardware R&D</label> <input class="input" id="frac_compute_hardware_rnd_ceiling" value="0.2"></div>
@@ -490,7 +488,13 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
               <div class="input-parameter"><label for="labour_growth">Population growth rate</label> <input class="input" id="labour_growth" value="0.01"></div>
               <div class="input-parameter"><label for="tfp_growth">TFP growth rate</label> <input class="input" id="tfp_growth" value="0.01"></div>
               <div class="input-parameter"><label for="compute_depreciation">Compute depreciation rate</label> <input class="input" id="compute_depreciation" value="0.2"></div>
-              <div class="input-parameter"><label for="money_cap_training_before_wakeup">Money cap training before wakeup</label> <input class="input" id="money_cap_training_before_wakeup" value="4000000000.0"></div>
+              <div class="input-parameter"><label for="money_cap_training_before_wakeup">Money threshold training</label> <input class="input" id="money_cap_training_before_wakeup" value="4000000000.0"></div>
+              <div class="input-parameter"><label for="initial_frac_compute_software_rnd_experiments">Initial frac compute software rnd experiments</label> <input class="input" id="initial_frac_compute_software_rnd_experiments" value="0.0001"></div>
+              <div class="input-parameter"><label for="frac_compute_software_rnd_experiments_growth">Frac compute software rnd experiments growth</label> <input class="input" id="frac_compute_software_rnd_experiments_growth" value="0.375"></div>
+              <div class="input-parameter"><label for="frac_compute_software_rnd_experiments_growth_rampup">Frac compute software rnd experiments growth rampup</label> <input class="input" id="frac_compute_software_rnd_experiments_growth_rampup" value="0.8"></div>
+              <div class="input-parameter"><label for="frac_compute_software_rnd_experiments_ceiling">Frac compute software rnd experiments ceiling</label> <input class="input" id="frac_compute_software_rnd_experiments_ceiling" value="0.11525"></div>
+              <div class="input-parameter"><label for="research_experiments_substitution_software">Research experiments substitution software</label> <input class="input" id="research_experiments_substitution_software" value="-0.1"></div>
+              <div class="input-parameter"><label for="research_to_compute_experiments_task_weight_ratio">Research to compute experiments task weight ratio</label> <input class="input" id="research_to_compute_experiments_task_weight_ratio" value="1.857142857"></div>
             </div>
           </div>
         </div>
