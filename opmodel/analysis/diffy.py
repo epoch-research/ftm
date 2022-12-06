@@ -494,6 +494,10 @@ def diffy(
         font-size: unset;
       }
 
+      .main {
+        padding-bottom: 2em;
+      }
+
       tbody tr:not(.no-changes):not(.different):not(.no-changes-message) * {
         color: var(--warn-color) !important;
       }
