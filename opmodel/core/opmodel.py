@@ -1036,7 +1036,7 @@ class SimulateTakeOff():
     # Compute software rnd production budgets
     self.labour_software_rnd[t_idx] = self.labour[t_idx] * self.frac_labour_software_rnd[t_idx]
     self.compute_software_rnd[t_idx] = self.compute[t_idx] * self.frac_compute_software_rnd[t_idx]
-    self.compute_software_rnd_experiments[t_idx] = self.compute[t_idx] * self.frac_compute_software_rnd_experiments[t_idx]
+    self.compute_software_rnd_experiments[t_idx] = self.hardware[t_idx] * self.frac_compute_software_rnd_experiments[t_idx]
 
     # Compute optimal task allocation
     self.labour_task_input_software_rnd[t_idx][:], \
