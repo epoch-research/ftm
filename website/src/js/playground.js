@@ -262,11 +262,12 @@ function import_scenario(params) {
 }
 
 function download(content, filename, type) {
-  var a = document.createElement("a");
-  var file = new Blob([content], {type: type});
-  a.href = URL.createObjectURL(file);
-  a.download = filename;
-  a.click();
+  let link = document.createElement('a');
+  let file = new Blob([content], {type: type});
+  link.href = URL.createObjectURL(file);
+  link.target = '_blank';
+  link.download = filename;
+  link.dispatchEvent(new MouseEvent('click'));
 }
 
 document.getElementById('export-button').addEventListener('click', () => export_scenario());
