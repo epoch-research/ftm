@@ -462,6 +462,7 @@ class SimulateTakeOff():
     self.state_def.capital_software_rnd = self.state_var()
     self.state_def.labour_software_rnd = self.state_var()
     self.state_def.compute_software_rnd = self.state_var()
+    self.state_def.compute_software_rnd_experiments = self.state_var()
 
     self.state_def.labour_task_input_software_rnd = self.state_var((self.n_labour_tasks_rnd + 1,))
     self.state_def.compute_task_input_software_rnd = self.state_var((self.n_labour_tasks_rnd + 1,))
