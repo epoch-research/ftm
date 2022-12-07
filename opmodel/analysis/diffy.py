@@ -64,18 +64,22 @@ class JSModel(Model):
 
   def simulate(self):
     inputs = {parameter : row['Best guess'] for parameter, row in self.parameters.iterrows()}
+
     if not 't_start' in inputs: inputs['t_start'] = 2022
     if not 't_end'   in inputs: inputs['t_end']   = 2100
     if not 't_step'  in inputs: inputs['t_step']  = 0.1
     self.inputs = inputs
+
     self.module.eval('''
       log = [];
       console = {log: function() {
         log.push(Array.from(arguments).map(x => JSON.stringify(x)).join(', '));
       }};
     ''')
-    self.module.eval(f'simulation_result = ftm.run_simulation(bridge.transform_python_to_js_params({json.dumps(self.inputs)}))')
-    print(self.module.execute("log.join('\\n')"))
+    try:
+      self.module.eval(f'simulation_result = ftm.run_simulation(bridge.transform_python_to_js_params({json.dumps(self.inputs)}))')
+    finally:
+      print(self.module.execute("log.join('\\n')"))
 
   def get_var_to_lineno(self): return {}
 
@@ -83,19 +87,30 @@ class JSModel(Model):
 
   def get_takeoff_metrics(self):
     variables = self.module.execute(f'bridge.get_takeoff_metrics(simulation_result)')
+    self.nones_to_nans(variables)
     return variables
 
   def get_main_dynamic_variables(self, step_index):
     variables = self.module.execute(f'bridge.get_external_variables(simulation_result, {step_index})')
+    self.nones_to_nans(variables)
     return variables
 
   def get_internal_dynamic_variables(self, step_index):
     variables = self.module.execute(f'bridge.get_internal_variables(simulation_result, {step_index})')
+    self.nones_to_nans(variables)
     return variables
 
   def get_step_count(self):
     count = self.module.execute('simulation_result.states.length')
     return count
+
+  def nones_to_nans(self, variables):
+    for k, v in variables.items():
+      if v is None:
+        variables[k] = np.nan
+      elif isinstance(v, (list, tuple, np.ndarray)):
+        for i in range(len(v)):
+          if v[i] is None: v[i] = np.nan
 
 class PythonModel(Model):
   def __init__(self, **kwargs):
@@ -120,9 +135,9 @@ class PythonModel(Model):
 
     self.inputs = inputs
 
-    self.inputs['t_start'] = get_option('t_start', 2022)
-    self.inputs['t_end']   = get_option('t_end',   2100)
-    self.inputs['t_step']  = get_option('t_step',   0.1)
+    if not 't_start' in self.inputs: self.inputs['t_start'] = get_option('t_start', 2022)
+    if not 't_stop' in self.inputs: self.inputs['t_end']   = get_option('t_end',   2100)
+    if not 't_step' in self.inputs: self.inputs['t_step']  = get_option('t_step',   0.1)
 
     try:
       log.info('Running the model...')
