@@ -425,70 +425,73 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
 
           <div class="tab-content">
             <div class="tab active" data-id="main-parameters">
-              <div class="input-parameter"><label for="full_automation_requirements_training">AGI training requirements</label> <input class="input" id="full_automation_requirements_training" value="1e+36"></div>
-              <div class="input-parameter"><label for="flop_gap_training">Effective FLOP gap (training)</label> <input class="input" id="flop_gap_training" value="10000.0"></div>
-              <div class="input-parameter"><label for="goods_vs_rnd_requirements_training">Training goods vs R&D</label> <input class="input" id="goods_vs_rnd_requirements_training" value="3.0"></div>
-              <div class="input-parameter"><label for="full_automation_requirements_runtime">AGI runtime requirements</label> <input class="input" id="full_automation_requirements_runtime" value="5.256e+23"></div>
-              <div class="input-parameter disabled"><label for="runtime_training_tradeoff_enabled_2">Maximum trade-off</label> <input id="runtime_training_tradeoff_enabled_2" class="runtime_training_tradeoff_enabled" type="checkbox"> <input class="input" id="runtime_training_max_tradeoff" value="1000.0"></div>
-              <div class="input-parameter"><label for="labour_substitution_rnd">Labour substitution R&D</label> <input class="input" id="labour_substitution_rnd" value="-0.5"></div>
-              <div class="input-parameter"><label for="hardware_returns">Returns to hardware</label> <input class="input" id="hardware_returns" value="5.2"></div>
-              <div class="input-parameter"><label for="software_returns">Returns to software</label> <input class="input" id="software_returns" value="1.25"></div>
-              <div class="input-parameter"><label for="frac_gwp_compute_growth">Growth rate fraction GWP compute</label> <input class="input" id="frac_gwp_compute_growth" value="0.19"></div>
-              <div class="input-parameter"><label for="frac_compute_training_growth">Growth rate fraction compute training</label> <input class="input" id="frac_compute_training_growth" value="0.547528364331348"></div>
-              <div class="input-parameter"><label for="frac_gwp_compute_growth_rampup">Wake-up growth rate fraction of GWP buying compute</label> <input class="input" id="frac_gwp_compute_growth_rampup" value="0.19"></div>
-              <div class="input-parameter"><label for="frac_compute_training_growth_rampup">Wake-up growth rate fraction compute training AI models</label> <input class="input" id="frac_compute_training_growth_rampup" value="1.1"></div>
-              <div class="input-parameter"><label for="frac_gwp_compute_ceiling">Max fraction GWP compute</label> <input class="input" id="frac_gwp_compute_ceiling" value="0.1"></div>
-              <div class="input-parameter"><label for="frac_compute_training_ceiling">Max fraction compute training</label> <input class="input" id="frac_compute_training_ceiling" value="0.1"></div>
-              <div class="input-parameter"><label for="initial_biggest_training_run">Initial biggest training run</label> <input class="input" id="initial_biggest_training_run" value="3e+24"></div>
-              <div class="input-parameter"><label for="rampup_trigger">Wakeup trigger</label> <input class="input" id="rampup_trigger" value="0.06"></div>
+<div class="input-parameter"><label for="full_automation_requirements_training">AGI training requirements</label> <input class="input" id="full_automation_requirements_training" value="1e+35"></div>
+<div class="input-parameter"><label for="flop_gap_training">FLOP gap (training)</label> <input class="input" id="flop_gap_training" value="10000.0"></div>
+<div class="input-parameter"><label for="goods_vs_rnd_requirements_training">Training goods vs R&D</label> <input class="input" id="goods_vs_rnd_requirements_training" value="3.0"></div>
+<div class="input-parameter"><label for="full_automation_requirements_runtime">AGI runtime requirements</label> <input class="input" id="full_automation_requirements_runtime" value="5.256e+23"></div>
+<div class="input-parameter disabled"><label for="runtime_training_tradeoff_enabled_2">Maximum trade-off</label> <input id="runtime_training_tradeoff_enabled_2" class="runtime_training_tradeoff_enabled" type="checkbox"> <input class="input" id="runtime_training_max_tradeoff" value="1000.0"></div>
+<div class="input-parameter"><label for="labour_substitution_rnd">Labour substitution R&D</label> <input class="input" id="labour_substitution_rnd" value="-0.5"></div>
+<div class="input-parameter"><label for="hardware_returns">Returns to hardware</label> <input class="input" id="hardware_returns" value="5.2"></div>
+<div class="input-parameter"><label for="software_returns">Returns to software</label> <input class="input" id="software_returns" value="1.25"></div>
+<div class="input-parameter"><label for="frac_gwp_compute_growth">Growth rate fraction GWP compute</label> <input class="input" id="frac_gwp_compute_growth" value="0.19"></div>
+<div class="input-parameter"><label for="frac_compute_training_growth">Growth rate fraction compute training</label> <input class="input" id="frac_compute_training_growth" value="0.5475283643"></div>
+<div class="input-parameter"><label for="frac_gwp_compute_growth_rampup">Wake-up growth rate fraction of GWP buying compute</label> <input class="input" id="frac_gwp_compute_growth_rampup" value="0.19"></div>
+<div class="input-parameter"><label for="frac_compute_training_growth_rampup">Wake-up growth rate fraction compute training AI models</label> <input class="input" id="frac_compute_training_growth_rampup" value="1.1"></div>
+<div class="input-parameter"><label for="frac_gwp_compute_ceiling">Max fraction GWP compute</label> <input class="input" id="frac_gwp_compute_ceiling" value="0.1"></div>
+<div class="input-parameter"><label for="frac_compute_training_ceiling">Max fraction compute training</label> <input class="input" id="frac_compute_training_ceiling" value="0.1"></div>
+<div class="input-parameter"><label for="initial_biggest_training_run">Initial biggest training run</label> <input class="input" id="initial_biggest_training_run" value="3e+24"></div>
+<div class="input-parameter"><label for="rampup_trigger">Wakeup trigger</label> <input class="input" id="rampup_trigger" value="0.06"></div>
             </div>
             <div class="tab" data-id="additional-parameters">
-              <div class="input-parameter"><label for="flop_gap_runtime">Effective FLOP gap (runtime)</label> <input class="input" id="flop_gap_runtime" value="100.0"></div>
-              <div class="input-parameter"><label for="goods_vs_rnd_requirements_runtime">Runtime goods vs R&D</label> <input class="input" id="goods_vs_rnd_requirements_runtime" value="100.0"></div>
-              <div class="input-parameter disabled"><label for="runtime_training_tradeoff_enabled_1">Trade-off efficiency</label> <input id="runtime_training_tradeoff_enabled_1" class="runtime_training_tradeoff_enabled" type="checkbox"> <input class="input" id="runtime_training_tradeoff" value="1"></div>
-              <div class="input-parameter"><label for="labour_substitution_goods">Labour substitution goods</label> <input class="input" id="labour_substitution_goods" value="-0.5"></div>
-              <div class="input-parameter"><label for="capital_substitution_goods">Substitution between capital and cognitive tasks for goods and services</label> <input class="input" id="capital_substitution_goods" value="-0.4"></div>
-              <div class="input-parameter"><label for="capital_substitution_rnd">Substitution between capital and cognitive tasks for R&D</label> <input class="input" id="capital_substitution_rnd" value="-0.25"></div>
-              <div class="input-parameter"><label for="hardware_performance_ceiling">Maximum hardware performance</label> <input class="input" id="hardware_performance_ceiling" value="1e+30"></div>
-              <div class="input-parameter"><label for="software_ceiling">Maximum software performance</label> <input class="input" id="software_ceiling" value="100000000.0"></div>
-              <div class="input-parameter"><label for="rnd_parallelization_penalty">R&D parallelization penalty</label> <input class="input" id="rnd_parallelization_penalty" value="0.7"></div>
-              <div class="input-parameter"><label for="hardware_delay">Hardware adoption delay</label> <input class="input" id="hardware_delay" value="1.0"></div>
-              <div class="input-parameter"><label for="frac_capital_hardware_rnd_growth">Growth rate fraction capital hardware R&D</label> <input class="input" id="frac_capital_hardware_rnd_growth" value="0.01"></div>
-              <div class="input-parameter"><label for="frac_labour_hardware_rnd_growth">Growth rate fraction labour hardware R&D</label> <input class="input" id="frac_labour_hardware_rnd_growth" value="0.01"></div>
-              <div class="input-parameter"><label for="frac_compute_hardware_rnd_growth">Growth rate fraction compute hardware R&D</label> <input class="input" id="frac_compute_hardware_rnd_growth" value="0.01"></div>
-              <div class="input-parameter"><label for="frac_labour_software_rnd_growth">Growth rate fraction labour software R&D</label> <input class="input" id="frac_labour_software_rnd_growth" value="0.18"></div>
-              <div class="input-parameter"><label for="frac_compute_software_rnd_growth">Growth rate fraction compute software R&D</label> <input class="input" id="frac_compute_software_rnd_growth" value="0.18"></div>
-              <div class="input-parameter"><label for="frac_capital_hardware_rnd_growth_rampup">Wake-up growth rate fraction capital hardware R&D</label> <input class="input" id="frac_capital_hardware_rnd_growth_rampup" value="0.14"></div>
-              <div class="input-parameter"><label for="frac_labour_hardware_rnd_growth_rampup">Wake-up growth rate fraction labour hardware R&D</label> <input class="input" id="frac_labour_hardware_rnd_growth_rampup" value="0.14"></div>
-              <div class="input-parameter"><label for="frac_compute_hardware_rnd_growth_rampup">Wake-up growth rate fraction compute hardware R&D</label> <input class="input" id="frac_compute_hardware_rnd_growth_rampup" value="0.6699999999999999"></div>
-              <div class="input-parameter"><label for="frac_labour_software_rnd_growth_rampup">Wake-up growth rate fraction labour software R&D</label> <input class="input" id="frac_labour_software_rnd_growth_rampup" value="0.22"></div>
-              <div class="input-parameter"><label for="frac_compute_software_rnd_growth_rampup">Wake-up growth rate fraction of compute software R&D</label> <input class="input" id="frac_compute_software_rnd_growth_rampup" value="0.6699999999999999"></div>
-              <div class="input-parameter"><label for="frac_capital_hardware_rnd_ceiling">Max fraction capital hardware R&D</label> <input class="input" id="frac_capital_hardware_rnd_ceiling" value="0.03"></div>
-              <div class="input-parameter"><label for="frac_labour_hardware_rnd_ceiling">Max fraction of labour dedicated to hardware R&D</label> <input class="input" id="frac_labour_hardware_rnd_ceiling" value="0.03"></div>
-              <div class="input-parameter"><label for="frac_compute_hardware_rnd_ceiling">Max fraction of compute dedicated to hardware R&D</label> <input class="input" id="frac_compute_hardware_rnd_ceiling" value="0.2"></div>
-              <div class="input-parameter"><label for="frac_labour_software_rnd_ceiling">Max fraction labour software R&D</label> <input class="input" id="frac_labour_software_rnd_ceiling" value="0.03"></div>
-              <div class="input-parameter"><label for="frac_compute_software_rnd_ceiling">Max fraction compute software R&D</label> <input class="input" id="frac_compute_software_rnd_ceiling" value="0.2"></div>
-              <div class="input-parameter"><label for="initial_frac_capital_hardware_rnd">Initial fraction capital hardware R&D</label> <input class="input" id="initial_frac_capital_hardware_rnd" value="0.002"></div>
-              <div class="input-parameter"><label for="initial_frac_labour_hardware_rnd">Initial fraction labour hardware R&D</label> <input class="input" id="initial_frac_labour_hardware_rnd" value="0.002"></div>
-              <div class="input-parameter"><label for="initial_frac_compute_hardware_rnd">Initial fraction compute hardware R&D</label> <input class="input" id="initial_frac_compute_hardware_rnd" value="0.002"></div>
-              <div class="input-parameter"><label for="initial_frac_labour_software_rnd">Initial fraction labour software R&D</label> <input class="input" id="initial_frac_labour_software_rnd" value="0.0002"></div>
-              <div class="input-parameter"><label for="initial_frac_compute_software_rnd">Initial fraction compute software R&D</label> <input class="input" id="initial_frac_compute_software_rnd" value="0.0002"></div>
-              <div class="input-parameter"><label for="ratio_initial_to_cumulative_input_hardware_rnd">Initial vs cumulative input - hardware R&D</label> <input class="input" id="ratio_initial_to_cumulative_input_hardware_rnd" value="0.047"></div>
-              <div class="input-parameter"><label for="ratio_initial_to_cumulative_input_software_rnd">Initial vs cumulative input - software R&D</label> <input class="input" id="ratio_initial_to_cumulative_input_software_rnd" value="0.2"></div>
-              <div class="input-parameter"><label for="initial_hardware_production">Initial hardware production</label> <input class="input" id="initial_hardware_production" value="1e+28"></div>
-              <div class="input-parameter"><label for="ratio_hardware_to_initial_hardware_production">Accumulated hardware vs initial hardware production</label> <input class="input" id="ratio_hardware_to_initial_hardware_production" value="2.0"></div>
-              <div class="input-parameter"><label for="initial_buyable_hardware_performance">Initial market hardware performance</label> <input class="input" id="initial_buyable_hardware_performance" value="1.5e+17"></div>
-              <div class="input-parameter"><label for="initial_gwp">Initial GWP</label> <input class="input" id="initial_gwp" value="85000000000000.0"></div>
-              <div class="input-parameter"><label for="initial_population">Initial world labour force.</label> <input class="input" id="initial_population" value="4000000000.0"></div>
-              <div class="input-parameter"><label for="initial_cognitive_share_goods">Initial cognitive share goods</label> <input class="input" id="initial_cognitive_share_goods" value="0.5"></div>
-              <div class="input-parameter"><label for="initial_cognitive_share_rnd">Initial cognitive share in R&D</label> <input class="input" id="initial_cognitive_share_rnd" value="0.7"></div>
-              <div class="input-parameter"><label for="initial_compute_share_goods">Initial compute share goods</label> <input class="input" id="initial_compute_share_goods" value="0.01"></div>
-              <div class="input-parameter"><label for="initial_compute_share_rnd">Initial compute share R&D</label> <input class="input" id="initial_compute_share_rnd" value="0.01"></div>
-              <div class="input-parameter"><label for="initial_capital_growth">Initial capital growth rate</label> <input class="input" id="initial_capital_growth" value="0.0275"></div>
-              <div class="input-parameter"><label for="labour_growth">Population growth rate</label> <input class="input" id="labour_growth" value="0.01"></div>
-              <div class="input-parameter"><label for="tfp_growth">TFP growth rate</label> <input class="input" id="tfp_growth" value="0.01"></div>
-              <div class="input-parameter"><label for="compute_depreciation">Compute depreciation rate</label> <input class="input" id="compute_depreciation" value="0.2"></div>
-              <div class="input-parameter"><label for="money_cap_training_before_wakeup">Money threshold training</label> <input class="input" id="money_cap_training_before_wakeup" value="4000000000.0"></div>
+<div class="input-parameter"><label for="flop_gap_runtime">FLOP gap (runtime)</label> <input class="input" id="flop_gap_runtime" value="100.0"></div>
+<div class="input-parameter"><label for="goods_vs_rnd_requirements_runtime">Runtime goods vs R&D</label> <input class="input" id="goods_vs_rnd_requirements_runtime" value="100.0"></div>
+<div class="input-parameter disabled"><label for="runtime_training_tradeoff_enabled_1">Trade-off efficiency</label> <input id="runtime_training_tradeoff_enabled_1" class="runtime_training_tradeoff_enabled" type="checkbox"> <input class="input" id="runtime_training_tradeoff" value="1"></div>
+<div class="input-parameter"><label for="labour_substitution_goods">Labour substitution goods</label> <input class="input" id="labour_substitution_goods" value="-0.5"></div>
+<div class="input-parameter"><label for="capital_substitution_goods">Substitution between capital and cognitive tasks for goods and services</label> <input class="input" id="capital_substitution_goods" value="-0.4"></div>
+<div class="input-parameter"><label for="capital_substitution_rnd">Substitution between capital and cognitive tasks for R&D</label> <input class="input" id="capital_substitution_rnd" value="-0.25"></div>
+<div class="input-parameter"><label for="hardware_performance_ceiling">Maximum hardware performance</label> <input class="input" id="hardware_performance_ceiling" value="1e+30"></div>
+<div class="input-parameter"><label for="software_ceiling">Maximum software performance</label> <input class="input" id="software_ceiling" value="100000000.0"></div>
+<div class="input-parameter"><label for="rnd_parallelization_penalty">R&D parallelization penalty</label> <input class="input" id="rnd_parallelization_penalty" value="0.7"></div>
+<div class="input-parameter"><label for="hardware_delay">Hardware adoption delay</label> <input class="input" id="hardware_delay" value="1.0"></div>
+<div class="input-parameter"><label for="frac_capital_hardware_rnd_growth">Growth rate fraction capital hardware R&D</label> <input class="input" id="frac_capital_hardware_rnd_growth" value="0.01"></div>
+<div class="input-parameter"><label for="frac_labour_hardware_rnd_growth">Growth rate fraction labour hardware R&D</label> <input class="input" id="frac_labour_hardware_rnd_growth" value="0.01"></div>
+<div class="input-parameter"><label for="frac_compute_hardware_rnd_growth">Growth rate fraction compute hardware R&D</label> <input class="input" id="frac_compute_hardware_rnd_growth" value="0.01"></div>
+<div class="input-parameter"><label for="frac_labour_software_rnd_growth">Growth rate fraction labour software R&D</label> <input class="input" id="frac_labour_software_rnd_growth" value="0.18"></div>
+<div class="input-parameter"><label for="frac_compute_software_rnd_growth">Growth rate fraction compute software R&D</label> <input class="input" id="frac_compute_software_rnd_growth" value="0.18"></div>
+<div class="input-parameter"><label for="frac_capital_hardware_rnd_growth_rampup">Wake-up growth rate fraction capital hardware R&D</label> <input class="input" id="frac_capital_hardware_rnd_growth_rampup" value="0.14"></div>
+<div class="input-parameter"><label for="frac_labour_hardware_rnd_growth_rampup">Wake-up growth rate fraction labour hardware R&D</label> <input class="input" id="frac_labour_hardware_rnd_growth_rampup" value="0.14"></div>
+<div class="input-parameter"><label for="frac_compute_hardware_rnd_growth_rampup">Wake-up growth rate fraction compute hardware R&D</label> <input class="input" id="frac_compute_hardware_rnd_growth_rampup" value="0.67"></div>
+<div class="input-parameter"><label for="frac_labour_software_rnd_growth_rampup">Wake-up growth rate fraction labour software R&D</label> <input class="input" id="frac_labour_software_rnd_growth_rampup" value="0.22"></div>
+<div class="input-parameter"><label for="frac_compute_software_rnd_growth_rampup">Wake-up growth rate fraction of compute software R&D</label> <input class="input" id="frac_compute_software_rnd_growth_rampup" value="0.67"></div>
+<div class="input-parameter"><label for="frac_capital_hardware_rnd_ceiling">Max fraction capital hardware R&D</label> <input class="input" id="frac_capital_hardware_rnd_ceiling" value="0.03"></div>
+<div class="input-parameter"><label for="frac_labour_hardware_rnd_ceiling">Max fraction of labour dedicated to hardware R&D</label> <input class="input" id="frac_labour_hardware_rnd_ceiling" value="0.03"></div>
+<div class="input-parameter"><label for="frac_compute_hardware_rnd_ceiling">Max fraction of compute dedicated to hardware R&D</label> <input class="input" id="frac_compute_hardware_rnd_ceiling" value="0.2"></div>
+<div class="input-parameter"><label for="frac_labour_software_rnd_ceiling">Max fraction labour software R&D</label> <input class="input" id="frac_labour_software_rnd_ceiling" value="0.03"></div>
+<div class="input-parameter"><label for="frac_compute_software_rnd_ceiling">Max fraction compute software R&D</label> <input class="input" id="frac_compute_software_rnd_ceiling" value="0.2"></div>
+<div class="input-parameter"><label for="initial_frac_capital_hardware_rnd">Initial fraction capital hardware R&D</label> <input class="input" id="initial_frac_capital_hardware_rnd" value="0.002"></div>
+<div class="input-parameter"><label for="initial_frac_labour_hardware_rnd">Initial fraction labour hardware R&D</label> <input class="input" id="initial_frac_labour_hardware_rnd" value="0.002"></div>
+<div class="input-parameter"><label for="initial_frac_compute_hardware_rnd">Initial fraction compute hardware R&D</label> <input class="input" id="initial_frac_compute_hardware_rnd" value="0.002"></div>
+<div class="input-parameter"><label for="initial_frac_labour_software_rnd">Initial fraction labour software R&D</label> <input class="input" id="initial_frac_labour_software_rnd" value="0.0002"></div>
+<div class="input-parameter"><label for="initial_frac_compute_software_rnd">Initial fraction compute software R&D</label> <input class="input" id="initial_frac_compute_software_rnd" value="0.0002"></div>
+<div class="input-parameter"><label for="ratio_initial_to_cumulative_input_hardware_rnd">Initial vs cumulative input - hardware R&D</label> <input class="input" id="ratio_initial_to_cumulative_input_hardware_rnd" value="0.047"></div>
+<div class="input-parameter"><label for="ratio_initial_to_cumulative_input_software_rnd">Initial vs cumulative input - software R&D</label> <input class="input" id="ratio_initial_to_cumulative_input_software_rnd" value="0.2"></div>
+<div class="input-parameter"><label for="initial_hardware_production">Initial hardware production</label> <input class="input" id="initial_hardware_production" value="1e+28"></div>
+<div class="input-parameter"><label for="ratio_hardware_to_initial_hardware_production">Accumulated hardware vs initial hardware production</label> <input class="input" id="ratio_hardware_to_initial_hardware_production" value="2.0"></div>
+<div class="input-parameter"><label for="initial_buyable_hardware_performance">Initial market hardware performance</label> <input class="input" id="initial_buyable_hardware_performance" value="1.5e+17"></div>
+<div class="input-parameter"><label for="initial_gwp">Initial GWP</label> <input class="input" id="initial_gwp" value="85000000000000.0"></div>
+<div class="input-parameter"><label for="initial_population">Initial population</label> <input class="input" id="initial_population" value="4000000000.0"></div>
+<div class="input-parameter"><label for="initial_cognitive_share_goods">Initial cognitive share goods</label> <input class="input" id="initial_cognitive_share_goods" value="0.5"></div>
+<div class="input-parameter"><label for="initial_cognitive_share_rnd">Initial cognitive share in R&D</label> <input class="input" id="initial_cognitive_share_rnd" value="0.7"></div>
+<div class="input-parameter"><label for="initial_compute_share_goods">Initial compute share goods</label> <input class="input" id="initial_compute_share_goods" value="0.01"></div>
+<div class="input-parameter"><label for="initial_compute_share_rnd">Initial compute share R&D</label> <input class="input" id="initial_compute_share_rnd" value="0.01"></div>
+<div class="input-parameter"><label for="initial_capital_growth">Initial capital growth rate</label> <input class="input" id="initial_capital_growth" value="0.0275"></div>
+<div class="input-parameter"><label for="labour_growth">Population growth rate</label> <input class="input" id="labour_growth" value="0.01"></div>
+<div class="input-parameter"><label for="tfp_growth">TFP growth rate</label> <input class="input" id="tfp_growth" value="0.01"></div>
+<div class="input-parameter"><label for="compute_depreciation">Compute depreciation rate</label> <input class="input" id="compute_depreciation" value="0.2"></div>
+<div class="input-parameter"><label for="money_cap_training_before_wakeup">Money threshold training</label> <input class="input" id="money_cap_training_before_wakeup" value="4000000000.0"></div>
+<div class="input-parameter"><label for="research_experiments_substitution_software">Research experiments substitution software</label> <input class="input" id="research_experiments_substitution_software" value="-0.1"></div>
+<div class="input-parameter"><label for="research_to_compute_experiments_task_weight_ratio">Research to compute experiments task weight ratio</label> <input class="input" id="research_to_compute_experiments_task_weight_ratio" value="1.857142857"></div>
+<div class="input-parameter"><label for="compute_software_rnd_experiments_efficiency">Compute software rnd experiments efficiency</label> <input class="input" id="compute_software_rnd_experiments_efficiency" value="0.4"></div>
             </div>
           </div>
         </div>
