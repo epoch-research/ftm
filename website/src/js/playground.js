@@ -381,6 +381,17 @@ class Graph {
         .attr("transform",
               "translate(" + margin.left + "," + margin.top + ")");
 
+    if (this.dataset.length == 0) {
+      svg.append('text')
+        .attr('text-anchor', 'middle')
+        .attr('dominant-baseline', 'central')
+        .attr('font-size', 26)
+        .attr('x', width/2)
+        .attr('y', height/2)
+        .text('No data')
+      return;
+    }
+
     // Add a margin so that we don't clip half a line
     let top_clip_margin = 1;
 
@@ -1112,32 +1123,39 @@ function add_multigraph(sim, variables, container, crop_after_agi = true) {
     let show_growth = (top == 'growth per year');
 
     if (show_growth) {
-      let r = sim.get_growth(label_to_var[side]);
-      x = r.t;
-      y = r.growth;
-      graph.yscale('linear');
+      if (label_to_yscale[side] == 'log') {
+        let r = sim.get_growth(label_to_var[side]);
+        x = r.t;
+        y = r.growth;
+        graph.yscale('linear');
+      } else {
+        x = null;
+        y = null;
+      }
     } else {
       x = sim.timesteps;
       y = (typeof label_to_var[side] == 'string') ? sim.get_thread(label_to_var[side]) : label_to_var[side];
       graph.yscale(label_to_yscale[side]);
     }
 
-    let xlims = [sim.timesteps[0], sim.timesteps[sim.states.length-1]];
+    if (x != null || y != null) {
+      let xlims = [sim.timesteps[0], sim.timesteps[sim.states.length-1]];
 
-    if (crop_after_agi) {
-      let end_idx = (crop_after_agi && sim.agi_year != null) ? Math.min(sim.time_to_index(sim.agi_year + 5), sim.states.length) : sim.states.length;
-      xlims[1] = sim.timesteps[end_idx];
-      x = x.slice(0, end_idx);
-      y = y.slice(0, end_idx);
+      if (crop_after_agi) {
+        let end_idx = (crop_after_agi && sim.agi_year != null) ? Math.min(sim.time_to_index(sim.agi_year + 5), sim.states.length) : sim.states.length;
+        xlims[1] = sim.timesteps[end_idx];
+        x = x.slice(0, end_idx);
+        y = y.slice(0, end_idx);
+      }
+
+      graph.xlims(xlims);
+
+      let label = side;
+      if (show_growth) {
+        label += ' growth';
+      }
+      graph.add_data_xy(x, y, {label: label});
     }
-
-    graph.xlims(xlims);
-
-    let label = side;
-    if (show_growth) {
-      label += ' growth';
-    }
-    graph.add_data_xy(x, y, {label: label});
   });
   plot_vlines(sim);
 
