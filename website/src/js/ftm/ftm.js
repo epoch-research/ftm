@@ -874,6 +874,24 @@ let ftm = {};
             compute_input_task[i] = (C + labour_input_task[I]/eta[I]) * beta[i]**sigma * eta[i]**(sigma-1) / Z;
           }
 
+          if (I > 0 && compute_input_task[I] < 0) {
+            for (let i = I; i < N; i++) {
+              compute_input_task[i] = 0;
+            }
+
+            for (let i = 0; i < I; i++) {
+              compute_input_task[i] = C * beta[i]**sigma * eta[i]**(sigma-1) / sums_beta_eta[I];
+            }
+
+            for (let i = 0; i < I; i++) {
+              labour_input_task[i] = 0;
+            }
+
+            for (let i = I; i < N; i++) {
+              labour_input_task[i] = L * (beta[i]**sigma / sums_beta[I]);
+            }
+          }
+
           break;
         }
       }
