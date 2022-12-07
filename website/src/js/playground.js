@@ -147,18 +147,28 @@ function run_simulation(immediate, callback) {
 
       plot_compute_decomposition(sim, '#compute-decomposition-graph-container');
 
+      let frac_automated_tasks = nj.array(sim.states.length);
+      for (let i = 0; i < sim.states.length; i++) {
+        frac_automated_tasks[i] =
+          (ftm.Model.get_automated_tasks_count(sim.states[i].goods) + ftm.Model.get_automated_tasks_count(sim.states[i].hardware_rnd))
+            / (sim.consts.goods.n_labour_tasks + sim.consts.rnd.n_labour_tasks);
+      }
+
       add_multigraph(sim, [
-        { label: 'GWP',                     var: 'gwp'},
-        { label: 'Software',                var: 'software.v'},
-        { label: 'Hardware',                var: 'hardware'},
-        { label: 'Hardware efficiency',     var: 'hardware_performance.v'},
-        { label: 'Labour',                  var: 'labour'},
-        { label: 'Capital',                 var: 'capital'},
-        { label: 'Compute',                 var: 'compute'},
-        { label: 'Biggest training run',    var: 'biggest_training_run'},
-        { label: 'Money spent on training', var: 'money_spent_training'},
-        { label: 'Fraction of GWP spent on training', var: nj.div(sim.get_thread('money_spent_training'), sim.get_thread('gwp'))},
-        { label: 'Fraction of compute invested in training', var: 'frac_compute.training.v'},
+        { label: 'GWP',                     var: 'gwp',                    yscale: 'log'},
+        { label: 'Software',                var: 'software.v',             yscale: 'log'},
+        { label: 'Hardware',                var: 'hardware',               yscale: 'log'},
+        { label: 'Hardware efficiency',     var: 'hardware_performance.v', yscale: 'log'},
+        { label: 'Labour',                  var: 'labour',                 yscale: 'log'},
+        { label: 'Capital',                 var: 'capital',                yscale: 'log'},
+        { label: 'Compute',                 var: 'compute',                yscale: 'log'},
+        { label: 'Biggest training run',    var: 'biggest_training_run',   yscale: 'log'},
+        { label: 'Money spent on training', var: 'money_spent_training',   yscale: 'log'},
+
+        { label: 'Fraction of GWP spent on training', var: nj.div(sim.get_thread('money_spent_training'), sim.get_thread('gwp')), yscale: 'log'},
+        { label: 'Fraction of compute invested in training', var: 'frac_compute.training.v', yscale: 'log'},
+
+        { label: 'Fraction of cognitive tasks automated', var: frac_automated_tasks, yscale: 'linear'},
       ], '#metrics-graph-container');
 
       document.body.classList.remove('running');
@@ -402,6 +412,17 @@ class Graph {
     if ((ylims[1] - ylims[0]) < 0.001) {
       ylims[0] = 0;
       ylims[1] *= 10;
+    }
+
+    // Add a bit of margin
+    if (this.yAxis.scale == 'log') {
+      let dy = ylims[1]/ylims[0];
+      ylims[0] /= dy ** (1/100);
+      ylims[1] *= dy ** (1/100);
+    } else {
+      let dy = ylims[1] - ylims[0];
+      ylims[0] -= dy * (1/100);
+      ylims[1] += dy * (1/100);
     }
 
     if (this.xAxis.lims[0] != null) xlims[0] = this.xAxis.lims[0];
@@ -1066,10 +1087,12 @@ function plot_compute_decomposition(sim, container, crop_after_agi = true) {
 
 function add_multigraph(sim, variables, container, crop_after_agi = true) {
   let label_to_var = {};
+  let label_to_yscale = {};
   let labels = [];
   for (let o of variables) {
     labels.push(o.label);
     label_to_var[o.label] = o.var;
+    label_to_yscale[o.label] = o.yscale;
   }
 
   plt.set_transform(ui_state.metrics_graph_transform)
@@ -1096,7 +1119,7 @@ function add_multigraph(sim, variables, container, crop_after_agi = true) {
     } else {
       x = sim.timesteps;
       y = (typeof label_to_var[side] == 'string') ? sim.get_thread(label_to_var[side]) : label_to_var[side];
-      graph.yscale('log');
+      graph.yscale(label_to_yscale[side]);
     }
 
     let xlims = [sim.timesteps[0], sim.timesteps[sim.states.length-1]];
