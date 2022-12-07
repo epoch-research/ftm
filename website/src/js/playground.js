@@ -233,19 +233,58 @@ function get_parameters() {
   return params;
 }
 
+function standard_format(x) {
+  let str;
+  if (x > 100) {
+    str = x.toExponential(3);
+    str = str.replace('e+', 'e');
+    str = str.replace(/\.([0-9]*[1-9])?0*/g, ".$1"); // remove right zeroes 
+    str = str.replace('.e', 'e'); // remove the decimal point, if no decimals
+  } else {
+    str = x.toString();
+  }
+  return str;
+}
+
 // Internal, for debugging
-function set_parameters(params) {
+function export_scenario() {
+  let json = JSON.stringify(get_parameters(), null, 2);
+  download(json, 'takeoff-scenario.json', 'text/plain');
+}
+
+function import_scenario(params) {
   for (let param in params) {
     let input = document.getElementById(param);
-    if (!input) {
-      console.log(param);
-    }
-    input.value = params[param];
+    input.value = standard_format(parseFloat(params[param]));
   }
 
   run_simulation(false);
 }
 
+function download(content, filename, type) {
+  let link = document.createElement('a');
+  let file = new Blob([content], {type: type});
+  link.href = URL.createObjectURL(file);
+  link.target = '_blank';
+  link.download = filename;
+  link.dispatchEvent(new MouseEvent('click'));
+}
+
+document.getElementById('export-button').addEventListener('click', () => export_scenario());
+
+document.getElementById('import-button').addEventListener('change', function() {
+  if (this.files.length == 0) {
+    return;
+  }
+
+  let reader = new FileReader();
+  reader.addEventListener('load', () => {
+    let json = reader.result;
+    import_scenario(JSON.parse(json));
+  });
+
+  reader.readAsText(this.files[0]);
+});
 
 // ------------------------------------------------------------------------
 // Plotting stuff
