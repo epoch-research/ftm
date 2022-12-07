@@ -169,12 +169,6 @@ let ftm = {};
           growth_rampup: 1.1,
           ceiling: 0.1,
         },
-
-        software_rnd_experiments: {
-          growth: 0.375,
-          growth_rampup: 0.8,
-          ceiling: 0.11525,
-        },
       },
 
       frac_gwp: {
@@ -188,7 +182,7 @@ let ftm = {};
       initial: {
         frac_capital: { hardware_rnd: 0.002, },
         frac_labour:  { hardware_rnd: 0.002, software_rnd: 0.0002, },
-        frac_compute: { hardware_rnd: 0.002, software_rnd: 0.0002, software_rnd_experiments: 0.0001},
+        frac_compute: { hardware_rnd: 0.002, software_rnd: 0.0002},
 
         biggest_training_run: 3e24,
         hardware_production: 1e28,
@@ -374,10 +368,9 @@ let ftm = {};
       state.frac_compute.hardware_rnd.v = initial.frac_compute.hardware_rnd;
       state.frac_compute.software_rnd.v = initial.frac_compute.software_rnd;
       state.frac_compute.training.v = initial.biggest_training_run / state.compute;
-      state.frac_compute.software_rnd_experiments.v = initial.frac_compute.software_rnd_experiments;
       state.frac_compute.goods.v =
         1 - state.frac_compute.hardware_rnd.v
-          - state.frac_compute.software_rnd.v - state.frac_compute.software_rnd_experiments.v
+          - state.frac_compute.software_rnd.v
           - state.frac_compute.training.v;
 
       // Initial compute must be greater than initial training run
@@ -631,7 +624,6 @@ let ftm = {};
       _update_frac_input(state.frac_capital.software_rnd, state, consts);
       _update_frac_input(state.frac_labour.software_rnd, state, consts);
       _update_frac_input(state.frac_compute.software_rnd, state, consts);
-      _update_frac_input(state.frac_compute.software_rnd_experiments, state, consts);
 
       // Cap the growth of the fraction of FLOP before rampup
       if (state.money_spent_training > consts.money_cap_training_before_wakeup && !states[state.t_idx-1].rampup) {
@@ -642,7 +634,7 @@ let ftm = {};
       state.frac_labour.goods.v  = 1 - state.frac_labour.hardware_rnd.v  - state.frac_labour.software_rnd.v;
       state.frac_compute.goods.v =
         1 - state.frac_compute.hardware_rnd.v
-          - state.frac_compute.software_rnd.v - state.frac_compute.software_rnd_experiments.v
+          - state.frac_compute.software_rnd.v
           - state.frac_compute.training.v;
     }
 
@@ -720,7 +712,7 @@ let ftm = {};
       this.produce(state, consts, 'rnd', 'software_rnd');
 
       // Combine with physical compute for experiments
-      state.software_rnd.experiments_compute = state.hardware * state.frac_compute.software_rnd_experiments.v;
+      state.software_rnd.experiments_compute = state.hardware ** consts.software_rnd.experiments_efficiency;
       state.software_rnd.output = this.ces_production_function(
         [state.software_rnd.output, state.software_rnd.experiments_compute],
         consts.software_rnd.experiments_task_weights,
@@ -1304,7 +1296,7 @@ let ftm = {};
 
     frac_capital = SimulationState.create_frac_state(['goods', 'hardware_rnd', 'software_rnd']);
     frac_labour  = SimulationState.create_frac_state(['goods', 'hardware_rnd', 'software_rnd']);
-    frac_compute = SimulationState.create_frac_state(['goods', 'hardware_rnd', 'software_rnd', 'software_rnd_experiments', 'training',]);
+    frac_compute = SimulationState.create_frac_state(['goods', 'hardware_rnd', 'software_rnd', 'training',]);
     frac_gwp = SimulationState.create_frac_state(['compute']);
 
     goods = { tfp: 0, };
@@ -1343,7 +1335,6 @@ let ftm = {};
 
       this.frac_compute.hardware_rnd = cheap_deep_copy(consts.frac_compute.hardware_rnd);
       this.frac_compute.software_rnd = cheap_deep_copy(consts.frac_compute.software_rnd);
-      this.frac_compute.software_rnd_experiments = cheap_deep_copy(consts.frac_compute.software_rnd_experiments);
       this.frac_compute.training = cheap_deep_copy(consts.frac_compute.training);
 
       this.frac_gwp.compute = cheap_deep_copy(consts.frac_gwp.compute);

@@ -25,6 +25,7 @@ let bridge = {}
     'capital_substitution_goods':                          'goods.capital_substitution',
     'capital_substitution_rnd':                            'rnd.capital_substitution',
     'research_experiments_substitution_software':          'software_rnd.experiments_substitution',
+    'compute_software_rnd_experiments_efficiency':         'software_rnd.experiments_efficiency',
 
     'hardware_performance_ceiling':                        'hardware_performance.ceiling',
     'software_ceiling':                                    'software.ceiling',
@@ -39,7 +40,6 @@ let bridge = {}
     'frac_compute_software_rnd_growth':                    'frac_compute.software_rnd.growth',
     'frac_gwp_compute_growth':                             'frac_gwp.compute.growth',
     'frac_compute_training_growth':                        'frac_compute.training.growth',
-    'frac_compute_software_rnd_experiments_growth':        'frac_compute.software_rnd_experiments.growth',
 
     'frac_capital_hardware_rnd_growth_rampup':             'frac_capital.hardware_rnd.growth_rampup',
     'frac_labour_hardware_rnd_growth_rampup':              'frac_labour.hardware_rnd.growth_rampup',
@@ -48,7 +48,6 @@ let bridge = {}
     'frac_compute_software_rnd_growth_rampup':             'frac_compute.software_rnd.growth_rampup',
     'frac_gwp_compute_growth_rampup':                      'frac_gwp.compute.growth_rampup',
     'frac_compute_training_growth_rampup':                 'frac_compute.training.growth_rampup',
-    'frac_compute_software_rnd_experiments_growth_rampup': 'frac_compute.software_rnd_experiments.growth_rampup',
 
     'frac_capital_hardware_rnd_ceiling':                   'frac_capital.hardware_rnd.ceiling',
     'frac_labour_hardware_rnd_ceiling':                    'frac_labour.hardware_rnd.ceiling',
@@ -57,14 +56,12 @@ let bridge = {}
     'frac_compute_software_rnd_ceiling':                   'frac_compute.software_rnd.ceiling',
     'frac_gwp_compute_ceiling':                            'frac_gwp.compute.ceiling',
     'frac_compute_training_ceiling':                       'frac_compute.training.ceiling',
-    'frac_compute_software_rnd_experiments_ceiling':       'frac_compute.software_rnd_experiments.ceiling',
 
     'initial_frac_capital_hardware_rnd':                   'initial.frac_capital.hardware_rnd',
     'initial_frac_labour_hardware_rnd':                    'initial.frac_labour.hardware_rnd',
     'initial_frac_compute_hardware_rnd':                   'initial.frac_compute.hardware_rnd',
     'initial_frac_labour_software_rnd':                    'initial.frac_labour.software_rnd',
     'initial_frac_compute_software_rnd':                   'initial.frac_compute.software_rnd',
-    'initial_frac_compute_software_rnd_experiments':       'initial.frac_compute.software_rnd_experiments',
 
     'initial_biggest_training_run':                        'initial.biggest_training_run',
     'ratio_initial_to_cumulative_input_hardware_rnd':      'initial.ratio_initial_to_cumulative_input_hardware_rnd',
