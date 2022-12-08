@@ -1016,7 +1016,7 @@ let ftm = {};
           rampup_start = year;
         }
 
-        if (rampup_mid == null && prev_state && Model.get_frac_tasks_automated(prev_state.goods, this.consts.goods) >= 0.3) {
+        if (rampup_mid == null && prev_state && Model.get_frac_tasks_automated(prev_state.goods, this.consts.goods) >= 0.2) {
           rampup_mid = year;
         }
 

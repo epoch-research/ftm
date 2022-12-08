@@ -1263,7 +1263,7 @@ function plot_vlines(sim, line_color = 'black', graph = null) {
     graph.axvline(sim.rampup_mid, {
       linestyle: '-.',
       color: line_color,
-      label: '30% automation',
+      label: '20% automation',
     });
   }
               

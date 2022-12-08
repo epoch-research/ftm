@@ -1155,8 +1155,8 @@ class SimulateTakeOff():
     if self.rampup[t_idx] and not self.rampup[t_idx-1]:
       self.rampup_start = t_year
 
-    if self.frac_tasks_automated_goods[t_idx-1] >= 0.3 and \
-    not self.frac_tasks_automated_goods[t_idx-2] >= 0.3:
+    if self.frac_tasks_automated_goods[t_idx-1] >= 0.2 and \
+    not self.frac_tasks_automated_goods[t_idx-2] >= 0.2:
       self.rampup_mid = t_year
 
     if self.frac_tasks_automated_goods[t_idx-1] >= 1. and \
@@ -1750,7 +1750,7 @@ class SimulateTakeOff():
       plt.axvline(self.rampup_mid,
                 linestyle='-.',
                 color=line_color,
-                label='30% automation')
+                label='20% automation')
 
     if self.agi_year:
       plt.axvline(self.agi_year,
