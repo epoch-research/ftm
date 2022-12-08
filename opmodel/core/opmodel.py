@@ -7,7 +7,7 @@ import math
 from . import utils
 from .utils import get_option, get_parameter_table, init_cli_arguments, handle_cli_arguments
 
-# TODO Temporary really hacky way to handle the state as a middle step in the transition to the final code
+# TODO Temporary really hacky way to handle the state (as a middle step in the transition to the final code)
 class StateDef:
   pass
 
