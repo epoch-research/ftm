@@ -520,13 +520,15 @@ def draw_oom_lines():
 def pluralize(name, count):
   return name if (count == 1) else name + 's'
 
-# Import display in non IPython environments
-try:
-  from IPython.display import display
-except ModuleNotFoundError: 
-  # As a fallback, just print
-  def display(x):
-    print(x)
+def format_float(x):
+  if x > 100:
+    s = f'{x:.3e}'
+    s = s.replace('e+', 'e')
+    s = re.sub(r'\.([0-9]*[1-9])?0*', r'.\1', s); # remove right zeroes
+    s = s.replace('.e', 'e') # remove the decimal point, if no decimal
+  else:
+    s = str(x)
+  return s
 
 class Log:
   ERROR_LEVEL = 1

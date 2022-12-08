@@ -120,27 +120,40 @@ def explore(exploration_target='compare', report_file_path=None, report_dir_path
   results = pd.DataFrame(results)
   report.add_data_frame(results)
 
-  # Plot results
-  metrics = ['gwp'] #, 'compute', 'hardware_performance', 'software', 'frac_gwp_compute', 'frac_training_compute']
-  for metric in metrics:
-    low_model.plot(metric, line_color='red')
-    med_model.plot(metric, new_figure=False, line_color='orange')
-    high_model.plot(metric, new_figure=False, line_color='green')
-
   # Plot compute decomposition
-  plt.figure(figsize=(14, 8), dpi=80);
+  sub_ylabels = {
+      'Conservative': 'Conservative',
+      'Best guess':   'Best guess',
+      'Aggressive':   'Aggressive',
+  }
+  ylabel = 'Scenario'
+
+  if exploration_target not in ('compare', 'both_requirements_steepness'):
+    param_names = get_param_names()
+    ylabel = param_names[exploration_target]
+    row = parameter_table.loc[exploration_target, :]
+    for scenario in sub_ylabels:
+      sub_ylabels[scenario] = format_float(row[scenario])
+
+  plt.figure(figsize=(14, 8), dpi=80)
+
   plt.subplot(3, 1, 1)
   low_model.plot_compute_decomposition(new_figure=False)
-  plt.ylabel("Conservative")
-  plt.title(f"Compute increase over time");
+  plt.ylabel(sub_ylabels['Conservative'], fontweight='bold')
+  plt.title(f"Compute increase over time")
   plt.legend(bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0)
-  plt.tight_layout();
+  plt.gcf().tight_layout(rect=[0, 0.03, 1, 0.95])
+
   plt.subplot(3, 1, 2)
   med_model.plot_compute_decomposition(new_figure=False)
-  plt.ylabel("Best guess")
+  plt.ylabel(sub_ylabels['Best guess'], fontweight='bold')
+
   plt.subplot(3, 1, 3)
   high_model.plot_compute_decomposition(new_figure=False)
-  plt.ylabel("Aggressive")
+  plt.ylabel(sub_ylabels['Aggressive'], fontweight='bold')
+
+  plt.gcf().text(-0.012, 0.5, ylabel, va='center', ha='center', rotation='vertical', fontsize=14, fontweight='bold')
+
   report.add_figure()
 
   # Plot requirements
@@ -176,12 +189,12 @@ def explore(exploration_target='compare', report_file_path=None, report_dir_path
       plt.xlim(lims)
       plt.gca().yaxis.set_major_formatter(mtick.PercentFormatter())
 
-    plt.figure(figsize=(14, 8), dpi=80);
+    plt.figure(figsize=(14, 8), dpi=80)
     plt.subplot(3, 1, 1)
     plot_requirements(requirements_low)
     plt.ylabel("Conservative")
     plt.title(f"{'Training' if training else 'Runtime'} requirements for goods and services")
-    plt.tight_layout();
+    plt.tight_layout()
     plt.subplot(3, 1, 2)
     plot_requirements(requirements_med)
     plt.ylabel("Best guess")

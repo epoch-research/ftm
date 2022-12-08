@@ -5,7 +5,7 @@ import pandas as pd
 import math
 
 from . import utils
-from .utils import display, get_option, get_parameter_table, init_cli_arguments, handle_cli_arguments
+from .utils import get_option, get_parameter_table, init_cli_arguments, handle_cli_arguments
 
 # TODO Temporary really hacky way to handle the state as a middle step in the transition to the final code
 class StateDef:
@@ -1899,7 +1899,7 @@ class SimulateTakeOff():
     return summary_table
 
   def display_summary_table(self):
-    display(self.get_summary_table())
+    print(self.get_summary_table())
 
   def get_takeoff_metrics(self):
     metrics_df = pd.DataFrame(self.takeoff_metrics, index = [0])
@@ -1907,7 +1907,7 @@ class SimulateTakeOff():
     return metrics_df
 
   def display_takeoff_metrics(self):
-    display(self.get_takeoff_metrics())
+    print(self.get_takeoff_metrics())
 
   def plot_fractional_inputs(self):
     fracs = {
