@@ -535,7 +535,7 @@ def write_mc_analysis_report(
       plot = plot_ecdf if method == 'cdf' else plot_epdf
       plot(results.scalar_metrics[metric], limits = [results.t_start, results.t_end], label = metric_id_to_human[metric], color = colors[color_index + i])
     if method == 'cdf':
-      plt.plot(bioanchors.years, bioanchors.cdf, color = '#e377c2', label = 'Bioanchors',)
+      plt.plot(bioanchors.years, bioanchors.cdf, color = '#e377c2', label = 'Bioanchors')
     plt.ylabel(method.upper())
     plt.xlabel('Year')
     plt.title('AI Timelines Metrics')
