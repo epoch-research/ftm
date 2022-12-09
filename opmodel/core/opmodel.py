@@ -48,7 +48,6 @@ class SimulateTakeOff():
       capital_substitution_goods,
       capital_substitution_rnd,
       research_experiments_substitution_software,
-      research_to_compute_experiments_task_weight_ratio,
       compute_software_rnd_experiments_efficiency,
 
       # R&D parameters
@@ -106,8 +105,10 @@ class SimulateTakeOff():
       initial_buyable_hardware_performance,
       initial_gwp,
       initial_population,
+      
       initial_cognitive_share_goods,
-      initial_cognitive_share_rnd,
+      initial_cognitive_share_hardware_rnd,
+      initial_experiment_share_software_rnd,
       initial_compute_share_goods,
       initial_compute_share_rnd,
 
@@ -194,9 +195,6 @@ class SimulateTakeOff():
       self.initial_hardware_production \
       * self.ratio_hardware_to_initial_hardware_production
 
-    self.research_experiments_task_weights_software = \
-        np.array(SimulateTakeOff.odds_to_probs(self.research_to_compute_experiments_task_weight_ratio))
-
     # Set the initial R&D inputs to roughly match their real values
     # (note that the simulation doesn't care about these values; we could set
     # both of these to 1 and there would be no changes in the dynamics of the model)
@@ -207,7 +205,8 @@ class SimulateTakeOff():
 
     # Economy shares
     self.initial_capital_share_goods = 1 - self.initial_cognitive_share_goods
-    self.initial_capital_share_rnd = 1 - self.initial_cognitive_share_rnd
+    self.initial_capital_share_hardware_rnd = 1 - self.initial_cognitive_share_rnd
+    self.initial_cognitive_share_software_rnd = 1 - self.initial_experiment_share_software_rnd
 
     self.initial_compute_share_goods = \
       self.initial_compute_share_goods \
@@ -922,8 +921,8 @@ class SimulateTakeOff():
       initial_compute_to_labour_share_ratio_rnd = \
         self.initial_compute_share_rnd / self.initial_labour_share_rnd
 
-      self.capital_task_weights_rnd, \
-      self.labour_task_weights_rnd, =\
+      self.capital_task_weights_hardware_rnd, \
+      self.labour_task_weights_hardware_rnd, =\
         SimulateTakeOff.adjust_task_weights(
           self.capital_hardware_rnd[0],
           no_automation_labour_task_input_rnd,
@@ -931,7 +930,7 @@ class SimulateTakeOff():
           self.task_compute_to_labour_ratio_rnd[0][:],
           self.capital_substitution_rnd,
           self.labour_substitution_rnd,
-          initial_capital_to_cognitive_share_ratio_rnd,
+          initial_capital_to_cognitive_share_ratio_hardware_rnd,
           initial_compute_to_labour_share_ratio_rnd,
         )
 
@@ -941,7 +940,7 @@ class SimulateTakeOff():
       SimulateTakeOff.solve_allocation(
           self.labour_hardware_rnd[t_idx],
           self.compute_hardware_rnd[t_idx],
-          self.labour_task_weights_rnd,
+          self.labour_task_weights_hardware_rnd,
           self.labour_substitution_rnd,
           self.task_compute_to_labour_ratio_rnd[t_idx],
           self.automatable_tasks_rnd[t_idx]
@@ -967,8 +966,8 @@ class SimulateTakeOff():
             self.capital_hardware_rnd[t_idx],
             self.labour_task_input_hardware_rnd[t_idx],
             self.compute_task_input_hardware_rnd[t_idx],
-            self.capital_task_weights_rnd, \
-            self.labour_task_weights_rnd,
+            self.capital_task_weights_hardware_rnd, \
+            self.labour_task_weights_hardware_rnd,
             self.task_compute_to_labour_ratio_rnd[t_idx],
             self.capital_substitution_rnd,
             self.labour_substitution_rnd,
@@ -980,8 +979,8 @@ class SimulateTakeOff():
       SimulateTakeOff.nested_ces_production_function(
           self.capital_hardware_rnd[t_idx],
           self.task_input_hardware_rnd[t_idx],
-          self.capital_task_weights_rnd,
-          self.labour_task_weights_rnd,
+          self.capital_task_weights_hardware_rnd,
+          self.labour_task_weights_hardware_rnd,
           self.capital_substitution_rnd,
           self.labour_substitution_rnd,
           self.tfp_rnd[t_idx],
@@ -1001,7 +1000,7 @@ class SimulateTakeOff():
       SimulateTakeOff.solve_allocation(
           self.labour_hardware_rnd[t_idx],
           self.compute_hardware_rnd[t_idx],
-          self.labour_task_weights_rnd,
+          self.labour_task_weights_hardware_rnd,
           self.labour_substitution_rnd,
           self.task_compute_to_labour_ratio_rnd[t_idx],
           AT=1 # Only first task is automatable
@@ -1015,8 +1014,8 @@ class SimulateTakeOff():
       SimulateTakeOff.nested_ces_production_function(
           self.capital_hardware_rnd[t_idx],
           no_automation_task_input_hardware_rnd,
-          self.capital_task_weights_rnd,
-          self.labour_task_weights_rnd,
+          self.capital_task_weights_hardware_rnd,
+          self.labour_task_weights_hardware_rnd,
           self.capital_substitution_rnd,
           self.labour_substitution_rnd,
           self.tfp_rnd[t_idx],
@@ -1025,18 +1024,46 @@ class SimulateTakeOff():
     self.automation_multiplier_rnd[t_idx] = output_hardware / no_automation_output
 
   def software_rnd_production(self, t_idx):
+  
     # Compute software rnd production budgets
     self.labour_software_rnd[t_idx] = self.labour[t_idx] * self.frac_labour_software_rnd[t_idx]
     self.compute_software_rnd[t_idx] = self.compute[t_idx] * self.frac_compute_software_rnd[t_idx]
     self.compute_software_rnd_experiments[t_idx] = self.hardware[t_idx] ** self.compute_software_rnd_experiments_efficiency
+    
+    # Initialize task weights to match the initial economy share ratio
+    if t_idx == 0:
+      no_automation_labour_task_input_rnd = np.zeros(self.n_labour_tasks_rnd + 1)
+      no_automation_labour_task_input_rnd[1:] = self.labour_software_rnd[0] / self.n_labour_tasks_rnd
 
+      no_automation_compute_task_input_rnd = np.zeros(self.n_labour_tasks_rnd + 1)
+      no_automation_compute_task_input_rnd[0] = self.compute_software_rnd[0]
+
+      initial_experiment_to_cognitive_share_ratio_software_rnd = \
+        self.initial_experiment_share_software_rnd / self.initial_cognitive_share_software_rnd
+      initial_compute_to_labour_share_ratio_rnd = \
+        self.initial_compute_share_rnd / self.initial_labour_share_rnd
+      
+      self.research_experiments_task_weights_software, \
+      self.labour_task_weights_software_rnd, =\
+        SimulateTakeOff.adjust_task_weights(
+          self.compute_software_rnd_experiments[0],
+          no_automation_labour_task_input_rnd,
+          no_automation_compute_task_input_rnd,
+          self.task_compute_to_labour_ratio_rnd[0][:],
+          self.research_experiments_substitution_software,
+          self.labour_substitution_rnd,
+          initial_experiment_to_cognitive_share_ratio_software_rnd,
+          initial_compute_to_labour_share_ratio_rnd,
+        )
+    
+    
     # Compute optimal task allocation
     self.labour_task_input_software_rnd[t_idx][:], \
     self.compute_task_input_software_rnd[t_idx][:] = \
       SimulateTakeOff.solve_allocation(
           self.labour_software_rnd[t_idx],
           self.compute_software_rnd[t_idx],
-          self.labour_task_weights_rnd,
+          self.labour_task_weights_software_rnd,
           self.labour_substitution_rnd,
           self.task_compute_to_labour_ratio_rnd[t_idx],
           self.automatable_tasks_rnd[t_idx]
@@ -1047,11 +1074,29 @@ class SimulateTakeOff():
       + self.task_compute_to_labour_ratio_rnd[t_idx] \
       * self.compute_task_input_software_rnd[t_idx][:]
     
+    # Keep track of economy shares
+    if self.compute_shares:
+      self.experiment_share_software_rnd[t_idx], \
+      self.cognitive_share_software_rnd[t_idx], \
+      self.labour_share_software_rnd[t_idx], \
+      self.compute_share_software_rnd[t_idx] =\
+        SimulateTakeOff.compute_shares(
+            self.compute_software_rnd_experiments[t_idx],
+            self.labour_task_input_software_rnd[t_idx],
+            self.compute_task_input_software_rnd[t_idx],
+            self.research_experiments_task_weights_software, \
+            self.labour_task_weights_software_rnd,
+            self.task_compute_to_labour_ratio_rnd[t_idx],
+            self.research_experiments_substitution_software,
+            self.labour_substitution_rnd,
+        )
+      
+    
     # Compute research output
     research_output = \
       SimulateTakeOff.ces_production_function(
           self.task_input_software_rnd[t_idx][:],
-          self.labour_task_weights_rnd,
+          self.labour_task_weights_software_rnd,
           self.labour_substitution_rnd,
           self.tfp_rnd[t_idx]
           )
@@ -1059,7 +1104,7 @@ class SimulateTakeOff():
     # Combine with experiments
     output_software = \
       SimulateTakeOff.ces_production_function(
-          np.array([research_output, self.compute_software_rnd_experiments[t_idx]]),
+          np.array([self.compute_software_rnd_experiments[t_idx], research_output]),
           self.research_experiments_task_weights_software,
           self.research_experiments_substitution_software,
           )
