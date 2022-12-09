@@ -1,5 +1,5 @@
 # opmodel
-Work in progress! The codebase needs to be cleaned up. 
+Work in progress! I don't recommend looking at the code right now. It needs to be cleaned up. 
 
 For now, you might be interested in [the core file](opmodel/core/opmodel.py).
 
