@@ -908,7 +908,7 @@ class SimulateTakeOff():
       no_automation_labour_task_input_rnd = np.zeros(self.n_labour_tasks_rnd + 1)
       no_automation_labour_task_input_rnd[1:] = self.labour_hardware_rnd[0] / self.n_labour_tasks_rnd
 
-      no_automation_compute_task_input_rnd = np.zeros(self.n_labour_tasks_goods + 1)
+      no_automation_compute_task_input_rnd = np.zeros(self.n_labour_tasks_rnd + 1)
       no_automation_compute_task_input_rnd[0] = self.compute_hardware_rnd[0]
 
       initial_capital_to_cognitive_share_ratio_rnd = \
