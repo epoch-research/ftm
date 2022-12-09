@@ -319,6 +319,11 @@ class Graph {
     this.on_select_callback = null;
     this.transform = null;
     this.transform_update_callback = null;
+
+    this.width = 770;
+    this.height = 520;
+
+    this.interactive = true;
   }
 
   attach(container) {
@@ -397,9 +402,9 @@ class Graph {
     }
 
     // set the dimensions and margins of the graph
-    let margin = {top: 20, right: 10, bottom: 30, left: 40};
-    let width = 770 - margin.left - margin.right;
-    let height = 520 - margin.top - margin.bottom;
+    let margin = {top: 20, right: 20, bottom: 30, left: 40};
+    let width = this.width - margin.left - margin.right;
+    let height = this.height - margin.top - margin.bottom;
 
     // append the svg object to the body of the page
     let svg_container = d3.select(this.nodes.plot)
@@ -555,6 +560,20 @@ class Graph {
       .attr("transform", "translate(0," + height + ")")
       .attr("stroke-width", 2)
       .call(d3.axisBottom(x).tickSizeOuter(0));
+
+    // Remove overlapping labels
+    let lastBoundsX = -Infinity;
+    for (let node of xAxis.selectAll('text').nodes()) {
+      if (!node.innerHTML) continue;
+
+      let bounds = node.getBoundingClientRect();
+      if (bounds.x < lastBoundsX + 5) {
+        node.remove();
+        continue;
+      }
+
+      lastBoundsX = bounds.x + bounds.width;
+    }
 
     let yAxis = svg.append("g")
       .attr("stroke-width", 2)
@@ -756,27 +775,29 @@ class Graph {
     let self = this;
 
     // Zooming
-    let zoom = d3.zoom()
-      .scaleExtent([1, 20])
-      .extent([[0, 0], [width, height]])
-      .translateExtent([[0, 0], [width, height]])
-      .on("zoom", updateChart)
-    ;
+    if (this.interactive) {
+      let zoom = d3.zoom()
+        .scaleExtent([1, 20])
+        .extent([[0, 0], [width, height]])
+        .translateExtent([[0, 0], [width, height]])
+        .on("zoom", updateChart)
+      ;
 
-    let overlay = content.append("rect")
-      .attr("width", width)
-      .attr("height", height)
-      .style("fill", "none")
-      .style("pointer-events", "all")
-      .call(zoom.transform, this.transform || d3.zoomIdentity)
-      .call(zoom)
-    ;
+      let overlay = content.append("rect")
+        .attr("width", width)
+        .attr("height", height)
+        .style("fill", "none")
+        .style("pointer-events", "all")
+        .call(zoom.transform, this.transform || d3.zoomIdentity)
+        .call(zoom)
+      ;
 
-    overlay
-      .on('mouseover', mouseover)
-      .on('mousemove', mousemove)
-      .on('mouseleave', mouseleave)
-    ;
+      overlay
+        .on('mouseover', mouseover)
+        .on('mousemove', mousemove)
+        .on('mouseleave', mouseleave)
+      ;
+    }
 
     content.on('wheel', (e) => {
       d3.event.preventDefault()
@@ -935,6 +956,15 @@ class Plotter {
 
   get_dataset() {
     return this.graph.get_dataset();
+  }
+
+  set_interactive(interactive) {
+    this.graph.interactive = interactive;
+  }
+
+  set_size(width, height) {
+    this.graph.width = width;
+    this.graph.height = height;
   }
 
   set_title(title) {
@@ -1459,8 +1489,20 @@ for (let input of document.querySelectorAll('.input-parameter')) {
 
   let tooltip = '';
 
+  if (id == 'training_requirements_steepness' || id == 'runtime_requirements_steepness' ) {
+    let runtime_or_training = (id == 'training_requirements_steepness') ? 'training' : 'runtime';
+    meaning = `How "discontinuous" the ${runtime_or_training} requirements distribution is, <i>while maintaining the FLOP gap</i>. A steepness of 3 OOM, for example, allows the distribution to jump only each 3 OOM.`
+  }
+
   if (meaning) {
     tooltip += `<span style="font-weight: bold">Meaning:</span> ${meaning}`
+  }
+
+  if (id == 'training_requirements_steepness' || id == 'runtime_requirements_steepness' ) {
+    let runtime_or_training = (id == 'training_requirements_steepness') ? 'training' : 'runtime';
+    tooltip += '<br>';
+    tooltip += '<br>';
+    tooltip += `<div class="illustration" style="margin-bottom: -3em">This is what the ${runtime_or_training} R&D requirements look like with the current value for the steepness of <span class="steepness"></span>:<div class="requirements-graph-container"></div></div>`;
   }
 
   if (tooltip.length > 0) tooltip += '<br><br>';
@@ -1475,6 +1517,7 @@ for (let input of document.querySelectorAll('.input-parameter')) {
     tooltip += '<span style="font-weight: bold">Justification for best guess value:</span> ' + justification;
   }
 
+  let initialized = false;
   tippy_instances.push(
     tippy(input, {
       content: tooltip,
@@ -1485,8 +1528,85 @@ for (let input of document.querySelectorAll('.input-parameter')) {
       //arrow: false,
       hideOnClick: false,
       theme: 'light-border',
+      maxWidth: (id == 'training_requirements_steepness' || id == 'runtime_requirements_steepness' ) ? '460px' : '350px',
+      onMount: (instance) => {
+        if (initialized) return;
+
+        if (id == 'training_requirements_steepness' || id == 'runtime_requirements_steepness' ) {
+          let graph_container = instance.popper.querySelector('.requirements-graph-container');
+          let steepness_node = instance.popper.querySelector('.steepness');
+          let runtime_or_training = (id == 'training_requirements_steepness') ? 'training' : 'runtime';
+
+          let input = document.getElementById(id);
+          input.addEventListener('input', () => {
+            draw_requirements(runtime_or_training, graph_container, steepness_node);
+          });
+
+          draw_requirements(runtime_or_training, graph_container, steepness_node);
+        }
+
+        initialized = true;
+      },
     })
   );
+}
+
+function draw_requirements(runtime_or_training, graph_container, steepness_node) {
+  let n_labour_tasks = 100;
+  let params = get_parameters();
+
+  if (!params) return;
+
+  let full_requirements = params['full_automation_requirements_' + runtime_or_training];
+  let gap = params['flop_gap_' + runtime_or_training];
+  let steepness = params[runtime_or_training + '_requirements_steepness'];
+
+  steepness_node.innerHTML = steepness;
+
+  let automation_costs = ftm.Model.process_automation_costs(
+    full_requirements,
+    gap,
+    n_labour_tasks,
+    steepness,
+  );
+  automation_costs.shift(); // remove first automatable tasks
+
+  automation_costs.splice(0, 0, full_requirements / gap**1.8); // remove first automatable tasks
+  automation_costs.push(full_requirements * gap**0.2)
+
+  let percentage_automated = nj.zeros(n_labour_tasks + 1);
+  percentage_automated[0] = 0;
+  for (let i = 1; i < n_labour_tasks + 1; i++) {
+    percentage_automated[i] = (i - 1)/(n_labour_tasks - 1);
+  }
+  percentage_automated[percentage_automated.length] = 1;
+
+  if (steepness != 0) {
+    // Make the steps look flat
+
+    let x = [];
+    let y = [];
+    for (let i = 0; i < n_labour_tasks + 1; i++) {
+      if (i > 0) {
+        x.push(automation_costs[i]);
+        y.push(percentage_automated[i-1]);
+      }
+
+      x.push(automation_costs[i]);
+      y.push(percentage_automated[i]);
+    }
+
+    automation_costs = x;
+    percentage_automated = y;
+  }
+
+  plt.clear(graph_container);
+  plt.set_size(450, 250);
+  plt.plot(automation_costs, percentage_automated);
+  plt.set_interactive(false);
+  plt.yscale('linear');
+  plt.xscale('log');
+  plt.show(graph_container);
 }
 
 let humanNames = {...parameter_names, ...metric_names, ...variable_names};

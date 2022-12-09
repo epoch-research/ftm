@@ -52,6 +52,10 @@ let nj;
 
     clip: (m, a) => exports.unaop(a, x => Math.max(x, m)),
 
+    ceil: (a) => exports.unaop(a, x => Math.ceil(x)),
+
+    floor: (a) => exports.unaop(a, x => Math.floor(x)),
+
     argmax: (arr) => {
       let max = -Infinity;
       let imax = 0;
