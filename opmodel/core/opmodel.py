@@ -205,20 +205,25 @@ class SimulateTakeOff():
 
     # Economy shares
     self.initial_capital_share_goods = 1 - self.initial_cognitive_share_goods
-    self.initial_capital_share_hardware_rnd = 1 - self.initial_cognitive_share_rnd
+    self.initial_capital_share_hardware_rnd = 1 - self.initial_cognitive_share_hardware_rnd
     self.initial_cognitive_share_software_rnd = 1 - self.initial_experiment_share_software_rnd
 
     self.initial_compute_share_goods = \
       self.initial_compute_share_goods \
       * self.initial_cognitive_share_goods # TERRIBLE HACK
-    self.initial_compute_share_rnd = \
+    self.initial_compute_share_hardware_rnd = \
       self.initial_compute_share_rnd \
-      * self.initial_cognitive_share_rnd # TERRIBLE HACK
+      * self.initial_cognitive_share_hardware_rnd # TERRIBLE HACK
+    self.initial_compute_share_software_rnd = \
+      self.initial_compute_share_rnd \
+      * self.initial_cognitive_share_software_rnd # TERRIBLE HACK
 
     self.initial_labour_share_goods = \
       self.initial_cognitive_share_goods - self.initial_compute_share_goods
-    self.initial_labour_share_rnd = \
-      self.initial_cognitive_share_rnd - self.initial_compute_share_rnd
+    self.initial_labour_share_hardware_rnd = \
+      self.initial_cognitive_share_hardware_rnd - self.initial_compute_share_hardware_rnd
+    self.initial_labour_share_software_rnd = \
+      self.initial_cognitive_share_software_rnd - self.initial_compute_share_software_rnd
 
 
     # Returns to hardware and software need to be adjusted
@@ -456,6 +461,11 @@ class SimulateTakeOff():
     self.state_def.cognitive_share_hardware_rnd = self.state_var()
     self.state_def.labour_share_hardware_rnd = self.state_var()
     self.state_def.compute_share_hardware_rnd = self.state_var()
+
+    self.state_def.experiment_share_software_rnd = self.state_var()
+    self.state_def.cognitive_share_software_rnd = self.state_var()
+    self.state_def.labour_share_software_rnd = self.state_var()
+    self.state_def.compute_share_software_rnd = self.state_var()
 
     # Software RnD production
     self.state_def.capital_software_rnd = self.state_var()
@@ -916,10 +926,10 @@ class SimulateTakeOff():
       no_automation_compute_task_input_rnd = np.zeros(self.n_labour_tasks_rnd + 1)
       no_automation_compute_task_input_rnd[0] = self.compute_hardware_rnd[0]
 
-      initial_capital_to_cognitive_share_ratio_rnd = \
-        self.initial_capital_share_rnd / self.initial_cognitive_share_rnd
-      initial_compute_to_labour_share_ratio_rnd = \
-        self.initial_compute_share_rnd / self.initial_labour_share_rnd
+      initial_capital_to_cognitive_share_ratio_hardware_rnd = \
+        self.initial_capital_share_hardware_rnd / self.initial_cognitive_share_hardware_rnd
+      initial_compute_to_labour_share_ratio_hardware_rnd = \
+        self.initial_compute_share_hardware_rnd / self.initial_labour_share_hardware_rnd
 
       self.capital_task_weights_hardware_rnd, \
       self.labour_task_weights_hardware_rnd, =\
@@ -931,7 +941,7 @@ class SimulateTakeOff():
           self.capital_substitution_rnd,
           self.labour_substitution_rnd,
           initial_capital_to_cognitive_share_ratio_hardware_rnd,
-          initial_compute_to_labour_share_ratio_rnd,
+          initial_compute_to_labour_share_ratio_hardware_rnd,
         )
 
     # Compute optimal task allocation
@@ -1040,8 +1050,8 @@ class SimulateTakeOff():
 
       initial_experiment_to_cognitive_share_ratio_software_rnd = \
         self.initial_experiment_share_software_rnd / self.initial_cognitive_share_software_rnd
-      initial_compute_to_labour_share_ratio_rnd = \
-        self.initial_compute_share_rnd / self.initial_labour_share_rnd
+      initial_compute_to_labour_share_ratio_software_rnd = \
+        self.initial_compute_share_software_rnd / self.initial_labour_share_software_rnd
       
       self.research_experiments_task_weights_software, \
       self.labour_task_weights_software_rnd, =\
@@ -1053,7 +1063,7 @@ class SimulateTakeOff():
           self.research_experiments_substitution_software,
           self.labour_substitution_rnd,
           initial_experiment_to_cognitive_share_ratio_software_rnd,
-          initial_compute_to_labour_share_ratio_rnd,
+          initial_compute_to_labour_share_ratio_software_rnd,
         )
     
     
