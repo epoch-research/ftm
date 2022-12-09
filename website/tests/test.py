@@ -1,4 +1,4 @@
-# Poor person's test. Execute from the root directory of the repo with  
+# Poor person's test. Execute from the root directory of the repo with
 #
 #   python -m website.tests.test
 #
@@ -153,6 +153,8 @@ for i in range(100):
   params['t_step'] = 1
   params['initial_population'] = 10**uniform(3, 12)
   params['initial_buyable_hardware_performance'] = 10**uniform(14, 16)
+  params['training_requirements_steepness'] = uniform(0, 10)
+  params['runtime_requirements_steepness'] = uniform(0, 40)
   #params['runtime_training_tradeoff'] = 10
   #params['runtime_training_max_tradeoff'] = 100
   print(params)

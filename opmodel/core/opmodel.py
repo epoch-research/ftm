@@ -5,9 +5,9 @@ import pandas as pd
 import math
 
 from . import utils
-from .utils import display, get_option, get_parameter_table, init_cli_arguments, handle_cli_arguments
+from .utils import get_option, get_parameter_table, init_cli_arguments, handle_cli_arguments
 
-# TODO Temporary really hacky way to handle the state as a middle step in the transition to the final code
+# TODO Temporary really hacky way to handle the state (as a middle step in the transition to the final code)
 class StateDef:
   pass
 
@@ -914,7 +914,7 @@ class SimulateTakeOff():
       no_automation_labour_task_input_rnd = np.zeros(self.n_labour_tasks_rnd + 1)
       no_automation_labour_task_input_rnd[1:] = self.labour_hardware_rnd[0] / self.n_labour_tasks_rnd
 
-      no_automation_compute_task_input_rnd = np.zeros(self.n_labour_tasks_goods + 1)
+      no_automation_compute_task_input_rnd = np.zeros(self.n_labour_tasks_rnd + 1)
       no_automation_compute_task_input_rnd[0] = self.compute_hardware_rnd[0]
 
       initial_capital_to_cognitive_share_ratio_rnd = \
@@ -1170,8 +1170,8 @@ class SimulateTakeOff():
     if self.rampup[t_idx] and not self.rampup[t_idx-1]:
       self.rampup_start = t_year
 
-    if self.frac_tasks_automated_goods[t_idx-1] >= 0.3 and \
-    not self.frac_tasks_automated_goods[t_idx-2] >= 0.3:
+    if self.frac_tasks_automated_goods[t_idx-1] >= 0.2 and \
+    not self.frac_tasks_automated_goods[t_idx-2] >= 0.2:
       self.rampup_mid = t_year
 
     if self.frac_tasks_automated_goods[t_idx-1] >= 1. and \
@@ -1766,7 +1766,7 @@ class SimulateTakeOff():
       plt.axvline(self.rampup_mid,
                 linestyle='-.',
                 color=line_color,
-                label='30% automation')
+                label='20% automation')
 
     if self.agi_year:
       plt.axvline(self.agi_year,
@@ -1915,7 +1915,7 @@ class SimulateTakeOff():
     return summary_table
 
   def display_summary_table(self):
-    display(self.get_summary_table())
+    print(self.get_summary_table())
 
   def get_takeoff_metrics(self):
     metrics_df = pd.DataFrame(self.takeoff_metrics, index = [0])
@@ -1923,7 +1923,7 @@ class SimulateTakeOff():
     return metrics_df
 
   def display_takeoff_metrics(self):
-    display(self.get_takeoff_metrics())
+    print(self.get_takeoff_metrics())
 
   def plot_fractional_inputs(self):
     fracs = {

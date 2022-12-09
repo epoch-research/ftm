@@ -12,11 +12,13 @@ from ..core.utils import log, get_parameter_table, get_rank_correlations, get_cl
 class TakeoffParamsDist():
   """ Joint parameter distribution. """
 
-  def __init__(self, ensure_no_automatable_goods_tasks = True, ignore_rank_correlations = False, use_ajeya_dist = True, resampling_method = 'gap_only',
+  def __init__(self, ensure_no_automatable_goods_tasks = True, ensure_no_automatable_rnd_tasks = True,
+      ignore_rank_correlations = False, use_ajeya_dist = True, resampling_method = 'gap_only',
           parameter_table = None):
     """
       If ensure_no_automatable_goods_tasks is True, we'll make sure none of the samples
       represent an scenario in which there is some "goods" task initially automatable.
+      Same for ensure_no_automatable_rnd_tasks.
     """
 
     self.resampling_method = resampling_method
@@ -50,6 +52,7 @@ class TakeoffParamsDist():
 
     self.joint_dist = JointDistribution(self.marginals, self.pairwise_rank_corr, rank_corr_method = "spearman")
     self.ensure_no_automatable_goods_tasks = ensure_no_automatable_goods_tasks
+    self.ensure_no_automatable_rnd_tasks = ensure_no_automatable_rnd_tasks
 
   def get_marginal_directions(self, parameter_table):
     directions = {}
@@ -143,12 +146,18 @@ class TakeoffParamsDist():
 
         for i, sample in samples.iterrows():
           # Ensure the sample makes sense before adding it
-          if self.ensure_no_automatable_goods_tasks:
-            max_gap_goods = \
-              (sample['full_automation_requirements_training']/(sample['initial_biggest_training_run'] * sample['runtime_training_max_tradeoff']))**(7/10.5)
-            max_gap_rnd = \
-              max_gap_goods/sample['goods_vs_rnd_requirements_training']**(7/10.5)
-            max_gap = min(max_gap_rnd, max_gap_goods)
+          if self.ensure_no_automatable_goods_tasks or self.ensure_no_automatable_rnd_tasks:
+            max_gap = inf
+
+            if self.ensure_no_automatable_goods_tasks:
+              max_gap_goods = \
+                (sample['full_automation_requirements_training']/(sample['initial_biggest_training_run'] * sample['runtime_training_max_tradeoff']))**(7/10.5)
+              max_gap = min(max_gap, max_gap_goods)
+
+            if self.ensure_no_automatable_rnd_tasks:
+              max_gap_rnd = \
+                max_gap_goods/sample['goods_vs_rnd_requirements_training']**(7/10.5)
+              max_gap = min(max_gap, max_gap_goods)
 
             if sample['flop_gap_training'] >= max_gap:
               continue

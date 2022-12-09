@@ -39,7 +39,7 @@ def generate_sidebar_content():
     if param == 'runtime_training_tradeoff' and value < 0:
       value = 1
 
-    array.append(f'''<div class="{classes}"><label for="{label_target}">{name}</label>{additional_inputs} <input class="input" id="{param}" value="{standard_format(value)}"></div>''')
+    array.append(f'''<div class="{classes}"><label for="{label_target}">{name}</label>{additional_inputs} <input class="input" id="{param}" value="{format_float(value)}"></div>''')
     test += 1
 
   # Basic params
@@ -56,20 +56,10 @@ def generate_sidebar_content():
       </div>
     </h3>
     <div class="handorgel__content">
-      ''' + ('\n'.join(extra_parameters)) + '''
+''' + ('\n'.join(extra_parameters)) + '''
     </div>
   </div>
   ''')
-
-def standard_format(x):
-  if x > 100:
-    s = f'{x:.3e}'
-    s = s.replace('e+', 'e')
-    s = re.sub(r'\.([0-9]*[1-9])?0*', r'.\1', s); # remove right zeroes
-    s = s.replace('.e', 'e') # remove the decimal point, if no decimal
-  else:
-    s = str(x)
-  return s
 
 def generate_dictionaries():
   print(f'let parameter_names = {json.dumps(get_param_names())};')

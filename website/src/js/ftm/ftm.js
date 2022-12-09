@@ -90,12 +90,14 @@ let ftm = {};
         full_automation_requirements: 1e36,
         flop_gap: 1e5,
         goods_vs_rnd_requirements: 3,
+        steepness: 0,
       },
 
       runtime: {
         full_automation_requirements: 1e17/6,
         flop_gap: 100,
         goods_vs_rnd_requirements: 10,
+        steepness: 0,
       },
 
       runtime_training_tradeoff: 0,
@@ -255,25 +257,29 @@ let ftm = {};
       consts.goods.automation_training_flops = this.process_automation_costs(
         consts.training.full_automation_requirements,
         consts.training.flop_gap,
-        consts.goods.n_labour_tasks
+        consts.goods.n_labour_tasks,
+        consts.training.steepness,
       );
 
       consts.goods.automation_runtime_flops = this.process_automation_costs(
         consts.runtime.full_automation_requirements,
         consts.runtime.flop_gap,
-        consts.goods.n_labour_tasks
+        consts.goods.n_labour_tasks,
+        consts.runtime.steepness,
       );
 
       consts.rnd.automation_training_flops = this.process_automation_costs(
         consts.training.full_automation_requirements / consts.training.goods_vs_rnd_requirements,
         consts.training.flop_gap,
-        consts.rnd.n_labour_tasks
+        consts.rnd.n_labour_tasks,
+        consts.training.steepness,
       );
 
       consts.rnd.automation_runtime_flops = this.process_automation_costs(
         consts.runtime.full_automation_requirements / consts.runtime.goods_vs_rnd_requirements,
         consts.runtime.flop_gap,
-        consts.rnd.n_labour_tasks
+        consts.rnd.n_labour_tasks,
+        consts.runtime.steepness,
       );
 
       consts.initial.software = 1;
@@ -420,9 +426,10 @@ let ftm = {};
       consts.software_rnd.labour_task_weights = consts.hardware_rnd.labour_task_weights;
     }
 
-    static process_automation_costs(full_automation_flops, flop_gap, n_labour_tasks) {
+    static process_automation_costs(full_automation_flops, flop_gap, n_labour_tasks, steepness) {
       let automation_flops = this.quantiles_from_gap(full_automation_flops, flop_gap);
       automation_flops = this.interpolate_quantiles(automation_flops, n_labour_tasks);
+      automation_flops = this.add_steepness(full_automation_flops, flop_gap, automation_flops, steepness);
       nj.insert(automation_flops, 0, 1.0); // The first task is always automatable
 
       return automation_flops;
@@ -468,6 +475,28 @@ let ftm = {};
       values = nj.array(values);
 
       return values;
+    }
+
+    static add_steepness(full_requirements, gap, requirements, steepness) {
+      /*
+        Takes an array of requirements and converts it into a sum of units
+        steps separated by `steepness` OOMs, but maintaining both ends of the
+        FLOP gap
+      */
+
+      if (steepness == 0) return requirements;
+
+      let gap_low = full_requirements/gap;
+      let gap_high = full_requirements;
+
+      let result = nj.zeros(requirements.length);
+      for (let i = 0; i < result.length; i++) {
+        let r = 10**(nj.log10(gap_low) + Math.ceil((nj.log10(requirements[i]) - nj.log10(gap_low))/steepness) * steepness);
+        if (r > gap_high) r = gap_high;
+        result[i] = r;
+      }
+
+      return result
     }
 
     static adjust_task_weights(
@@ -1038,7 +1067,7 @@ let ftm = {};
           rampup_start = year;
         }
 
-        if (rampup_mid == null && prev_state && Model.get_frac_tasks_automated(prev_state.goods, this.consts.goods) >= 0.3) {
+        if (rampup_mid == null && prev_state && Model.get_frac_tasks_automated(prev_state.goods, this.consts.goods) >= 0.2) {
           rampup_mid = year;
         }
 

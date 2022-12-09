@@ -15,10 +15,12 @@ let bridge = {}
     'full_automation_requirements_training':               'training.full_automation_requirements',
     'flop_gap_training':                                   'training.flop_gap',
     'goods_vs_rnd_requirements_training':                  'training.goods_vs_rnd_requirements',
+    'training_requirements_steepness':                     'training.steepness',
 
     'full_automation_requirements_runtime':                'runtime.full_automation_requirements',
     'flop_gap_runtime':                                    'runtime.flop_gap',
     'goods_vs_rnd_requirements_runtime':                   'runtime.goods_vs_rnd_requirements',
+    'runtime_requirements_steepness':                      'runtime.steepness',
 
     'labour_substitution_goods':                           'goods.labour_substitution',
     'labour_substitution_rnd':                             'rnd.labour_substitution',
