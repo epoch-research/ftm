@@ -203,9 +203,20 @@ let ftm = {};
           },
         },
 
-        rnd: {
+        hardware_rnd: {
           share: {
             cognitive: 0.7,
+          },
+        },
+
+        software_rnd: {
+          share: {
+            experiments: 0.7,
+          },
+        },
+
+        rnd: {
+          share: {
             compute: 0.01,
           },
         },
@@ -295,10 +306,15 @@ let ftm = {};
       consts.initial.rnd_input_hardware = consts.initial.gwp * frac_gwp_hardware_rnd_2020
       consts.initial.rnd_input_software = consts.initial.gwp * frac_gwp_software_rnd_2020
 
-      let share = consts.initial.goods;
-      for (let share of [consts.initial.goods.share, consts.initial.rnd.share]) {
-        share.capital = 1 - share.cognitive;
+      consts.initial.goods.share.capital = 1 - consts.initial.goods.share.cognitive;
+      consts.initial.hardware_rnd.share.capital = 1 - consts.initial.hardware_rnd.share.cognitive;
+      consts.initial.software_rnd.share.cognitive = 1 - consts.initial.software_rnd.share.experiments;
 
+      consts.initial.hardware_rnd.share.compute = consts.initial.rnd.share.compute;
+      consts.initial.software_rnd.share.compute = consts.initial.rnd.share.compute;
+
+      let share = consts.initial.goods;
+      for (let share of [consts.initial.goods.share, consts.initial.hardware_rnd.share, consts.initial.software_rnd.share]) {
         // Split cognitive share into compute and labour
         share.compute = share.compute * share.cognitive; // TERRIBLE HACK
         share.labour  = share.cognitive - share.compute;
@@ -310,6 +326,12 @@ let ftm = {};
 
       // Also, the capital substitution parameter for R&D
       consts.rnd.capital_substitution *= consts.rnd.parallelization_penalty;
+
+      consts.hardware_rnd.capital_substitution = consts.rnd.capital_substitution;
+      consts.hardware_rnd.labour_substitution = consts.rnd.labour_substitution;
+
+      consts.software_rnd.capital_substitution = consts.software_rnd.experiments_substitution;
+      consts.software_rnd.labour_substitution = consts.rnd.labour_substitution;
 
       consts.hardware_delay_idx = nj.even_round(consts.hardware_delay/consts.t_step);
 
@@ -388,12 +410,12 @@ let ftm = {};
       //
       // Initialize production inputs
 
-      let _initialize_task_weight = (state, consts, category, item) => {
+      let _initialize_task_weight = (state, consts, category, item, capital=null, labour=null, compute=null) => {
         // Initialize task weights to match the initial economy share ratio
 
-        let capital = state.capital * state.frac_capital[item].v;
-        let labour  = state.labour  * state.frac_labour[item].v;
-        let compute = state.compute * state.frac_compute[item].v;
+        if (capital == null) capital = state.capital * state.frac_capital[item].v;
+        if (labour == null)  labour  = state.labour  * state.frac_labour[item].v;
+        if (compute == null) compute = state.compute * state.frac_compute[item].v;
 
         let no_automation_labour_task_input = nj.zeros(consts[category].n_labour_tasks + 1);
         no_automation_labour_task_input.fill(labour / consts[category].n_labour_tasks, 1);
@@ -401,7 +423,7 @@ let ftm = {};
         let no_automation_compute_task_input = nj.zeros(consts[category].n_labour_tasks + 1);
         no_automation_compute_task_input[0] = compute;
 
-        let share = initial[category].share;
+        let share = initial[item].share;
         let initial_capital_to_cognitive_share_ratio = share.capital / share.cognitive;
         let initial_compute_to_labour_share_ratio    = share.compute / share.labour;
 
@@ -410,8 +432,8 @@ let ftm = {};
           no_automation_labour_task_input,
           no_automation_compute_task_input,
           this.get_task_compute_to_labour_ratio(consts[category].automation_runtime_flops, consts[category].automation_training_flops, consts.initial.biggest_training_run, consts, category),
-          consts[category].capital_substitution,
-          consts[category].labour_substitution,
+          consts[item].capital_substitution,
+          consts[item].labour_substitution,
           initial_capital_to_cognitive_share_ratio,
           initial_compute_to_labour_share_ratio,
         );
@@ -422,8 +444,10 @@ let ftm = {};
 
       _initialize_task_weight(state, consts, 'goods', 'goods');
       _initialize_task_weight(state, consts, 'rnd', 'hardware_rnd');
-      consts.software_rnd.capital_task_weights = [0, 1];
-      consts.software_rnd.labour_task_weights = consts.hardware_rnd.labour_task_weights;
+
+      let experiments_compute = state.hardware ** consts.software_rnd.experiments_efficiency;
+      consts.initial.software_rnd.share.capital = consts.initial.software_rnd.share.experiments; 
+      _initialize_task_weight(state, consts, 'rnd', 'software_rnd', experiments_compute);
     }
 
     static process_automation_costs(full_automation_flops, flop_gap, n_labour_tasks, steepness) {
@@ -732,33 +756,24 @@ let ftm = {};
     static production(state, consts, states) {
       this.produce(state, consts, 'goods', 'goods');
       this.produce(state, consts, 'rnd', 'hardware_rnd');
-      this.produce_software_rnd(state, consts);
+
+      state.software_rnd.experiments_compute = state.hardware ** consts.software_rnd.experiments_efficiency;
+      this.produce(state, consts, 'rnd', 'software_rnd', state.software_rnd.experiments_compute, true);
 
       this.post_production(state, consts, states);
     }
 
-    static produce_software_rnd(state, consts) {
-      this.produce(state, consts, 'rnd', 'software_rnd');
-
-      // Combine with physical compute for experiments
-      state.software_rnd.experiments_compute = state.hardware ** consts.software_rnd.experiments_efficiency;
-      state.software_rnd.output = this.ces_production_function(
-        [state.software_rnd.output, state.software_rnd.experiments_compute],
-        consts.software_rnd.experiments_task_weights,
-        consts.software_rnd.experiments_substitution,
-      );
-    }
-
-    static produce(state, consts, category, item) {
-      state[item].capital = state.capital * state.frac_capital[item].v;
-      state[item].labour  = state.labour  * state.frac_labour[item].v;
+    static produce(state, consts, category, item, capital=null, apply_tfp_to_cognitive_outputs=false) {
+      if (capital == null) capital = state.capital * state.frac_capital[item].v;
+      state[item].capital = capital;
+      state[item].labour  = state.labour  * state.frac_labour[item].v;;
       state[item].compute = state.compute * state.frac_compute[item].v;
 
       let r = this.solve_allocation(
         state[item].labour,
         state[item].compute,
         consts[item].labour_task_weights,
-        consts[category].labour_substitution,
+        consts[item].labour_substitution,
         state[category].task_compute_to_labour_ratio,
         this.get_automatable_task_count(state, consts, category) + 1,
       );
@@ -766,12 +781,35 @@ let ftm = {};
       state[item].compute_task_input = r.compute;
 
       state[item].task_input = nj.add(state[item].labour_task_input, nj.mult(state[category].task_compute_to_labour_ratio, state[item].compute_task_input));
-      state[item].output = this.nested_ces_production_function(
-        state[item].capital, state[item].task_input,
-        consts[item].capital_task_weights, consts[item].labour_task_weights,
-        consts[category].capital_substitution, consts[category].labour_substitution,
-        state[category].tfp
+
+      // Cognitive outputs
+      let cognitive_output = this.ces_production_function(
+        state[item].task_input,
+        consts[item].labour_task_weights,
+        consts[item].labour_substitution,
       );
+
+      if (apply_tfp_to_cognitive_outputs) {
+        cognitive_output *= state[category].tfp;
+      }
+
+      // Final outputs
+      state[item].output = this.ces_production_function(
+        [state[item].capital, cognitive_output],
+        consts[item].capital_task_weights,
+        consts[item].capital_substitution,
+      );
+
+      if (!apply_tfp_to_cognitive_outputs) {
+        state[item].output *= state[category].tfp;
+      }
+
+      if (item == 'software_rnd') {
+        if (state.t_idx == 1) {
+          let a = 1 + 1;
+          console.log(state[item].output.toExponential());
+        }
+      }
     }
 
     static post_production(state, consts, states) {
