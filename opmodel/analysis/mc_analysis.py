@@ -527,12 +527,15 @@ def write_mc_analysis_report(
   color_index += 1
 
   # Timelines metrics
+  bioanchors = BioAnchorsAGIDistribution()
   pdf_cdf_sub_container = add_pdf_cdf_sub_container('cdf')
   for method in ['cdf', 'pdf']:
     plt.figure(figsize=(10,6))
     for i, metric in enumerate(['rampup_start', 'agi_year']):
       plot = plot_ecdf if method == 'cdf' else plot_epdf
       plot(results.scalar_metrics[metric], limits = [results.t_start, results.t_end], label = metric_id_to_human[metric], color = colors[color_index + i])
+    if method == 'cdf':
+      plt.plot(bioanchors.years, bioanchors.cdf, color = '#e377c2', label = 'Bioanchors',)
     plt.ylabel(method.upper())
     plt.xlabel('Year')
     plt.title('AI Timelines Metrics')
