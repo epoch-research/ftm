@@ -265,12 +265,15 @@ def mc_analysis(n_trials = 100, max_retries = 100):
     row[scalar_metric] = np.mean(filter_nans(scalar_metrics[scalar_metric]))
   metrics_quantiles.append(row)
 
+  n_finished_trials = np.sum(scalar_metrics['agi_year'] < t_end)
+
   results = McAnalysisResults()
   results.quantiles                    = quantiles
   results.metrics_quantiles            = metrics_quantiles
   results.state_metrics                = state_metrics
   results.scalar_metrics               = scalar_metrics
   results.n_trials                     = n_trials
+  results.n_finished_trials            = n_finished_trials
   results.timesteps                    = timesteps
   results.t_step                       = t_step
   results.t_start                      = t_start
@@ -288,7 +291,7 @@ def mc_analysis(n_trials = 100, max_retries = 100):
   return results
 
 def is_slow_takeoff(model):
-  return n_year_doubling_before_m_year_doubling(model.gwp[:model.t_idx], model.t_step, 4, 1)
+  return model.agi_year is not None and n_year_doubling_before_m_year_doubling(model.gwp[:model.t_idx], model.t_step, 4, 1)
 
 def n_year_doubling_before_m_year_doubling(array, t_step, n, m):
   delta_n = round(n/t_step)
@@ -367,13 +370,16 @@ def write_mc_analysis_report(
   for n in range(1, 20):
     row = []
     for m in range(1, 20):
-      p = np.sum([n_year_doubling_before_m_year_doubling(gwp, results.t_step, n, m) for gwp in gwps])/results.n_trials if (n > m) else np.nan
+      # Only consider runs in which we have AGI before 2100
+      p = np.sum([
+        (n_year_doubling_before_m_year_doubling(gwps[i], results.t_step, n, m) and results.scalar_metrics['agi_year'][i] < results.t_end) for i in range(len(gwps))
+      ])/results.n_finished_trials if (n > m) else np.nan
       row.append(p)
     takeoff_probability_table.append(row)
 
   # Add the tooltip
   description = '''Probability of a full <input class='doubling-years-inputs' id='doubling-years-input-m' value='4' style='display:inline-block'> year doubling of GWP before a <input class='doubling-years-inputs' id='doubling-years-input-n' value='1'> year doubling of GWP starts'''
-  report.add_paragraph(f"<span style='font-weight:bold'>Probability of slow takeoff</span>{report.generate_tooltip_html(description, on_mount = 'initialize_takeoff_probability_mini_widget()', triggers = 'mouseenter click', classes = 'slow-takeoff-probability-tooltip-info')}<span style='font-weight:bold'>:</span> <span id='slow-takeoff-probability'>{results.slow_takeoff_count/results.n_trials:.0%}</span>")
+  report.add_paragraph(f"<span style='font-weight:bold'>Probability of slow takeoff</span>{report.generate_tooltip_html(description, on_mount = 'initialize_takeoff_probability_mini_widget()', triggers = 'mouseenter click', classes = 'slow-takeoff-probability-tooltip-info')}<span style='font-weight:bold'>:</span> <span id='slow-takeoff-probability'>{results.slow_takeoff_count/results.n_finished_trials:.0%}</span>")
 
   # Style
   report.head.append(et.fromstring('''
@@ -527,12 +533,15 @@ def write_mc_analysis_report(
   color_index += 1
 
   # Timelines metrics
+  bioanchors = BioAnchorsAGIDistribution()
   pdf_cdf_sub_container = add_pdf_cdf_sub_container('cdf')
   for method in ['cdf', 'pdf']:
     plt.figure(figsize=(10,6))
     for i, metric in enumerate(['rampup_start', 'agi_year']):
       plot = plot_ecdf if method == 'cdf' else plot_epdf
       plot(results.scalar_metrics[metric], limits = [results.t_start, results.t_end], label = metric_id_to_human[metric], color = colors[color_index + i])
+    if method == 'cdf':
+      plt.plot(bioanchors.years, bioanchors.cdf, color = '#e377c2', label = 'Bioanchors')
     plt.ylabel(method.upper())
     plt.xlabel('Year')
     plt.title('AI Timelines Metrics')
