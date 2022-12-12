@@ -30,14 +30,18 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
 
   for group in results.scenario_groups:
     for scenario in group:
-      row = {**{f'FLOP to train AGI using {scenario.model.t_start} algorithms': f'{group.full_automation_reqs:.0e}'.replace('+', ''), 'Scenario' : scenario.name}, **scenario.model.takeoff_metrics}
-      for metric in ['rampup_start', 'agi_year', 'doubling_times']:
+      row = {
+        **{f'FLOP to train AGI using {scenario.model.t_start} algorithms': f'{group.full_automation_reqs:.0e}'.replace('+', ''), 'Scenario' : scenario.name},
+        **scenario.model.timeline_metrics,
+        **scenario.model.takeoff_metrics,
+      }
+      for metric in ['doubling_times']:
         row[metric] = getattr(scenario.model, metric)
       table.append(row)
   table = pd.DataFrame(table)
 
   def nan_format(row, col, index_r, index_c, cell):
-    if index_c in ('rampup_start', 'agi_year'):
+    if index_c in SimulateTakeOff.timeline_metrics:
       return f'> {results.scenario_groups[0][0].model.t_end}'
     return '-'
 

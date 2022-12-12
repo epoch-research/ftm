@@ -147,7 +147,7 @@ class TakeoffParamsDist():
         for i, sample in samples.iterrows():
           # Ensure the sample makes sense before adding it
           if self.ensure_no_automatable_goods_tasks or self.ensure_no_automatable_rnd_tasks:
-            max_gap = inf
+            max_gap = np.inf
 
             if self.ensure_no_automatable_goods_tasks:
               max_gap_goods = \

@@ -415,14 +415,19 @@ class SimulateTakeOff():
 
   def create_simulation_state_automation(self):
     self.state_def.biggest_training_run = self.state_var()
+    self.state_def.automatable_tasks_goods_no_tradeoff = self.state_var(dtype=int)
+    self.state_def.automatable_tasks_rnd_no_tradeoff = self.state_var(dtype=int)
     self.state_def.automatable_tasks_goods = self.state_var(dtype=int)
     self.state_def.automatable_tasks_rnd = self.state_var(dtype=int)
     self.state_def.frac_automatable_tasks = self.state_var()
+    self.state_def.frac_automatable_tasks_goods_no_tradeoff = self.state_var()
+    self.state_def.frac_automatable_tasks_rnd_no_tradeoff = self.state_var()
     self.state_def.frac_automatable_tasks_goods = self.state_var()
     self.state_def.frac_automatable_tasks_rnd = self.state_var()
     self.state_def.task_compute_to_labour_ratio_goods = self.state_var((self.n_labour_tasks_goods+1,))
     self.state_def.task_compute_to_labour_ratio_rnd = self.state_var((self.n_labour_tasks_rnd+1,))
     self.agi_year = None
+    self.sub_agi_year = None
 
   def create_simulation_state_production(self):
     # Goods production
@@ -587,25 +592,14 @@ class SimulateTakeOff():
       if self.automation_multiplier_rnd[t_idx-1] <= 10:
         return True
 
-      # Can we already compute the billion_agis metric?
-      ten_billion_agi_compute = \
-        max(np.max(self.automation_runtime_flops_goods),
-            np.max(self.automation_runtime_flops_rnd))*1e10
-      full_automation_flops = \
-        max(np.max(self.automation_training_flops_goods),
-            np.max(self.automation_training_flops_rnd))
-
-      if (self.compute[t_idx-1] < ten_billion_agi_compute) or (self.biggest_training_run[t_idx-1] < full_automation_flops):
-        return True
-
       # Haven't we automated every task yet?
       if self.frac_tasks_automated_goods[t_idx-1] < 1 or self.frac_tasks_automated_rnd[t_idx-1] < 1:
         return True
 
       # Can't we compute the gwp_growth metric?
       delta = int(1 / self.t_step)
-      gwp_growth = np.log(self.gwp[delta:self.t_idx] / self.gwp[:self.t_idx-delta])
-      if np.all(gwp_growth <= 0.05) or np.all(gwp_growth <= 0.15):
+      gwp_growth = np.log(np.divide(self.gwp[delta:self.t_idx], self.gwp[:self.t_idx-delta]))
+      if np.all(gwp_growth <= 0.05) or np.all(gwp_growth <= 0.20):
         return True
 
       return False
@@ -726,6 +720,9 @@ class SimulateTakeOff():
       self.compute[t_idx] * self.frac_compute_training[t_idx]
 
     # Update index of automatable tasks
+    self.automatable_tasks_goods_no_tradeoff[t_idx] = np.sum(self.automation_training_flops_goods < self.biggest_training_run[t_idx])
+    self.automatable_tasks_rnd_no_tradeoff[t_idx] = np.sum(self.automation_training_flops_rnd < self.biggest_training_run[t_idx])
+
     self.automatable_tasks_goods[t_idx] = \
       np.sum(
           self.automation_training_flops_goods < \
@@ -745,6 +742,14 @@ class SimulateTakeOff():
       )
 
     # Update fraction of automated tasks
+    self.frac_automatable_tasks_goods_no_tradeoff[t_idx] =  \
+      (self.automatable_tasks_goods_no_tradeoff[t_idx] - 1) \
+      / self.n_labour_tasks_goods # We dont count the initial compute task
+
+    self.frac_automatable_tasks_rnd_no_tradeoff[t_idx] =  \
+      (self.automatable_tasks_rnd_no_tradeoff[t_idx] - 1) \
+      / self.n_labour_tasks_rnd # We dont count the initial compute task
+
     self.frac_automatable_tasks_goods[t_idx] =  \
       (self.automatable_tasks_goods[t_idx] - 1) \
       / self.n_labour_tasks_goods # We dont count the initial compute task
@@ -1229,8 +1234,12 @@ class SimulateTakeOff():
     not self.frac_tasks_automated_goods[t_idx-2] >= 0.2:
       self.rampup_mid = t_year
 
-    if self.frac_tasks_automated_goods[t_idx-1] >= 1. and \
-    not self.frac_tasks_automated_goods[t_idx-2] >= 1.:
+    if self.frac_automatable_tasks_goods_no_tradeoff[t_idx-1] >= 0.2 and \
+    not self.frac_automatable_tasks_goods_no_tradeoff[t_idx-2] >= 0.2:
+      self.sub_agi_year = t_year
+
+    if self.frac_automatable_tasks_goods_no_tradeoff[t_idx-1] >= 1 and \
+    not self.frac_automatable_tasks_goods_no_tradeoff[t_idx-2] >= 1:
       self.agi_year = t_year
 
     def update_frac_input(current_frac, growth_rate, growth_rate_rampup, max_frac):
@@ -1653,21 +1662,33 @@ class SimulateTakeOff():
     self.compute_timeline_metrics()
 
   timeline_metrics = [
-    'automation_3%',
-    'automation_10%',
-    'automation_20%',
-    'automation_30%',
-    'automation_50%',
-    'automation_100%',
-    'billion_agis'
+    'automation_gns_20%',
+    'automation_gns_100%',
+    'sub_agi_year',
+    'agi_year',
+    'automation_rnd_20%',
+    'automation_rnd_100%',
+    'rampup_start',
   ]
 
   def compute_timeline_metrics(self):
-    self.timeline_metrics = {}
+    unsorted_metrics = {}
 
-    for th in [0.03, 0.1, 0.2, 0.3, 0.5, 1.0]:
-      t_year = self.index_to_time(np.argmax(self.frac_automated_tasks >= th))
-      self.timeline_metrics[f'automation_{int(th*100)}%'] = t_year
+    for th in [0.2, 1.0]:
+      t_year_gns = self.index_to_time(np.argmax(self.frac_tasks_automated_goods >= th))
+      unsorted_metrics[f'automation_gns_{int(th*100)}%'] = t_year_gns
+
+      t_year_rnd = self.index_to_time(np.argmax(self.frac_tasks_automated_rnd >= th))
+      unsorted_metrics[f'automation_rnd_{int(th*100)}%'] = t_year_rnd
+
+    unsorted_metrics['sub_agi_year'] = self.sub_agi_year
+    unsorted_metrics['agi_year']     = self.agi_year
+    unsorted_metrics['rampup_start'] = self.rampup_start
+
+    self.timeline_metrics = {}
+    for k in SimulateTakeOff.timeline_metrics:
+      v = unsorted_metrics[k]
+      self.timeline_metrics[k] = v if (v is not None) else np.nan
 
   def _length_between_thresholds(
         self,
@@ -1684,13 +1705,12 @@ class SimulateTakeOff():
     return (idx2 - idx1) * self.t_step
 
   takeoff_metrics = [
+    'full_automation_gns',
+    'full_automation_rnd',
+    'sub_agi_to_agi',
     'cog_output_multiplier',
-    'billion_agis',
-    'full_automation',
-    'rampup_to_agi',
-    'combined',
     'gwp_growth',
-    ]
+  ]
 
   def compute_takeoff_metrics(self):
     """ Computes indicator metrics measuring length of AI takeoff
@@ -1698,8 +1718,22 @@ class SimulateTakeOff():
     # Initialize takeoff metrics dict
     self.takeoff_metrics = {}
 
-    # GWP doubling times
-    self.compute_doubling_times()
+    # Time from AI that can perform 20% of tasks to AI that can perform 100%.
+
+    self.takeoff_metrics["full_automation_gns"] = \
+      self._length_between_thresholds(
+          self.frac_tasks_automated_goods > 0.2,
+          self.frac_tasks_automated_goods >= 1.,
+      )
+
+    self.takeoff_metrics["full_automation_rnd"] = \
+      self._length_between_thresholds(
+          self.frac_tasks_automated_rnd > 0.2,
+          self.frac_tasks_automated_rnd >= 1.,
+      )
+
+    # Time from powerful sub-AGI to AGI
+    self.takeoff_metrics['sub_agi_to_agi'] = self.agi_year - self.sub_agi_year if (self.agi_year is not None) else np.nan
 
     # Years from “total cognitive output is 2X human cognitive output” to
     # “total cognitive output is 10X human cognitive output”
@@ -1709,54 +1743,17 @@ class SimulateTakeOff():
           self.automation_multiplier_rnd > 10,
       )
 
-    # Time from AI that automates 10% of cognitive tasks to when
-    # we have enough compute to run 10 billion AGIs
-
-    self.frac_automated_tasks = \
-      (self.frac_tasks_automated_goods * self.n_labour_tasks_goods \
-    + self.frac_tasks_automated_rnd * self.n_labour_tasks_rnd) \
-    / ( self.n_labour_tasks_goods + self.n_labour_tasks_rnd )
-
-    ten_billion_agi_compute = \
-      max(np.max(self.automation_runtime_flops_goods),
-          np.max(self.automation_runtime_flops_rnd))*1e10
-    full_automation_flops = \
-      max(np.max(self.automation_training_flops_goods),
-          np.max(self.automation_training_flops_rnd))
-    self.takeoff_metrics["billion_agis"] = \
-      self._length_between_thresholds(
-          self.frac_automated_tasks > 0.2,
-          (self.compute >= ten_billion_agi_compute) &\
-          (self.biggest_training_run >= full_automation_flops),
-      )
-
-    # Time from AI that can perform 50% of tasks to AI that can perform 100%.
-
-    self.takeoff_metrics["full_automation"] = \
-      self._length_between_thresholds(
-          self.frac_automatable_tasks > 0.5,
-          self.frac_automatable_tasks >= 1.,
-      )
-
-    # Time from rampup to full automation
-    self.takeoff_metrics["rampup_to_agi"] = \
-      self._length_between_thresholds(
-          self.frac_tasks_automated_goods > 0.03,
-          self.frac_tasks_automated_goods >= 1.,
-      )
-
-    ## Combined metric
-    self.takeoff_metrics["combined"] = \
-      np.mean([self.takeoff_metrics[metric] for metric in self.takeoff_metrics])
-
-    # Time from 5% GWP growth to 15% GWP growth
+    # Time from 5% GWP growth to 20% GWP growth
     delta = int(1 / self.t_step)
     self.gwp_growth = np.log(self.gwp[delta:self.t_idx] / self.gwp[:self.t_idx-delta])
     self.takeoff_metrics["gwp_growth"] = \
       self._length_between_thresholds(
           self.gwp_growth > 0.05,
-          self.gwp_growth > 0.15,
+          self.gwp_growth > 0.20,
       )
+
+    # GWP doubling times
+    self.compute_doubling_times()
 
   def compute_doubling_times(self):
     self.doubling_times = [self.t_step / np.log2(self.gwp[1]/self.gwp[0])]

@@ -803,13 +803,6 @@ let ftm = {};
       if (!apply_tfp_to_cognitive_outputs) {
         state[item].output *= state[category].tfp;
       }
-
-      if (item == 'software_rnd') {
-        if (state.t_idx == 1) {
-          let a = 1 + 1;
-          console.log(state[item].output.toExponential());
-        }
-      }
     }
 
     static post_production(state, consts, states) {
@@ -1074,9 +1067,15 @@ let ftm = {};
       return this.get_automated_tasks_count(statex) / constsx.n_labour_tasks;
     }
 
-    static get_automatable_task_count(state, consts, category) {
+    static get_frac_automatable_tasks(state, consts, category, with_tradeoff=true) {
+      return this.get_automatable_task_count(state, consts, category, with_tradeoff) / consts[category].n_labour_tasks;
+    }
+
+    static get_automatable_task_count(state, consts, category, with_tradeoff=true) {
       // -1 to account for the initial task
-      return nj.count_true(nj.lt(consts[category].automation_training_flops, state.biggest_training_run * consts.runtime_training_max_tradeoff)) - 1;
+      return nj.count_true(
+        nj.lt(consts[category].automation_training_flops, state.biggest_training_run * (with_tradeoff ? consts.runtime_training_max_tradeoff : 1))
+      ) - 1;
     }
 
     // -------------------------------------------------------------------------
@@ -1095,6 +1094,7 @@ let ftm = {};
       let rampup_start = null;
       let rampup_mid = null;
       let agi_year = null;
+      let sub_agi_year = null;
 
       for (let i = 0; i < this.states.length; i++) {
         let state = this.states[i];
@@ -1109,7 +1109,11 @@ let ftm = {};
           rampup_mid = year;
         }
 
-        if (agi_year == null && prev_state && Model.get_frac_tasks_automated(prev_state.goods, this.consts.goods) >= 1) {
+        if (sub_agi_year == null && prev_state && Model.get_frac_automatable_tasks(prev_state, this.consts, 'goods', false) >= 0.2) {
+          sub_agi_year = year;
+        }
+
+        if (agi_year == null && prev_state && Model.get_frac_automatable_tasks(prev_state, this.consts, 'goods', false) >= 1) {
           agi_year = year;
         }
       }
@@ -1131,10 +1135,25 @@ let ftm = {};
         doubling_times[i] = +doubling_times[i].toFixed(2);
       }
 
+      // Fraction of tasks automated
+      let frac_tasks_automated_goods = nj.array(this.states.length);
+      for (let i = 0; i < this.states.length; i++) {
+        frac_tasks_automated_goods[i] = Model.get_frac_tasks_automated(this.states[i].goods, this.consts.goods);
+      }
+
+      let frac_tasks_automated_rnd = nj.array(this.states.length);
+      for (let i = 0; i < this.states.length; i++) {
+        frac_tasks_automated_rnd[i] = Model.get_frac_tasks_automated(this.states[i].hardware_rnd, this.consts.rnd);
+      }
+
       this.doubling_times = doubling_times.slice(0, 5); // We are only interested in the first five doubling times
       this.rampup_start = rampup_start;
       this.rampup_mid   = rampup_mid;
       this.agi_year     = agi_year;
+      this.sub_agi_year = sub_agi_year;
+
+      this.frac_tasks_automated_goods = frac_tasks_automated_goods;
+      this.frac_tasks_automated_rnd = frac_tasks_automated_rnd;
     }
 
     // -------------------------------------------------------------------------
@@ -1182,61 +1201,54 @@ let ftm = {};
       return (idx2 - idx1) * this.consts.t_step;
     }
 
+    // Compute timeline metrics
+    get_timeline_metrics() {
+      let timeline_metrics = {};
+
+      timeline_metrics['automation_gns_20%'] = this.index_to_time(nj.argmax(nj.gte(this.frac_tasks_automated_goods, 0.2)));
+      timeline_metrics['automation_gns_100%'] = this.index_to_time(nj.argmax(nj.gte(this.frac_tasks_automated_goods, 1.0)));
+
+      timeline_metrics['sub_agi_year'] = this.sub_agi_year;
+      timeline_metrics['agi_year']     = this.agi_year;
+
+      timeline_metrics['automation_rnd_20%'] = this.index_to_time(nj.argmax(nj.gte(this.frac_tasks_automated_rnd, 0.2)));
+      timeline_metrics['automation_rnd_100%'] = this.index_to_time(nj.argmax(nj.gte(this.frac_tasks_automated_rnd, 1.0)));
+
+      timeline_metrics['rampup_start'] = this.rampup_start;
+
+      return timeline_metrics;
+    }
+
     // Compute takeoff metrics
     get_takeoff_metrics() {
       let takeoff_metrics = {};
 
-      let frac_automated_tasks = nj.array(this.states.length);
-      for (let i = 0; i < this.states.length; i++) {
-        frac_automated_tasks[i] =
-          (Model.get_automated_tasks_count(this.states[i].goods) + Model.get_automated_tasks_count(this.states[i].hardware_rnd))
-            / (this.consts.goods.n_labour_tasks + this.consts.rnd.n_labour_tasks);
-      }
+      // Time from AI that can perform 20% of tasks to AI that can perform 100%.
 
-      let frac_automatable_tasks = nj.array(this.states.length);
-      for (let i = 0; i < this.states.length; i++) {
-        frac_automatable_tasks[i] =
-          (Model.get_automatable_task_count(this.states[i], this.consts, 'goods') + Model.get_automatable_task_count(this.states[i], this.consts, 'rnd'))
-            / (this.consts.goods.n_labour_tasks + this.consts.rnd.n_labour_tasks);
-      }
+      takeoff_metrics["full_automation_gns"] = this.length_between_thresholds(
+          nj.gt(this.frac_tasks_automated_goods, 0.2),
+          nj.gte(this.frac_tasks_automated_goods, 1.),
+      );
 
-      let frac_tasks_automated_goods = nj.array(this.states.length);
-      for (let i = 0; i < this.states.length; i++) {
-        frac_tasks_automated_goods[i] = Model.get_frac_tasks_automated(this.states[i].goods, this.consts.goods);
-      }
+      takeoff_metrics["full_automation_rnd"] = this.length_between_thresholds(
+          nj.gt(this.frac_tasks_automated_rnd, 0.2),
+          nj.gte(this.frac_tasks_automated_rnd, 1.),
+      );
 
       // Years from "total cognitive output is 2X human cognitive output" to "total cognitive output is 10X human cognitive output"
       let rnd_automation_multiplier = this.get_thread('hardware_rnd.automation_multiplier');
       takeoff_metrics["cog_output_multiplier"] = this.length_between_thresholds(nj.gt(rnd_automation_multiplier, 2), nj.gt(rnd_automation_multiplier, 10));
 
-      // Time from AI that automates 20% of cognitive tasks to when we have enough compute to run 10 billion AGIs
+      // Time from powerful sub-AGI to AGI
+      takeoff_metrics['sub_agi_to_agi'] = (this.agi_year != null) ? this.agi_year - this.sub_agi_year : nj.nan;
 
-      let ten_billion_agi_compute = Math.max(nj.max(this.consts.goods.automation_runtime_flops), nj.max(this.consts.rnd.automation_runtime_flops)) * 1e10;
-      let full_automation_flops = Math.max(nj.max(this.consts.goods.automation_training_flops), nj.max(this.consts.rnd.automation_training_flops));
-      takeoff_metrics["billion_agis"] = this.length_between_thresholds(
-        nj.gt(frac_automated_tasks, 0.2),
-        nj.and(nj.gte(this.get_thread('compute'), ten_billion_agi_compute),
-               nj.gte(this.get_thread('biggest_training_run'), full_automation_flops)
-        ),
-      );
-
-      // Time from AI that can perform 50% of tasks to AI that can perform 100%.
-      takeoff_metrics["full_automation"] = this.length_between_thresholds(nj.gt(frac_automatable_tasks, 0.5), nj.gte(frac_automatable_tasks, 1));
-
-      // Time from rampup to full automation
-
-      takeoff_metrics["rampup_to_agi"] = this.length_between_thresholds(nj.gt(frac_tasks_automated_goods, 0.03), nj.gte(frac_tasks_automated_goods, 1));
-
-      // Combined metric
-      takeoff_metrics["combined"] = nj.mean(Object.values(takeoff_metrics));
-
-      // Time from 5% GWP growth to 15% GWP growth
+      // Time from 5% GWP growth to 20% GWP growth
       let steps_per_year = Math.floor(1 / this.consts.t_step);
       let gwp_growth = nj.array(this.states.length - steps_per_year);
       for (let i = 0; i < this.states.length - steps_per_year; i++) {
         gwp_growth[i] = Math.log(this.states[i+steps_per_year].gwp/this.states[i].gwp);
       }
-      takeoff_metrics["gwp_growth"] = this.length_between_thresholds(nj.gt(gwp_growth, 0.05), nj.gt(gwp_growth, 0.15));
+      takeoff_metrics["gwp_growth"] = this.length_between_thresholds(nj.gt(gwp_growth, 0.05), nj.gt(gwp_growth, 0.20));
 
       takeoff_metrics['doubling_times'] = this.doubling_times;
 

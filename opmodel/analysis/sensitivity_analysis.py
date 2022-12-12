@@ -15,7 +15,7 @@ from . import log
 from . import *
 from ..stats.distributions import TakeoffParamsDist, PointDistribution, JointDistribution
 
-main_metric = 'billion_agis'
+main_metric = 'full_automation_gns'
 
 method_human_names = {
   'one_at_a_time': 'One-at-a-time',
@@ -51,7 +51,7 @@ def variance_reduction_comparison(quick_test_mode = False, save_dir = None, rest
       ensure_no_automatable_goods_tasks = True, ensure_no_automatable_rnd_tasks = True,
       use_ajeya_dist = False, ignore_rank_correlations = True, resampling_method = 'resample_all')
 
-  metric_names = SimulateTakeOff.takeoff_metrics + ['rampup_start', 'agi_year']
+  metric_names = SimulateTakeOff.timeline_metrics + SimulateTakeOff.takeoff_metrics
   parameters = [name for name, marginal in params_dist.marginals.items() if not isinstance(marginal, PointDistribution)]
   mean_samples = 50_000
   var_samples = 2
@@ -116,9 +116,10 @@ def get_parameter_importance_metrics(params, metric_names):
 
   model.run_simulation()
 
-  all_metrics = model.takeoff_metrics.copy()
-  all_metrics["rampup_start"] = model.t_end if model.rampup_start is None else model.rampup_start
-  all_metrics["agi_year"]     = model.t_end if model.agi_year is None else model.agi_year
+  for metric, value in model.timeline_metrics.items():
+    all_metrics[metric] = model.t_end if value is None or np.isnan(value) else value
+  for metric, value in model.takeoff_metrics.items():
+    all_metrics[metric] = value
 
   # Keep only the ones in metric_names (in that order)
   metrics = [all_metrics[name] for name in metric_names]
@@ -180,14 +181,25 @@ def one_at_a_time_comparison(quick_test_mode = False):
     result = {
       'Parameter' : parameter,
     }
-    for takeoff_metric in low_model.takeoff_metrics:
-      result[f"{takeoff_metric}"] = f"[{low_model.takeoff_metrics[takeoff_metric]:0.2f}, {med_model.takeoff_metrics[takeoff_metric]:0.2f}, {high_model.takeoff_metrics[takeoff_metric]:0.2f}]"
 
-      if takeoff_metric == 'billion_agis':
-        result["billion_agis skew"] = skew(
-          high_model.takeoff_metrics["billion_agis"],
-          med_model.takeoff_metrics["billion_agis"],
-          low_model.takeoff_metrics["billion_agis"]
+    for metric in low_model.timeline_metrics:
+      result[f"{metric}"] = f"[{low_model.timeline_metrics[metric]:0.2f}, {med_model.timeline_metrics[metric]:0.2f}, {high_model.timeline_metrics[metric]:0.2f}]"
+
+      if metric == 'agi_year':
+        result["agi_year skew"] = skew(
+          high_model.agi_year,
+          med_model.agi_year,
+          low_model.agi_year
+        )
+
+    for metric in low_model.takeoff_metrics:
+      result[f"{metric}"] = f"[{low_model.takeoff_metrics[metric]:0.2f}, {med_model.takeoff_metrics[metric]:0.2f}, {high_model.takeoff_metrics[metric]:0.2f}]"
+
+      if metric == 'full_automation_gns':
+        result["full_automation_gns skew"] = skew(
+          high_model.takeoff_metrics[metric],
+          med_model.takeoff_metrics[metric],
+          low_model.takeoff_metrics[metric]
         )
 
     result["importance"] = np.abs(high_model.takeoff_metrics[main_metric] - low_model.takeoff_metrics[main_metric])
@@ -195,16 +207,6 @@ def one_at_a_time_comparison(quick_test_mode = False):
     def format_year(model, year):
       if year is None or np.isnan(year): return f'> {model.t_end}'
       return f"{year:0.2f}"
-
-    # Add timelines metrics
-    result["rampup_start"] = f"[{format_year(low_model, low_model.rampup_start)}, {format_year(med_model, med_model.rampup_start)}, {format_year(high_model, high_model.rampup_start)}]"
-    result["agi_year"] = f"[{format_year(low_model, low_model.agi_year)}, {format_year(med_model, med_model.agi_year)}, {format_year(high_model, high_model.agi_year)}]"
-
-    result["agi_year skew"] = skew(
-      high_model.agi_year,
-      med_model.agi_year,
-      low_model.agi_year
-    )
 
     # Add GWP doubling times
     result["doubling_times"] = f"[{low_model.doubling_times[:4]}, {med_model.doubling_times[:4]}, {high_model.doubling_times[:4]}]"
@@ -316,7 +318,7 @@ def write_sensitivity_analysis_report(
   if method == 'one_at_a_time':
     def process_header(row, col, index_r, index_c, cell):
       if row == 0:
-        if index_c in SimulateTakeOff.takeoff_metrics + ["doubling_times", "rampup_start", "agi_year"]:
+        if index_c in SimulateTakeOff.timeline_metrics + SimulateTakeOff.takeoff_metrics + ["doubling_times"]:
           cell.attrib['data-meaning-suffix'] = f'<br><br>Values of the metric as we set each parameter to their [conservative, best guess, aggressive] values.'
     report.apply_to_table(table_container, process_header)
 
@@ -349,7 +351,7 @@ def write_sensitivity_analysis_report(
   most_important_parameters = get_most_important_parameters()
 
   def keep_cell(row, col, index_r, index_c, cell):
-    fixed_cols = [0, 1, 2, 3] if method == 'one_at_a_time' else [0]
+    fixed_cols = [0, 1] if method == 'one_at_a_time' else [0]
     col_condition = (col in fixed_cols) or (index_c in most_important_metrics or index_c in ['importance', 'variance_reduction'])
     row_condition = (row in [0]) or (index_r in most_important_parameters)
     return col_condition and row_condition

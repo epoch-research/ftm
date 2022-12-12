@@ -8,7 +8,7 @@ from .timelines_analysis import write_timelines_analysis_report
 from .mc_analysis import write_mc_analysis_report, McAnalysisResults
 
 def megareport(report_file_path=None, report_dir_path=None, quick_test_mode=False, report=None,
-    mc_trials=None, mc_input_results_filename=None, variance_reduction_params={}):
+    mc_trials=None, mc_input_results_filename=None, variance_reduction_params={}, variance_reduction_method=False):
   if mc_trials is None: mc_trials = 100
   if report_file_path is None:
     report_file_path = 'megareport.html'
@@ -28,7 +28,8 @@ def megareport(report_file_path=None, report_dir_path=None, quick_test_mode=Fals
   log.info('Generating parameter importance analysis tab')
   log.indent()
   report.begin_tab('Parameter importance analysis', 'parameter_importance_analysis')
-  write_sensitivity_analysis_report(report = report, method = 'combined', quick_test_mode = quick_test_mode, variance_reduction_params=variance_reduction_params)
+  write_sensitivity_analysis_report(report = report, quick_test_mode = quick_test_mode,
+      variance_reduction_params=variance_reduction_params, method=variance_reduction_method)
   log.deindent()
   log.info()
 
@@ -74,6 +75,18 @@ if __name__ == '__main__':
     "--variance-reduction-restore-dir",
   )
 
+  parser.add_argument(
+    "-m",
+    "--variance-reduction-method",
+    default = 'one_at_a_time',
+    choices = [
+      'one_at_a_time',
+      'variance_reduction_on_margin',
+      'shapley_values',
+      'combined',
+    ]
+  )
+
   args = handle_cli_arguments(parser)
 
   variance_reduction_params = {
@@ -85,4 +98,5 @@ if __name__ == '__main__':
     quick_test_mode=args.quick_test_mode, mc_trials=args.mc_trials,
     mc_input_results_filename=args.input_results_file,
     variance_reduction_params=variance_reduction_params,
+    variance_reduction_method=args.variance_reduction_method,
   )

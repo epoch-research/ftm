@@ -67,14 +67,33 @@ class YearsBeforeAgiMetric:
 
     return value
 
+class DoublingYearsBeforeAgiMetric(YearsBeforeAgiMetric):
+  def __init__(self, attr, remarks = None):
+    self.name = f'{attr} doubling time (years)'
+    self.format_quantile = lambda x: f'{x:.1f}' if x <= 100 else 'N/A'
+    self.attr = attr
+    self.remarks = remarks
+
+  def get_value_at_year(self, year, normal_model, no_automation_model):
+    model = no_automation_model if (year < normal_model.t_start) else normal_model
+
+    ts = model.timesteps
+    vals = getattr(model, self.attr)
+    interpolator = interp1d(ts, np.log10(vals), fill_value = 'extrapolate')
+
+    denominator = np.log2(10**interpolator(year+1)/10**interpolator(year))
+    doubling_time = 1/denominator if (denominator != 0) else 1e10
+
+    return doubling_time
+
 def mc_analysis(n_trials = 100, max_retries = 100):
   scalar_metrics = {}
 
-  for takeoff_metric in SimulateTakeOff.takeoff_metrics:
+  for takeoff_metric in SimulateTakeOff.timeline_metrics:
     scalar_metrics[takeoff_metric] = []
 
-  for m in ['rampup_start', 'agi_year']:
-    scalar_metrics[m] = []
+  for takeoff_metric in SimulateTakeOff.takeoff_metrics:
+    scalar_metrics[takeoff_metric] = []
 
   state_metrics = {
       metric : [] for metric in ['biggest_training_run', 'gwp']
@@ -86,25 +105,6 @@ def mc_analysis(n_trials = 100, max_retries = 100):
   metrics_before_agi = []
 
   # Doubling times metrics
-  class DoublingYearsBeforeAgiMetric(YearsBeforeAgiMetric):
-    def __init__(self, attr, remarks = None):
-      self.name = f'{attr} doubling time (years)'
-      self.format_quantile = lambda x: f'{x:.1f}' if x <= 100 else 'N/A'
-      self.attr = attr
-      self.remarks = remarks
-
-    def get_value_at_year(self, year, normal_model, no_automation_model):
-      model = no_automation_model if (year < normal_model.t_start) else normal_model
-
-      ts = model.timesteps
-      vals = getattr(model, self.attr)
-      interpolator = interp1d(ts, np.log10(vals), fill_value = 'extrapolate')
-
-      denominator = np.log2(10**interpolator(year+1)/10**interpolator(year))
-      doubling_time = 1/denominator if (denominator != 0) else 1e10
-
-      return doubling_time
-
   def add_doubling_time_metric(metric, remarks = None):
     metrics_before_agi.append(DoublingYearsBeforeAgiMetric(metric, remarks))
 
@@ -137,11 +137,7 @@ def mc_analysis(n_trials = 100, max_retries = 100):
 
   parameter_table.at['runtime_training_tradeoff', 'Conservative'] = 3
   parameter_table.at['runtime_training_tradeoff', 'Best guess']   = 1.5
-  parameter_table.at['runtime_training_tradeoff', 'Aggressive']   = 0.5
-
-  parameter_table.at['runtime_training_max_tradeoff', 'Conservative'] = 10**0.001
-  parameter_table.at['runtime_training_max_tradeoff', 'Best guess']   = 10**1.5
-  parameter_table.at['runtime_training_max_tradeoff', 'Aggressive']   = 10**3
+  parameter_table.at['runtime_training_tradeoff', 'Aggressive']   = 0.8
 
   params_dist = TakeoffParamsDist(parameter_table=parameter_table)
   samples = []
@@ -191,11 +187,13 @@ def mc_analysis(n_trials = 100, max_retries = 100):
 
     # Collect results
     for scalar_metric in scalar_metrics:
-      if scalar_metric in SimulateTakeOff.takeoff_metrics:
+      if scalar_metric in SimulateTakeOff.timeline_metrics:
+        metric_value = model.timeline_metrics[scalar_metric]
+      elif scalar_metric in SimulateTakeOff.takeoff_metrics:
         metric_value = model.takeoff_metrics[scalar_metric]
-        assert (np.isnan(metric_value) or metric_value >= 0), f"{scalar_metric} is negative!"
       else:
         metric_value = getattr(model, scalar_metric)
+      assert (metric_value is None or np.isnan(metric_value) or metric_value >= 0), f"{scalar_metric} is negative!"
 
       if scalar_metric == "rampup_start" and metric_value is None:
         metric_value = model.t_end
@@ -441,7 +439,7 @@ def write_mc_analysis_report(
 
   def process_header(row, col, index_r, index_c, cell):
     if row == 0:
-      if index_c in SimulateTakeOff.takeoff_metrics:
+      if index_c in SimulateTakeOff.timeline_metrics + SimulateTakeOff.takeoff_metrics:
         cell.attrib['data-meaning-suffix'] = f'<br><br><i>Conditional on takeoff happening before {results.t_end}.</i>'
 
   metrics_quantiles = pd.DataFrame(results.metrics_quantiles)
@@ -519,12 +517,12 @@ def write_mc_analysis_report(
   pdf_cdf_sub_container = add_pdf_cdf_sub_container('pdf')
   for method in ['cdf', 'pdf']:
     plt.figure(figsize=(10,6))
-    metric = 'billion_agis'
+    metric = 'full_automation_gns'
     plot = plot_ecdf if (method == 'cdf') else plot_epdf
     plot(results.scalar_metrics[metric], limits = [0, results.t_end - results.t_start], label = metric_id_to_human[metric], color = colors[color_index])
     plt.xlabel('Years')
     plt.ylabel(f'{method.upper()}\n(conditional on takeoff happening before {results.t_end})')
-    plt.title(metric_id_to_human['billion_agis'])
+    plt.title(metric_id_to_human['full_automation_gns'])
 
     container = report.add_figure(parent = pdf_cdf_sub_container)
     report.add_class(container, method)

@@ -52,6 +52,9 @@ def explore(exploration_target='compare', report_file_path=None, report_dir_path
         for parameter, row in parameter_table.iterrows()
     }
 
+    if med_params['runtime_training_tradeoff'] <= 0:
+      del med_params['runtime_training_max_tradeoff']
+
     low_value = 'Conservative'
     med_value = 'Best guess'
     high_value = 'Aggressive'
@@ -107,11 +110,11 @@ def explore(exploration_target='compare', report_file_path=None, report_dir_path
   report.add_paragraph(f"<span style='font-weight:bold'>Exploration target:</span> {exploration_target}")
 
   # Print table of metrics
-  low_results = {**{'type' : 'Conservative', 'value' : low_value}, **low_model.takeoff_metrics}
-  med_results = {**{'type' : 'Best guess', 'value' : med_value}, **med_model.takeoff_metrics}
-  high_results = {**{'type' : 'Aggressive', 'value' : high_value}, **high_model.takeoff_metrics}
+  low_results = {**{'type' : 'Conservative', 'value' : low_value},  **low_model.timeline_metrics, **low_model.takeoff_metrics}
+  med_results = {**{'type' : 'Best guess', 'value' : med_value},  **low_model.timeline_metrics, **med_model.takeoff_metrics}
+  high_results = {**{'type' : 'Aggressive', 'value' : high_value},  **low_model.timeline_metrics, **high_model.takeoff_metrics}
 
-  for metric in ['rampup_start', 'agi_year', 'doubling_times']:
+  for metric in ['doubling_times']:
     low_results[metric] = getattr(low_model, metric)
     med_results[metric] = getattr(med_model, metric)
     high_results[metric] = getattr(high_model, metric)
