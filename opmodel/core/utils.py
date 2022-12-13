@@ -241,7 +241,8 @@ def get_sheet_df_as_rich_text(sheet_name, workbook = None):
   for row_index, row in enumerate(tbody.find_all('tr')):
     df_row = []
     for cell in row.find_all('td'):
-      if cell.has_attr('class') and ('softmerge-inner' in cell['class']) or ('softmerge' in cell['class']):
+      classes = cell.get('class')
+      if classes and ('softmerge-inner' in classes or 'softmerge' in classes):
         cell = list(cell.children)[0]
       cell_contents = cell.text if (row_index == 0) else cell.decode_contents()
       df_row.append(cell_contents)
