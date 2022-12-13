@@ -67,6 +67,13 @@ if __name__ == '__main__':
   )
 
   parser.add_argument(
+    "-c",
+    "--rank-correlations-url",
+    type=str,
+    default=None,
+  )
+
+  parser.add_argument(
     "--input-results-file",
     help = 'Read the MC results from this file (pickle) instead of regenerating them',
   )
@@ -92,6 +99,8 @@ if __name__ == '__main__':
   variance_reduction_params = {
       'restore_dir': args.variance_reduction_restore_dir
   }
+
+  set_option('rank_correlations_sheet_url', args.rank_correlations_url)
 
   megareport(
     report_file_path=args.output_file, report_dir_path=args.output_dir,

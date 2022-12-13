@@ -320,7 +320,12 @@ def set_ajeya_dist_url(url):
 def get_rank_correlations():
   global cached_rank_correlations
   if cached_rank_correlations is None:
-    cached_rank_correlations = pd.read_excel(get_input_workbook(), sheet_name = 'Rank correlations', skiprows = 2)
+    rank_correlations_sheet_url = get_option('rank_correlations_sheet_url')
+    if rank_correlations_sheet_url:
+      cached_rank_correlations = get_csv_from_sheet_url(rank_correlations_sheet_url, skiprows = 2)
+    else:
+      cached_rank_correlations = pd.read_excel(get_input_workbook(), sheet_name = 'Rank correlations', skiprows = 2)
+
     cached_rank_correlations = cached_rank_correlations.set_index(cached_rank_correlations.columns[0])
   return cached_rank_correlations.copy()
 
@@ -514,7 +519,7 @@ class InvalidZipError(Exception):
   pass
 
 
-def get_csv_from_sheet_url(url, usecols = None):
+def get_csv_from_sheet_url(url, usecols = None, skiprows = None):
   pattern = r'https://docs.google.com/spreadsheets/d/([a-zA-Z0-9-_]*)/.*\bgid\b=([0-9]*)?.*'
   m = re.match(pattern, url)
   if m:
@@ -523,7 +528,7 @@ def get_csv_from_sheet_url(url, usecols = None):
     url = f'https://docs.google.com/spreadsheets/d/{workbook_id}/export?format=csv&gid={sheet_id}'
 
   try:
-    csv = pd.read_csv(url, usecols = usecols)
+    csv = pd.read_csv(url, usecols = usecols, skiprows = skiprows)
   except Exception:
     raise InvalidCsvError("Error reading the sheet (you might want to check it's publicly accessible)")
 

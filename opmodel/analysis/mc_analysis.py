@@ -779,6 +779,13 @@ if __name__ == '__main__':
   )
 
   parser.add_argument(
+    "-c",
+    "--rank-correlations-url",
+    type=str,
+    default=None,
+  )
+
+  parser.add_argument(
     "--input-results-file",
     help = 'Read the MC results from this file (pickle) instead of regenerating them',
   )
@@ -789,6 +796,8 @@ if __name__ == '__main__':
   )
 
   args = handle_cli_arguments(parser)
+
+  set_option('rank_correlations_sheet_url', args.rank_correlations_url)
 
   write_mc_analysis_report(
     n_trials=args.n_trials,
