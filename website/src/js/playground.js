@@ -57,7 +57,7 @@ metrics_to_show.addEventListener('change',  () => {
   let metrics_table;
 
   if (ui_state.metrics_to_show == 'important-metrics') {
-    let important_metrics = ['automation_gns_100%', 'agi_year', 'full_automation_gns'];
+    let important_metrics = ['agi_year', 'full_automation_gns', 'full_automation_rnd', 'automation_gns_100%'];
 
     metrics_table = {};
     for (let key of important_metrics) metrics_table[key] = all_metrics_table[key];
