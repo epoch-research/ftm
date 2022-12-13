@@ -284,6 +284,17 @@ def mc_analysis(n_trials = 100, max_retries = 100):
 
   return results
 
+def conditional_dist_graph(x, y, x_label=None, y_label=None):
+  indices_to_keep = np.where(np.logical_not(np.isnan(x) | np.isnan(y)))
+  x = x[indices_to_keep]
+  y = y[indices_to_keep]
+
+  plt.figure(figsize=(10,6))
+  plt.scatter(x, y, s = 16, alpha = 0.5)
+
+  if x_label: plt.xlabel(x_label)
+  if y_label: plt.ylabel(y_label)
+
 def is_slow_takeoff(model):
   return model.agi_year is not None and n_year_doubling_before_m_year_doubling(model.gwp[:model.t_idx], model.t_step, 4, 1)
 
@@ -348,6 +359,9 @@ def write_mc_analysis_report(
   if output_results_filename:
     with open(output_results_filename, 'wb') as f:
       pickle.dump(results, f)
+
+  metric_id_to_human = get_metric_names()
+  param_id_to_human = get_param_names()
 
   log.info('Writing report...')
   new_report = report is None
@@ -450,7 +464,6 @@ def write_mc_analysis_report(
   report.apply_to_table(table_container, process_header)
 
   # Plot CDFs of scalar metrics
-  metric_id_to_human = get_metric_names()
 
   def plot_ecdf(x, limits, label, color = None, normalize = False):
     x = filter_nans(x)
@@ -599,6 +612,39 @@ def write_mc_analysis_report(
     param_stats.append(stats)
   param_names = results.param_samples.columns
   columns = [['mean'] + results.quantiles]
+
+  # Timelines vs takeoff tables
+
+  header = report.add_header('Timelines vs takeoff', level = 3)
+
+  graph_container = report.add_html('<div style="margin-left: 17px"></div>')
+  conditional_dist_graph(
+    results.scalar_metrics['agi_year'],
+    results.scalar_metrics['full_automation_gns'],
+    metric_id_to_human['agi_year'],
+    metric_id_to_human['full_automation_gns'],
+  )
+  report.add_figure(parent = graph_container)
+
+  graph_container = report.add_html('<div style="margin-left: 0em"></div>')
+  conditional_dist_graph(
+    results.param_samples['full_automation_requirements_training'].to_numpy(),
+    np.where(results.scalar_metrics['agi_year'] < results.t_end, results.scalar_metrics['agi_year'], np.nan),
+    param_id_to_human['full_automation_requirements_training'],
+    metric_id_to_human['agi_year'],
+  )
+  plt.xscale('log')
+  report.add_figure(parent = graph_container)
+
+  graph_container = report.add_html('<div style="margin-left: 17px"></div>')
+  conditional_dist_graph(
+    results.param_samples['full_automation_requirements_training'].to_numpy(),
+    np.where(results.scalar_metrics['full_automation_gns'] < results.t_end, results.scalar_metrics['full_automation_gns'], np.nan),
+    param_id_to_human['full_automation_requirements_training'],
+    metric_id_to_human['full_automation_gns'],
+  )
+  plt.xscale('log')
+  report.add_figure(parent = graph_container)
 
   # "Years before AGI" tables
 
