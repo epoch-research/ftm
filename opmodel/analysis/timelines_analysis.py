@@ -207,7 +207,12 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
   for group in results.scenario_groups:
     group_inputs = {}
     for scenario in group:
-      group_inputs[scenario.name] = scenario.params
+      params = scenario.params.copy()
+      # If the tradeoff is disabled, show that explicitly
+      if params['runtime_training_tradeoff'] <= 0:
+        params['runtime_training_tradeoff'] = '(disabled)'
+        params['runtime_training_max_tradeoff'] = '(disabled)'
+      group_inputs[scenario.name] = params
     inputs[group.name] = group_inputs
   inputs_json = json.dumps(inputs)
 

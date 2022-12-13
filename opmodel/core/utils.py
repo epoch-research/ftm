@@ -192,7 +192,7 @@ def get_input_workbook(format = 'xlsx'):
     cached_input_workbooks[format] = get_workbook(get_option('input_workbook'), format)
   return cached_input_workbooks[format]
 
-def get_parameter_table():
+def get_parameter_table(tradeoff_enabled=False):
   global cached_param_table
   if cached_param_table is None:
     url = get_option('param_table_url')
@@ -217,6 +217,20 @@ def get_parameter_table():
     cached_param_table['Aggressive']   = floatify_series(cached_param_table['Aggressive'])
 
     cached_param_table = cached_param_table.set_index("Parameter id")
+
+    if tradeoff_enabled:
+      cached_param_table.at['runtime_training_tradeoff', 'Conservative'] = 3
+      cached_param_table.at['runtime_training_tradeoff', 'Best guess']   = 1.5
+      cached_param_table.at['runtime_training_tradeoff', 'Aggressive']   = 0.8
+    else:
+      cached_param_table.at['runtime_training_tradeoff', 'Conservative'] = None
+      cached_param_table.at['runtime_training_tradeoff', 'Best guess']   = 0
+      cached_param_table.at['runtime_training_tradeoff', 'Aggressive']   = None
+
+      cached_param_table.at['runtime_training_max_tradeoff', 'Conservative'] = None
+      cached_param_table.at['runtime_training_max_tradeoff', 'Best guess']   = 1
+      cached_param_table.at['runtime_training_max_tradeoff', 'Aggressive']   = None
+
     cached_param_table.fillna(np.nan, inplace = True)
   return cached_param_table.copy()
 

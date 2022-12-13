@@ -132,12 +132,8 @@ def mc_analysis(n_trials = 100, max_retries = 100):
 
   slow_takeoff_count = 0
 
-  parameter_table = get_parameter_table()
+  parameter_table = get_parameter_table(tradeoff_enabled=True)
   parameter_table = parameter_table[['Conservative', 'Best guess', 'Aggressive', 'Type']]
-
-  parameter_table.at['runtime_training_tradeoff', 'Conservative'] = 3
-  parameter_table.at['runtime_training_tradeoff', 'Best guess']   = 1.5
-  parameter_table.at['runtime_training_tradeoff', 'Aggressive']   = 0.8
 
   params_dist = TakeoffParamsDist(parameter_table=parameter_table)
   samples = []

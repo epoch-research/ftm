@@ -49,7 +49,7 @@ def sensitivity_analysis(quick_test_mode = False, method = 'one_at_a_time', vari
 def variance_reduction_comparison(quick_test_mode = False, save_dir = None, restore_dir = None, method = 'variance_reduction_on_margin'):
   params_dist = TakeoffParamsDist(
       ensure_no_automatable_goods_tasks = True, ensure_no_automatable_rnd_tasks = True,
-      use_ajeya_dist = False, ignore_rank_correlations = True, resampling_method = 'resample_all')
+      use_ajeya_dist = False, ignore_rank_correlations = True, tradeoff_enabled = True, resampling_method = 'resample_all')
 
   metric_names = SimulateTakeOff.timeline_metrics + SimulateTakeOff.takeoff_metrics
   parameters = [name for name, marginal in params_dist.marginals.items() if not isinstance(marginal, PointDistribution)]
@@ -129,7 +129,7 @@ def get_parameter_importance_metrics(params, metric_names):
 def one_at_a_time_comparison(quick_test_mode = False):
   log.info('Retrieving parameters...')
 
-  parameter_table = get_parameter_table()
+  parameter_table = get_parameter_table(tradeoff_enabled=True)
   parameter_table = parameter_table[['Conservative', 'Best guess', 'Aggressive']]
   best_guess_parameters = {parameter : row["Best guess"] \
                            for parameter, row in parameter_table.iterrows()}

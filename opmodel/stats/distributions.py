@@ -14,7 +14,7 @@ class TakeoffParamsDist():
 
   def __init__(self, ensure_no_automatable_goods_tasks = True, ensure_no_automatable_rnd_tasks = True,
       ignore_rank_correlations = False, use_ajeya_dist = True, resampling_method = 'gap_only',
-          parameter_table = None):
+      tradeoff_enabled = True, parameter_table = None):
     """
       If ensure_no_automatable_goods_tasks is True, we'll make sure none of the samples
       represent an scenario in which there is some "goods" task initially automatable.
@@ -26,17 +26,8 @@ class TakeoffParamsDist():
     # Retrieve parameter table
     if parameter_table is None:
       log.info('Retrieving parameters...')
-      parameter_table = get_parameter_table()
+      parameter_table = get_parameter_table(tradeoff_enabled)
       parameter_table = parameter_table[['Conservative', 'Best guess', 'Aggressive', 'Type']]
-
-      # By defaul, disable the runtime-training tradeoff
-      parameter_table.at['runtime_training_tradeoff', 'Conservative'] = None
-      parameter_table.at['runtime_training_tradeoff', 'Best guess']   = 0
-      parameter_table.at['runtime_training_tradeoff', 'Aggressive']   = None
-
-      parameter_table.at['runtime_training_max_tradeoff', 'Conservative'] = None
-      parameter_table.at['runtime_training_max_tradeoff', 'Best guess']   = 1
-      parameter_table.at['runtime_training_max_tradeoff', 'Aggressive']   = None
 
     self.parameter_table = parameter_table
 
@@ -122,6 +113,8 @@ class TakeoffParamsDist():
       # statsmodels.distributions.copula.copulas throws an exception when we ask less than 2 samples from it
       actual_count = max(count, 2)
       samples = self.joint_dist.rvs(actual_count, random_state = random_state, conditions = conditions)[:count]
+
+      # TODO Add self.ensure_no_automatable_rnd_tasks
 
       if self.ensure_no_automatable_goods_tasks:
         # Resample the training gap to ensure no tasks is automatable from the beginning
