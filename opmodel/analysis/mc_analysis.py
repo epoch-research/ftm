@@ -438,8 +438,12 @@ def write_mc_analysis_report(
       if index_c in SimulateTakeOff.timeline_metrics + SimulateTakeOff.takeoff_metrics:
         cell.attrib['data-meaning-suffix'] = f'<br><br><i>Conditional on takeoff happening before {results.t_end}.</i>'
 
+  for r in results.metrics_quantiles:
+    quantile = r['Quantile']
+    if not isinstance(quantile, str):
+      r['Quantile'] = f'{quantile:.2f}'
   metrics_quantiles = pd.DataFrame(results.metrics_quantiles)
-  metrics_quantiles_styled = metrics_quantiles.style.format(lambda x: x if isinstance(x, str) else f'{x:.2f}').hide(axis = 'index')
+  metrics_quantiles_styled = metrics_quantiles.style.format(lambda x: x if isinstance(x, str) else f'{x:.1f}').hide(axis = 'index')
   table_container = report.add_data_frame(metrics_quantiles_styled, show_importance_selector = True,
       keep_cell = keep_cell, label = 'metrics', show_index = False,
   )
