@@ -1662,10 +1662,10 @@ class SimulateTakeOff():
     self.compute_timeline_metrics()
 
   timeline_metrics = [
-    'automation_gns_20%',
-    'automation_gns_100%',
     'sub_agi_year',
     'agi_year',
+    'automation_gns_20%',
+    'automation_gns_100%',
     'automation_rnd_20%',
     'automation_rnd_100%',
     'rampup_start',
