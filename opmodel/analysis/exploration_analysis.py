@@ -54,6 +54,8 @@ def explore(exploration_target='compare', report_file_path=None, report_dir_path
 
     if med_params['runtime_training_tradeoff'] <= 0:
       del med_params['runtime_training_max_tradeoff']
+      del high_params['runtime_training_max_tradeoff']
+      del low_params['runtime_training_max_tradeoff']
 
     low_value = 'Conservative'
     med_value = 'Best guess'
