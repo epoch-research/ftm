@@ -3,12 +3,12 @@ import unittest
 import numpy as np
 import pandas as pd
 from scipy import stats
-from opmodel.core.utils import *
+from ftm.core.utils import *
 from scipy.interpolate import interp1d
 from statsmodels.distributions.empirical_distribution import ECDF
-from opmodel.stats.distributions import TakeoffParamsDist, PointDistribution, AjeyaDistribution
+from ftm.stats.distributions import TakeoffParamsDist, PointDistribution, AjeyaDistribution
 
-from opmodel.core.opmodel import *
+from ftm.core.model import *
 
 class TestSimulateTakeoff(unittest.TestCase):
   

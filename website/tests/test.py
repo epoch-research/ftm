@@ -8,9 +8,9 @@ import json
 import numpy as np
 from numpy.random import uniform
 
-from opmodel.core.utils import *
-from opmodel.core.opmodel import *
-from opmodel.analysis.mc_analysis import TakeoffParamsDist
+from ftm.core.utils import *
+from ftm.core.model import *
+from ftm.analysis.mc_analysis import TakeoffParamsDist
 
 parser = init_cli_arguments()
 args = handle_cli_arguments(parser)

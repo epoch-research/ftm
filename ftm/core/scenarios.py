@@ -1,6 +1,6 @@
 from . import utils
 from .utils import log, get_parameter_table, get_timelines_parameters
-from .opmodel import SimulateTakeOff
+from .model import SimulateTakeOff
 
 import numpy as np
 

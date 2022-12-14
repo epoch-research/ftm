@@ -594,4 +594,4 @@ class Log:
       end = '' if (i == len(lines) - 1 and not ends_in_newline) else '\n'
       print((' ' * self.indentation_level) + line, file = out, end = end)
 
-log = Log(level=Log.INFO_LEVEL)
+log = Log(level=Log.TRACE_LEVEL)

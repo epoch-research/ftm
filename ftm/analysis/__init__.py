@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import argparse
 
-from ..core.opmodel import SimulateTakeOff
+from ..core.model import SimulateTakeOff
 from ..core.utils import *
 from .report import Report
 

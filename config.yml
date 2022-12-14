@@ -3,7 +3,7 @@
 
 input_workbook: 'https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/'
 
-repo_web_url: 'https://github.com/epoch-research/opmodel'
+repo_web_url: 'https://github.com/epoch-research/ftm'
 repo_url: '${repo_web_url}.git'
 
 cache_dir: '${project_dir}/_cache_'

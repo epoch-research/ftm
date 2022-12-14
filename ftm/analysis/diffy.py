@@ -271,7 +271,7 @@ class ModelManager:
     original_params_url = params_url
 
     if not relative_python_module_path:
-      relative_python_module_path = 'opmodel/core/opmodel.py'
+      relative_python_module_path = 'ftm/core/model.py'
 
     # Clean the param url if it's a Google sheet
     pattern = r'https://docs.google.com/spreadsheets/d/([a-zA-Z0-9-_]*)/.*\bgid\b=([0-9]*)?.*'

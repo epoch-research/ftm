@@ -5,8 +5,8 @@
 
 import re
 import json
-from opmodel.core.utils import *
-from opmodel.core.opmodel import *
+from ftm.core.utils import *
+from ftm.core.model import *
 
 important_params_and_metrics = pd.read_excel(
     get_input_workbook(),

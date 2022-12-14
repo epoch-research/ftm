@@ -9,7 +9,7 @@ import statsmodels.distributions.copula.copulas as sm_copulas
 
 # TODO Make the sampling faster (alternative to the resampling)
 
-from ..core.opmodel import SimulateTakeOff
+from ..core.model import SimulateTakeOff
 from ..core.utils import log, get_parameter_table, get_rank_correlations, get_clipped_ajeya_dist
 
 class TakeoffParamsDist():
