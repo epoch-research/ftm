@@ -90,8 +90,6 @@ class TakeoffParamsDist():
 
         r = rank_correlations_matrix[right][left]
         if not np.isnan(r) and r != 0:
-          # Add a small perturbation to hopefully make the matrix non singular
-          r -= 1e-8
           correlations[(left, right)] = r * directions[left]*directions[right]
     return correlations
 
@@ -135,7 +133,7 @@ class TakeoffParamsDist():
       actual_count = max(count, 2)
       samples = self.joint_dist.rvs(actual_count, random_state = random_state, conditions = conditions)[:count]
 
-      # We are gonna resample only the training gap and all the correlated parameters
+      # We are gonna resample only the training gap and associated parameters
       training_gap_parameters = [
         'flop_gap_training',
         'goods_vs_rnd_requirements_training',
@@ -179,11 +177,13 @@ class TakeoffParamsDist():
 
         # statsmodels.distributions.copula.copulas throws an exception when we ask less than 2 samples from it
         # (hence the max)
+        # TODO Come on, fix that
         samples = self.joint_dist.rvs(max(2, samples_to_read), random_state = random_state, conditions = conditions)[:samples_to_read]
 
         for i, sample in samples.iterrows():
-          # Ensure the sample makes sense before adding it
+          # Only add the sample if it makes sense
           if not self.sample_is_good(sample):
+            log.trace('Discarding sample')
             continue
 
           # OK, looks good

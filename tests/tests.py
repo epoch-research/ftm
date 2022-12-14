@@ -481,7 +481,7 @@ class TestParamsDistribution(unittest.TestCase):
     batch_count = 1000
     samples_per_batch = 10
 
-    TestParamsDistribution.params_dist = TakeoffParamsDist()
+    TestParamsDistribution.params_dist = TakeoffParamsDist(resampling_method='resample_all')
 
     log.level = Log.ERROR_LEVEL
     batches = []
@@ -549,6 +549,27 @@ class TestParamsDistribution(unittest.TestCase):
         result = stats.kstest(param_samples, marginal.cdf)
         if result.pvalue > 0.30:
           self.assertLess(result.statistic, 0.01)
+
+  def test_max_fractions(self):
+    for max_frac_automatable_tasks_goods in [0, 0.01, 0.05, 0.2]:
+      for max_frac_automatable_tasks_rnd in [0, 0.01, 0.05, 0.2]:
+        print('Running simulations for')
+        print(f'  max_frac_automatable_tasks_goods = {max_frac_automatable_tasks_goods}')
+        print(f'  max_frac_automatable_tasks_rnd = {max_frac_automatable_tasks_rnd}')
+
+        dist = TakeoffParamsDist(
+          max_frac_automatable_tasks_goods = max_frac_automatable_tasks_goods,
+          max_frac_automatable_tasks_rnd = max_frac_automatable_tasks_rnd,
+          resampling_method = 'resample_all'
+        )
+        samples = dist.rvs(100)
+        for index, sample in samples.iterrows():
+          model = SimulateTakeOff(**sample.to_dict())
+          model.t_end = model.t_start + 2*model.t_step
+          model.run_simulation()
+
+          self.assertLessEqual(model.frac_automatable_tasks_goods[0], max_frac_automatable_tasks_goods)
+          self.assertLessEqual(model.frac_automatable_tasks_rnd[0], max_frac_automatable_tasks_rnd)
 
   def ecdf(self, samples):
     result = ECDF(samples)

@@ -89,11 +89,11 @@ class DoublingYearsBeforeAgiMetric(YearsBeforeAgiMetric):
 def mc_analysis(n_trials = 100, max_retries = 100):
   scalar_metrics = {}
 
-  for takeoff_metric in SimulateTakeOff.timeline_metrics:
-    scalar_metrics[takeoff_metric] = []
+  for metric in SimulateTakeOff.timeline_metrics:
+    scalar_metrics[metric] = []
 
-  for takeoff_metric in SimulateTakeOff.takeoff_metrics:
-    scalar_metrics[takeoff_metric] = []
+  for metric in SimulateTakeOff.takeoff_metrics:
+    scalar_metrics[metric] = []
 
   state_metrics = {
       metric : [] for metric in ['biggest_training_run', 'gwp']
@@ -139,6 +139,7 @@ def mc_analysis(n_trials = 100, max_retries = 100):
       parameter_table=parameter_table,
       max_frac_automatable_tasks_goods=0,
       max_frac_automatable_tasks_rnd=0.05,
+      resampling_method='resample_all',
   )
   samples = []
 
@@ -197,12 +198,12 @@ def mc_analysis(n_trials = 100, max_retries = 100):
         metric_value = model.takeoff_metrics[scalar_metric]
       else:
         metric_value = getattr(model, scalar_metric)
+
       assert (metric_value is None or np.isnan(metric_value) or metric_value >= 0), f"{scalar_metric} is negative!"
 
-      if scalar_metric == "rampup_start" and metric_value is None:
+      if scalar_metric in SimulateTakeOff.timeline_metrics and np.isnan(metric_value):
         metric_value = model.t_end
-      elif scalar_metric == "agi_year" and metric_value is None:
-        metric_value = model.t_end
+
       scalar_metrics[scalar_metric].append(metric_value)
 
     for state_metric in state_metrics:
@@ -231,8 +232,8 @@ def mc_analysis(n_trials = 100, max_retries = 100):
 
   log.deindent()
 
-  for scalar_metric in scalar_metrics:
-    scalar_metrics[scalar_metric] = np.array(scalar_metrics[scalar_metric])
+  for name, value in scalar_metrics.items():
+    scalar_metrics[name] = np.array(value)
 
   ## Summaries
   quantiles = [0.01, 0.1, 0.2, 0.5, 0.8, 0.9, 0.99]
@@ -393,6 +394,9 @@ def write_mc_analysis_report(
       row.append(p)
     takeoff_probability_table.append(row)
 
+  # Probability of 
+  report.add_paragraph(f"<span style='font-weight:bold'>Probability of AGI before {results.t_end}</span><span style='font-weight:bold'>:</span> {results.n_finished_trials/results.n_trials:.0%}")
+
   # Add the tooltip
   description = '''Probability of a full <input class='doubling-years-inputs' id='doubling-years-input-m' value='4' style='display:inline-block'> year doubling of GWP before a <input class='doubling-years-inputs' id='doubling-years-input-n' value='1'> year doubling of GWP starts'''
   report.add_paragraph(f"<span style='font-weight:bold'>Probability of slow takeoff</span>{report.generate_tooltip_html(description, on_mount = 'initialize_takeoff_probability_mini_widget()', triggers = 'mouseenter click', classes = 'slow-takeoff-probability-tooltip-info')}<span style='font-weight:bold'>:</span> <span id='slow-takeoff-probability'>{results.slow_takeoff_count/results.n_finished_trials:.0%}</span>")
@@ -455,20 +459,22 @@ def write_mc_analysis_report(
     row_condition = (row in [0]) or (index_r != 'mean')
     return col_condition and row_condition
 
-  def process_header(row, col, index_r, index_c, cell):
-    if row == 0:
-      if index_c in SimulateTakeOff.timeline_metrics + SimulateTakeOff.takeoff_metrics:
-        cell.attrib['data-meaning-suffix'] = f'<br><br><i>Conditional on takeoff happening before {results.t_end}.</i>'
-
   for r in results.metrics_quantiles:
     quantile = r['Quantile']
     if not isinstance(quantile, str):
       r['Quantile'] = f'{quantile:.2f}'
+
   metrics_quantiles = pd.DataFrame(results.metrics_quantiles)
   metrics_quantiles_styled = metrics_quantiles.style.format(lambda x: x if isinstance(x, str) else f'{x:.1f}').hide(axis = 'index')
   table_container = report.add_data_frame(metrics_quantiles_styled, show_importance_selector = True,
       keep_cell = keep_cell, label = 'metrics', show_index = False,
   )
+
+  def process_header(row, col, index_r, index_c, cell):
+    if row == 0:
+      if index_c in SimulateTakeOff.takeoff_metrics:
+        cell.attrib['data-meaning-suffix'] = f'<br><br><i>Conditional on the transition actually taking place before {results.t_end}.</i>'
+
   report.apply_to_table(table_container, process_header)
 
   # Plot CDFs of scalar metrics
