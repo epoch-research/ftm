@@ -135,7 +135,11 @@ def mc_analysis(n_trials = 100, max_retries = 100):
   parameter_table = get_parameter_table(tradeoff_enabled=True)
   parameter_table = parameter_table[['Conservative', 'Best guess', 'Aggressive', 'Type']]
 
-  params_dist = TakeoffParamsDist(parameter_table=parameter_table)
+  params_dist = TakeoffParamsDist(
+      parameter_table=parameter_table,
+      max_frac_automatable_tasks_goods=0,
+      max_frac_automatable_tasks_rnd=0.05,
+  )
   samples = []
 
   last_valid_indices = []
@@ -152,8 +156,10 @@ def mc_analysis(n_trials = 100, max_retries = 100):
       # Try to run the simulation
       try:
         log.info(f'Running simulation {trial+1}/{n_trials}...')
+        log.indent()
 
         sample = params_dist.rvs(1)
+
         mc_params = {param: sample[param][0] for param in sample}
 
         model = SimulateTakeOff(**mc_params, t_start = t_start, t_end_min = t_end, compute_shares = False)
@@ -174,6 +180,8 @@ def mc_analysis(n_trials = 100, max_retries = 100):
         log.info('Discarding the sample and rerunning the simulation')
         log.deindent()
         continue
+
+      log.deindent()
 
       # This was a good sample
       samples.append(sample)
@@ -750,7 +758,7 @@ def write_mc_analysis_report(
     tbody.insert(0, et.fromstring(f'''
       <tr>
         <th data-param-id='full_automation_requirements_training'>{get_param_names()['full_automation_requirements_training'] if get_option('human_names') else 'full_automation_requirements_training'}</th>
-        <td colspan="4" style="text-align: center">sampled from a clipped Cotra's distribution <span data-modal-trigger="ajeya-modal">(<i>click here to view</i>)</span></td>
+        <td colspan="4" style="text-align: center">sampled from Cotra's distribution <span data-modal-trigger="ajeya-modal">(<i>click here to view</i>)</span></td>
       </tr>
     '''))
   else:

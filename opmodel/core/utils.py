@@ -217,22 +217,24 @@ def get_parameter_table(tradeoff_enabled=False):
     cached_param_table['Aggressive']   = floatify_series(cached_param_table['Aggressive'])
 
     cached_param_table = cached_param_table.set_index("Parameter id")
-
-    if tradeoff_enabled:
-      cached_param_table.at['runtime_training_tradeoff', 'Conservative'] = 3
-      cached_param_table.at['runtime_training_tradeoff', 'Best guess']   = 1.5
-      cached_param_table.at['runtime_training_tradeoff', 'Aggressive']   = 0.8
-    else:
-      cached_param_table.at['runtime_training_tradeoff', 'Conservative'] = None
-      cached_param_table.at['runtime_training_tradeoff', 'Best guess']   = 0
-      cached_param_table.at['runtime_training_tradeoff', 'Aggressive']   = None
-
-      cached_param_table.at['runtime_training_max_tradeoff', 'Conservative'] = None
-      cached_param_table.at['runtime_training_max_tradeoff', 'Best guess']   = 1
-      cached_param_table.at['runtime_training_max_tradeoff', 'Aggressive']   = None
-
     cached_param_table.fillna(np.nan, inplace = True)
-  return cached_param_table.copy()
+
+  table = cached_param_table.copy()
+
+  if tradeoff_enabled:
+    table.at['runtime_training_tradeoff', 'Conservative'] = 3
+    table.at['runtime_training_tradeoff', 'Best guess']   = 1.5
+    table.at['runtime_training_tradeoff', 'Aggressive']   = 0.8
+  else:
+    table.at['runtime_training_tradeoff', 'Conservative'] = None
+    table.at['runtime_training_tradeoff', 'Best guess']   = 0
+    table.at['runtime_training_tradeoff', 'Aggressive']   = None
+
+    table.at['runtime_training_max_tradeoff', 'Conservative'] = None
+    table.at['runtime_training_max_tradeoff', 'Best guess']   = 1
+    table.at['runtime_training_max_tradeoff', 'Aggressive']   = None
+
+  return table
 
 def get_sheet_df_as_rich_text(sheet_name, workbook = None):
   # Unfortunately, we can't just read the rich text of the cells from

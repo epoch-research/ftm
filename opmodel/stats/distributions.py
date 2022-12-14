@@ -7,19 +7,17 @@ from scipy.stats import multivariate_normal
 import statsmodels.distributions.copula.api as sm_api
 import statsmodels.distributions.copula.copulas as sm_copulas
 
+# TODO Make the sampling faster (alternative to the resampling)
+
+from ..core.opmodel import SimulateTakeOff
 from ..core.utils import log, get_parameter_table, get_rank_correlations, get_clipped_ajeya_dist
 
 class TakeoffParamsDist():
   """ Joint parameter distribution. """
 
-  def __init__(self, ensure_no_automatable_goods_tasks = True, ensure_no_automatable_rnd_tasks = True,
-      ignore_rank_correlations = False, use_ajeya_dist = True, resampling_method = 'gap_only',
+  def __init__(self, max_frac_automatable_tasks_goods = 0, max_frac_automatable_tasks_rnd = 0,
+      ignore_rank_correlations = False, use_ajeya_dist = True, resampling_method = 'gap_and_correlations_only',
       tradeoff_enabled = True, parameter_table = None):
-    """
-      If ensure_no_automatable_goods_tasks is True, we'll make sure none of the samples
-      represent an scenario in which there is some "goods" task initially automatable.
-      Same for ensure_no_automatable_rnd_tasks.
-    """
 
     self.resampling_method = resampling_method
 
@@ -42,8 +40,8 @@ class TakeoffParamsDist():
       self.pairwise_rank_corr = self.process_correlations(self.marginals, self.rank_correlations, marginal_directions)
 
     self.joint_dist = JointDistribution(self.marginals, self.pairwise_rank_corr, rank_corr_method = "spearman")
-    self.ensure_no_automatable_goods_tasks = ensure_no_automatable_goods_tasks
-    self.ensure_no_automatable_rnd_tasks = ensure_no_automatable_rnd_tasks
+    self.max_frac_automatable_tasks_goods = max_frac_automatable_tasks_goods
+    self.max_frac_automatable_tasks_rnd = max_frac_automatable_tasks_rnd
 
   def get_marginal_directions(self, parameter_table):
     directions = {}
@@ -66,24 +64,13 @@ class TakeoffParamsDist():
         marginal = PointDistribution(row['Best guess'])
       marginals[parameter] = marginal
 
-    lowest_training_requirements_goods = \
-        (marginals['initial_biggest_training_run'].b * marginals['runtime_training_max_tradeoff'].b) \
-        * marginals['flop_gap_training'].a**(10.5/7)
-
-    lowest_training_requirements_rnd = \
-        (marginals['initial_biggest_training_run'].b * marginals['runtime_training_max_tradeoff'].b * marginals['goods_vs_rnd_requirements_training'].b) \
-        * marginals['flop_gap_training'].a**(10.5/7)
-
-    lowest_training_requirements = max(lowest_training_requirements_goods, lowest_training_requirements_rnd)
-
     if use_ajeya_dist:
-      marginals['full_automation_requirements_training'] = \
-          AjeyaDistribution(lower_bound = lowest_training_requirements)
+      marginals['full_automation_requirements_training'] = AjeyaDistribution()
     else:
-      marginals['full_automation_requirements_training'] = SkewedLogUniform(\
+      marginals['full_automation_requirements_training'] = SkewedLogUniform(
         parameter_table.at['full_automation_requirements_training', 'Conservative'],
         parameter_table.at['full_automation_requirements_training', 'Best guess'],
-        max(lowest_training_requirements, parameter_table.at['full_automation_requirements_training', 'Aggressive']),
+        parameter_table.at['full_automation_requirements_training', 'Aggressive'],
       )
 
     return marginals
@@ -100,8 +87,37 @@ class TakeoffParamsDist():
 
         r = rank_correlations_matrix[right][left]
         if not np.isnan(r) and r != 0:
+          # Add a small perturbation to hopefully make the matrix non singular
+          r -= 1e-8
           correlations[(left, right)] = r * directions[left]*directions[right]
     return correlations
+
+  def sample_is_admissible(self, pd_sample):
+    # Will we be able to draw a good sample from this one?
+    most_favorable_params = pd_sample.to_dict()
+    params_to_set = [
+        'flop_gap_training',
+        'goods_vs_rnd_requirements_training',
+        'runtime_training_tradeoff',
+        'runtime_training_max_tradeoff',
+    ]
+    for param in params_to_set:
+      most_favorable_params[param] = self.marginals[param].a
+
+    model = SimulateTakeOff(**most_favorable_params, t_start = 2022, t_end = 2023)
+    model.initialize_inputs()
+    model.automate_tasks(0)
+
+    return model.frac_automatable_tasks_goods[0] <= self.max_frac_automatable_tasks_goods \
+        and model.frac_automatable_tasks_rnd[0] <= self.max_frac_automatable_tasks_rnd
+
+  def sample_is_good(self, pd_sample):
+    model = SimulateTakeOff(**pd_sample.to_dict(), t_start = 2022, t_end = 2023)
+    model.initialize_inputs()
+    model.automate_tasks(0)
+
+    return model.frac_automatable_tasks_goods[0] <= self.max_frac_automatable_tasks_goods \
+        and model.frac_automatable_tasks_rnd[0] <= self.max_frac_automatable_tasks_rnd
 
   def rvs(self, count, random_state = None, conditions = {}, resampling_method = None):
     # statsmodels.distributions.copula.copulas throws an exception when we ask less than 2 samples from it.
@@ -109,21 +125,46 @@ class TakeoffParamsDist():
 
     if resampling_method is None: resampling_method = self.resampling_method
 
-    if resampling_method == 'gap_only':
+    # TODO Simplify
+
+    if resampling_method == 'gap_and_correlations_only':
       # statsmodels.distributions.copula.copulas throws an exception when we ask less than 2 samples from it
       actual_count = max(count, 2)
       samples = self.joint_dist.rvs(actual_count, random_state = random_state, conditions = conditions)[:count]
 
-      # TODO Add self.ensure_no_automatable_rnd_tasks
+      # We are gonna resample only the training gap and all the correlated parameters
+      training_gap_parameters = [
+        'flop_gap_training',
+        'goods_vs_rnd_requirements_training',
+        'flop_gap_runtime',
+        'goods_vs_rnd_requirements_runtime',
+        'runtime_training_tradeoff',
+        'runtime_training_max_tradeoff',
+      ]
 
-      if self.ensure_no_automatable_goods_tasks:
-        # Resample the training gap to ensure no tasks is automatable from the beginning
-        gap_marginal = self.marginals['flop_gap_training']
-        for i, row in samples.iterrows():
-          max_gap = (row['full_automation_requirements_training']/(row['initial_biggest_training_run'] * row['runtime_training_max_tradeoff']))**(7/10.5)
-          gap_marginal.set_upper_bound(max_gap)
-          samples.at[i, 'flop_gap_training'] = gap_marginal.rvs(random_state = random_state)
-        gap_marginal.set_upper_bound(None)
+      for sample_index, sample in samples.iterrows():
+        while not self.sample_is_admissible(sample):
+          # Can we use this sample?
+          log.trace('Inadmissible sample. Resampling all parameters.')
+
+          new_sample = self.joint_dist.rvs(2, random_state = random_state, conditions = conditions).iloc[0].to_dict()
+
+          for param in new_sample:
+            samples.loc[sample_index, param] = new_sample[param]
+
+        while not self.sample_is_good(sample):
+          # Modify the sample until it makes sense
+          log.trace('Resampling')
+
+          sub_conditions = conditions.copy()
+          for param in sample.index:
+            if param not in training_gap_parameters:
+              sub_conditions[param] = sample[param]
+
+          new_sample = self.joint_dist.rvs(2, random_state = random_state, conditions = sub_conditions).iloc[0].to_dict()
+
+          for param in training_gap_parameters:
+            samples.loc[sample_index, param] = new_sample[param]
 
       return samples
     else:
@@ -139,21 +180,8 @@ class TakeoffParamsDist():
 
         for i, sample in samples.iterrows():
           # Ensure the sample makes sense before adding it
-          if self.ensure_no_automatable_goods_tasks or self.ensure_no_automatable_rnd_tasks:
-            max_gap = np.inf
-
-            if self.ensure_no_automatable_goods_tasks:
-              max_gap_goods = \
-                (sample['full_automation_requirements_training']/(sample['initial_biggest_training_run'] * sample['runtime_training_max_tradeoff']))**(7/10.5)
-              max_gap = min(max_gap, max_gap_goods)
-
-            if self.ensure_no_automatable_rnd_tasks:
-              max_gap_rnd = \
-                max_gap_goods/sample['goods_vs_rnd_requirements_training']**(7/10.5)
-              max_gap = min(max_gap, max_gap_goods)
-
-            if sample['flop_gap_training'] >= max_gap:
-              continue
+          if not self.sample_is_good(sample):
+            continue
 
           # OK, looks good
           output_samples.loc[output_samples_count] = samples.loc[i]

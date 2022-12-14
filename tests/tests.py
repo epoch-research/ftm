@@ -478,10 +478,19 @@ class TestParamsDistribution(unittest.TestCase):
 
   @classmethod
   def setUpClass(self):
-    n_samples = 10000
+    batch_count = 1000
+    samples_per_batch = 10
 
     TestParamsDistribution.params_dist = TakeoffParamsDist()
-    TestParamsDistribution.samples = TestParamsDistribution.params_dist.rvs(n_samples)
+
+    log.level = Log.ERROR_LEVEL
+    batches = []
+    for i in range(batch_count):
+      print(f'Sample {i * samples_per_batch}/{batch_count * samples_per_batch}')
+      batches.append(TestParamsDistribution.params_dist.rvs(samples_per_batch))
+    log.level = Log.TRACE_LEVEL
+
+    TestParamsDistribution.samples = samples = pd.concat(batches)
 
   def setUp(self):
     self.samples = TestParamsDistribution.samples
