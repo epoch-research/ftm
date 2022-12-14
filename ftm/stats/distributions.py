@@ -19,6 +19,9 @@ class TakeoffParamsDist():
       ignore_rank_correlations = False, use_ajeya_dist = True, resampling_method = 'gap_and_correlations_only',
       tradeoff_enabled = True, parameter_table = None):
 
+    if resampling_method not in ('gap_and_correlations_only', 'resample_all'):
+      raise ValueError("`resampling_method` must be one of 'gap_and_correlations_only' or 'resample_all'")
+
     self.resampling_method = resampling_method
 
     # Retrieve parameter table
