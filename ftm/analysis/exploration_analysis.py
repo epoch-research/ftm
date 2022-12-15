@@ -52,11 +52,6 @@ def explore(exploration_target='compare', report_file_path=None, report_dir_path
         for parameter, row in parameter_table.iterrows()
     }
 
-    if med_params['runtime_training_tradeoff'] <= 0:
-      del med_params['runtime_training_max_tradeoff']
-      del high_params['runtime_training_max_tradeoff']
-      del low_params['runtime_training_max_tradeoff']
-
     low_value = 'Conservative'
     med_value = 'Best guess'
     high_value = 'Aggressive'
@@ -221,6 +216,15 @@ def explore(exploration_target='compare', report_file_path=None, report_dir_path
   report.add_data_frame(high_model.get_summary_table())
 
   # Write down the parameters
+  if med_params['runtime_training_tradeoff'] <= 0:
+    del med_params['runtime_training_tradeoff']
+    del high_params['runtime_training_tradeoff']
+    del low_params['runtime_training_tradeoff']
+
+    del med_params['runtime_training_max_tradeoff']
+    del high_params['runtime_training_max_tradeoff']
+    del low_params['runtime_training_max_tradeoff']
+
   report.add_header("Inputs", level = 3)
   input_parameters = pd.DataFrame(
     [low_params, med_params, high_params],
