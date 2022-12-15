@@ -167,7 +167,6 @@ def mc_analysis(n_trials = 100, max_retries = 100):
 
         # Check that no goods task is automatable from the beginning (except for the first one)
         runtime_training_max_tradeoff = model.runtime_training_max_tradeoff if model.runtime_training_tradeoff is not None else 1.
-        assert(not np.any(model.automation_training_flops_goods[1:] < model.initial_biggest_training_run * runtime_training_max_tradeoff))
 
         model.run_simulation()
       except Exception as e:
