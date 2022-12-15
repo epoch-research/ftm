@@ -1696,7 +1696,12 @@ class SimulateTakeOff():
   def first_index(condition):
     if np.any(condition):
       return np.argmax(condition)
-    return None
+    return None # TODO return np.nan
+
+  def first_time(self, condition):
+    idx = SimulateTakeOff.first_index(condition)
+    if idx is None: return np.nan
+    return self.index_to_time(idx)
 
   def time_to_index(self, t):
     return round((t - self.t_start) / self.t_step)
@@ -1724,10 +1729,10 @@ class SimulateTakeOff():
     unsorted_metrics = {}
 
     for th in [0.2, 1.0]:
-      t_year_gns = self.index_to_time(np.argmax(self.frac_tasks_automated_goods >= th))
+      t_year_gns = self.first_time(self.frac_tasks_automated_goods >= th)
       unsorted_metrics[f'automation_gns_{int(th*100)}%'] = t_year_gns
 
-      t_year_rnd = self.index_to_time(np.argmax(self.frac_tasks_automated_rnd >= th))
+      t_year_rnd = self.first_time(self.frac_tasks_automated_rnd >= th)
       unsorted_metrics[f'automation_rnd_{int(th*100)}%'] = t_year_rnd
 
     unsorted_metrics['sub_agi_year'] = self.sub_agi_year
@@ -1739,7 +1744,7 @@ class SimulateTakeOff():
       v = unsorted_metrics[k]
       self.timeline_metrics[k] = v if (v is not None) else np.nan
 
-  def _length_between_thresholds(
+  def length_between_thresholds(
         self,
         series1,
         series2,
@@ -1770,13 +1775,13 @@ class SimulateTakeOff():
     # Time from AI that can perform 20% of tasks to AI that can perform 100%.
 
     self.takeoff_metrics["full_automation_gns"] = \
-      self._length_between_thresholds(
+      self.length_between_thresholds(
           self.frac_tasks_automated_goods > 0.2,
           self.frac_tasks_automated_goods >= 1.,
       )
 
     self.takeoff_metrics["full_automation_rnd"] = \
-      self._length_between_thresholds(
+      self.length_between_thresholds(
           self.frac_tasks_automated_rnd > 0.2,
           self.frac_tasks_automated_rnd >= 1.,
       )
@@ -1787,7 +1792,7 @@ class SimulateTakeOff():
     # Years from “total cognitive output is 2X human cognitive output” to
     # “total cognitive output is 10X human cognitive output”
     self.takeoff_metrics["cog_output_multiplier"] = \
-      self._length_between_thresholds(
+      self.length_between_thresholds(
           self.automation_multiplier_rnd > 2,
           self.automation_multiplier_rnd > 10,
       )
@@ -1796,7 +1801,7 @@ class SimulateTakeOff():
     delta = int(1 / self.t_step)
     self.gwp_growth = np.log(self.gwp[delta:self.t_idx] / self.gwp[:self.t_idx-delta])
     self.takeoff_metrics["gwp_growth"] = \
-      self._length_between_thresholds(
+      self.length_between_thresholds(
           self.gwp_growth > 0.05,
           self.gwp_growth > 0.20,
       )
