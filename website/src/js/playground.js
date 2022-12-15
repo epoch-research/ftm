@@ -1339,11 +1339,11 @@ function plot_vlines(sim, line_color = 'black', graph = null) {
     });
   }
               
-  if (sim.agi_year) {
-    graph.axvline(sim.agi_year, {
+  if (sim.timeline_metrics['automation_gns_100%']) {
+    graph.axvline(sim.timeline_metrics['automation_gns_100%'], {
       linestyle: 'dashed',
       color: line_color,
-      label: 'Full automation',
+      label: '100% automation',
     });
   }
 }

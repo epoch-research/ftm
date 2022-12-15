@@ -64,6 +64,9 @@ let ftm = {};
       this.timesteps = timesteps;
 
       this.post_simulation(this.states, this.consts);
+
+      this.takeoff_metrics = this.get_takeoff_metrics();
+      this.timeline_metrics = this.get_timeline_metrics();
     }
 
     // ------------------------------------------------------------------------
@@ -1201,18 +1204,26 @@ let ftm = {};
       return (idx2 - idx1) * this.consts.t_step;
     }
 
+    time_when(series) {
+      if (!nj.any(series)) {
+        return nj.nan;
+      }
+      let idx = nj.argmax(series);
+      return this.index_to_time(idx);
+    }
+
     // Compute timeline metrics
     get_timeline_metrics() {
       let timeline_metrics = {};
 
-      timeline_metrics['automation_gns_20%'] = this.index_to_time(nj.argmax(nj.gte(this.frac_tasks_automated_goods, 0.2)));
-      timeline_metrics['automation_gns_100%'] = this.index_to_time(nj.argmax(nj.gte(this.frac_tasks_automated_goods, 1.0)));
+      timeline_metrics['automation_gns_20%'] = this.time_when(nj.gte(this.frac_tasks_automated_goods, 0.2));
+      timeline_metrics['automation_gns_100%'] = this.time_when(nj.gte(this.frac_tasks_automated_goods, 1.0));
 
       timeline_metrics['sub_agi_year'] = this.sub_agi_year;
       timeline_metrics['agi_year']     = this.agi_year;
 
-      timeline_metrics['automation_rnd_20%'] = this.index_to_time(nj.argmax(nj.gte(this.frac_tasks_automated_rnd, 0.2)));
-      timeline_metrics['automation_rnd_100%'] = this.index_to_time(nj.argmax(nj.gte(this.frac_tasks_automated_rnd, 1.0)));
+      timeline_metrics['automation_rnd_20%'] = this.time_when(nj.gte(this.frac_tasks_automated_rnd, 0.2));
+      timeline_metrics['automation_rnd_100%'] = this.time_when(nj.gte(this.frac_tasks_automated_rnd, 1.0));
 
       timeline_metrics['rampup_start'] = this.rampup_start;
 
@@ -1296,7 +1307,7 @@ let ftm = {};
       for (let [period, t] of Object.entries({'Pre wake-up': prerampup,
                         'Wake-up': this.rampup_start,
                         'Mid rampup': this.rampup_mid,
-                        'AGI': this.agi_year})) {
+                        'Full economic automation': this.timeline_metrics['automation_gns_100%']})) {
 
         if (t == null) {
           let summary_row = {

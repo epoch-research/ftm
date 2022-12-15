@@ -88,6 +88,10 @@ class ScenarioRunner:
     # Run simulations
     log.info('Running simulations...')
 
+    low_params['dynamic_t_end'] = True
+    med_params['dynamic_t_end'] = True
+    high_params['dynamic_t_end'] = True
+
     log.info('  Conservative simulation')
     low_model = SimulateTakeOff(**low_params)
     low_model.run_simulation()
