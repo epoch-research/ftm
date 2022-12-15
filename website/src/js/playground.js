@@ -78,6 +78,11 @@ metrics_to_show.addEventListener('change',  () => {
 function run_simulation(immediate, callback) {
   let params = get_parameters();
   if (params) {
+    if (!params['runtime_training_tradeoff_enabled']) {
+      params['runtime_training_tradeoff'] = 0;
+    }
+    delete params['runtime_training_tradeoff_enabled'];
+
     document.body.classList.add('running');
     cancelBackgroundProcesses();
     dispatchBackgroundProcess(() => {
@@ -225,9 +230,7 @@ function get_parameters() {
 
   let runtime_training_tradeoff_enabled = document.querySelector('.runtime_training_tradeoff_enabled').checked;
 
-  if (!runtime_training_tradeoff_enabled) {
-    params['runtime_training_tradeoff'] = 0;
-  }
+  params['runtime_training_tradeoff_enabled'] = runtime_training_tradeoff_enabled;
 
   return params;
 }
@@ -254,7 +257,11 @@ function export_scenario() {
 function import_scenario(params) {
   for (let param in params) {
     let input = document.getElementById(param);
-    input.value = standard_format(parseFloat(params[param]));
+    if (param == 'runtime_training_tradeoff_enabled') {
+      update_tradeoff_disabled(params[param]);
+    } else {
+      input.value = standard_format(parseFloat(params[param]));
+    }
   }
 
   run_simulation(false);
