@@ -143,9 +143,9 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
       # Humanize periods
       human_period = {
         'prerampup' : 'Pre wake-up',
-        'rampup_start': 'Wake-up',
+        'rampup start': 'Wake-up',
         'mid rampup': 'Mid rampup',
-        'agi': 'AGI',
+        'full economic automation': 'Full economic automation',
       }
       summary_dict['period'] = {k: human_period[v] for k, v in summary_dict['period'].items()}
       summary_dict['year'] = {k: f'> {scenario.model.t_end}' if (v == '-') else v for k, v in summary_dict['year'].items()}
