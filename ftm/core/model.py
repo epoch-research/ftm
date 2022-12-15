@@ -166,8 +166,8 @@ class SimulateTakeOff():
     self.create_simulation_state()
 
   def check_input_validity(self):
-    assert self.flop_gap_training > 1
-    assert self.flop_gap_runtime > 1
+    assert self.flop_gap_training >= 1
+    assert self.flop_gap_runtime >= 1
 
     assert self.hardware_delay >= 0
 
