@@ -165,9 +165,6 @@ def mc_analysis(n_trials = 100, max_retries = 100):
 
         model = SimulateTakeOff(**mc_params, t_start = t_start, t_end_min = t_end, compute_shares = False)
 
-        # Check that no goods task is automatable from the beginning (except for the first one)
-        runtime_training_max_tradeoff = model.runtime_training_max_tradeoff if model.runtime_training_tradeoff is not None else 1.
-
         model.run_simulation()
       except Exception as e:
         # This was a bad sample. We'll just discard it and try again.
