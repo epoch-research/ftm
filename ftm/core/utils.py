@@ -472,6 +472,13 @@ def init_cli_arguments():
     help="Show human names for the parameters and metrics",
   )
 
+  parser.add_argument(
+    "--disable-automation",
+    action='store_true',
+    default=None,
+    help="Disable automation",
+  )
+
   return parser
 
 def handle_cli_arguments(parser):
@@ -498,6 +505,9 @@ def handle_cli_arguments(parser):
 
   if args.ajeya_dist_url is not None:
     set_ajeya_dist_url(args.ajeya_dist_url)
+
+  if args.disable_automation:
+    set_option('disable_automation', True)
 
   if args.human_names is not None: set_option('human_names', args.human_names)
 

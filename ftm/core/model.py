@@ -135,12 +135,16 @@ class SimulateTakeOff():
 
       compute_shares = True,
 
+      disable_automation = None,
+
       n_labour_tasks = 100,
       ):
 
     if t_start is None: t_start = get_option('t_start', 2022)
     if t_end   is None: t_end   = get_option('t_end',   2100)
     if t_step  is None: t_step  = get_option('t_step',  0.1)
+
+    if disable_automation is None: disable_automation = get_option('disable_automation', False)
 
     if dynamic_t_end is None: dynamic_t_end = get_option('dynamic_t_end', False)
 
@@ -597,10 +601,11 @@ class SimulateTakeOff():
         return True
 
       # Can't we compute the gwp_growth metric?
-      delta = int(1 / self.t_step)
-      gwp_growth = np.log(np.divide(self.gwp[delta:self.t_idx], self.gwp[:self.t_idx-delta]))
-      if np.all(gwp_growth <= 0.05) or np.all(gwp_growth <= 0.20):
-        return True
+      if not self.disable_automation:
+        delta = int(1 / self.t_step)
+        gwp_growth = np.log(np.divide(self.gwp[delta:self.t_idx], self.gwp[:self.t_idx-delta]))
+        if np.all(gwp_growth <= 0.05) or np.all(gwp_growth <= 0.20):
+          return True
 
       return False
 
@@ -881,12 +886,6 @@ class SimulateTakeOff():
           self.tfp_goods[t_idx],
           )
 
-    ## Compute the ratio of output to gwp
-    if t_idx == 0:
-      self.output_to_gwp_factor = self.initial_gwp / output
-
-    self.gwp[t_idx] = output * self.output_to_gwp_factor
-
     ## Compute how much worse is the output without automation
     # Compute optimal task allocation
     no_automation_labour_task_input_goods, \
@@ -916,6 +915,16 @@ class SimulateTakeOff():
           )
 
     self.automation_multiplier_goods[t_idx] = output / no_automation_output
+
+    if self.disable_automation:
+      output = no_automation_output
+
+    ## Compute the ratio of output to gwp
+    if t_idx == 0:
+      self.output_to_gwp_factor = self.initial_gwp / output
+
+    self.gwp[t_idx] = output * self.output_to_gwp_factor
+
 
   def hardware_rnd_production(self, t_idx):
     # Compute hardware rnd production budgets
@@ -1001,13 +1010,6 @@ class SimulateTakeOff():
           self.tfp_rnd[t_idx],
           )
 
-    if t_idx == 0:
-      self.rnd_input_to_hardware_investment_factor = \
-        self.initial_rnd_input_hardware / output_hardware
-
-    self.rnd_input_hardware[t_idx] = \
-      output_hardware * self.rnd_input_to_hardware_investment_factor
-
     ## Compute how much worse is the hardware output without automation
     # Compute optimal task allocation
     no_automation_labour_task_input_rnd, \
@@ -1037,6 +1039,16 @@ class SimulateTakeOff():
           )
 
     self.automation_multiplier_rnd[t_idx] = output_hardware / no_automation_output
+
+    if self.disable_automation:
+      output_hardware = no_automation_output
+
+    if t_idx == 0:
+      self.rnd_input_to_hardware_investment_factor = \
+        self.initial_rnd_input_hardware / output_hardware
+
+    self.rnd_input_hardware[t_idx] = \
+      output_hardware * self.rnd_input_to_hardware_investment_factor
 
   def software_rnd_production(self, t_idx):
   
@@ -1123,6 +1135,43 @@ class SimulateTakeOff():
           self.research_experiments_task_weights_software,
           self.research_experiments_substitution_software,
           )
+
+    ## Compute how much worse is the software output without automation
+    # Compute optimal task allocation
+    no_automation_labour_task_input_software_rnd, \
+    no_automation_compute_task_input_software_rnd = \
+      SimulateTakeOff.solve_allocation(
+          self.labour_software_rnd[t_idx],
+          self.compute_software_rnd[t_idx],
+          self.labour_task_weights_software_rnd,
+          self.labour_substitution_rnd,
+          self.task_compute_to_labour_ratio_rnd[t_idx],
+          AT=1
+          )
+
+    no_automation_task_input_software_rnd = \
+      no_automation_labour_task_input_software_rnd[:]  \
+      + self.task_compute_to_labour_ratio_rnd[t_idx] \
+      * no_automation_compute_task_input_software_rnd[:]
+
+    no_automation_research_output = \
+      SimulateTakeOff.ces_production_function(
+          no_automation_task_input_software_rnd[:],
+          self.labour_task_weights_software_rnd,
+          self.labour_substitution_rnd,
+          self.tfp_rnd[t_idx]
+          )
+
+    # Combine with experiments
+    no_automation_output = \
+      SimulateTakeOff.ces_production_function(
+          np.array([self.compute_software_rnd_experiments[t_idx], no_automation_research_output]),
+          self.research_experiments_task_weights_software,
+          self.research_experiments_substitution_software,
+          )
+
+    if self.disable_automation:
+      output_software = no_automation_output
 
     if t_idx == 0:
       self.rnd_input_to_software_investment_factor = \
@@ -1775,16 +1824,18 @@ class SimulateTakeOff():
 
   ## VISUALIZATION ##
 
-  def plot(self, metric, plot_growth = False, new_figure=True, line_color='black', crop_after_agi = True):
+  def plot(self, metric, plot_growth = False, new_figure=True, line_color='black', crop_after_full_automation = True):
     """ Plot a metric over time.
         Eg gwp, compute, capital, labour, hardware_efficiency, software, hardware
     """
     x = self.timesteps
     y = getattr(self, metric)
 
-    if crop_after_agi:
-      idx_end = min(self.time_to_index(self.agi_year+5), self.t_idx) \
-                if self.agi_year is not None and crop_after_agi else self.t_idx
+    if crop_after_full_automation:
+      full_automation_year = self.timeline_metrics['automation_gns_100%']
+
+      idx_end = min(self.time_to_index(full_automation_year+5), self.t_idx) \
+                if not np.isnan(full_automation_year) and crop_after_full_automation else self.t_idx
       x = x[:idx_end]
       y = y[:idx_end]
 
@@ -1820,24 +1871,26 @@ class SimulateTakeOff():
                 color=line_color,
                 label='20% automation')
 
-    if self.agi_year:
-      plt.axvline(self.agi_year,
+    if not np.isnan(self.timeline_metrics['automation_gns_100%']):
+      plt.axvline(self.timeline_metrics['automation_gns_100%'],
                 linestyle='dashed',
                 color=line_color,
-                label='Full automation')
+                label='100% automation')
 
 
 
-  def plot_compute_decomposition(self, new_figure=True, crop_after_agi = True):
+  def plot_compute_decomposition(self, new_figure=True, crop_after_full_automation = True):
     """ Show the growth of the factors that drive compute
     """
 
     if new_figure:
       plt.figure(figsize=(14, 8), dpi=80)
 
+    full_automation_year = self.timeline_metrics['automation_gns_100%']
+
     start_idx = 0
     reference_idx = self.time_to_index(self.rampup_start) if self.rampup_start is not None else 0
-    end_idx = min(self.time_to_index(self.agi_year+5), self.t_idx) if self.agi_year is not None and crop_after_agi else self.t_idx
+    end_idx = min(self.time_to_index(full_automation_year+5), self.t_idx) if not np.isnan(full_automation_year) and crop_after_full_automation else self.t_idx
 
     plt.plot(self.timesteps[start_idx:end_idx], self.compute_investment[start_idx:end_idx]/self.compute_investment[reference_idx], label='$ on FLOP globally', color = 'blue')
     plt.plot(self.timesteps[start_idx:end_idx], self.hardware_performance[start_idx:end_idx]/self.hardware_performance[reference_idx], label='Hardware (FLOP/$)', color = 'orange')
@@ -1999,7 +2052,7 @@ class SimulateTakeOff():
       },
     }
 
-    agi_idx = self.time_to_index(self.agi_year + 5)
+    agi_idx = self.time_to_index(self.timeline_metrics['automation_gns_100%'] + 5)
 
     colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
     color_index = 0
