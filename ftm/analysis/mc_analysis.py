@@ -31,7 +31,7 @@ class TooManyRetries(Exception):
   pass
 
 class YearsBeforeAgiMetric:
-  """ Metrics for the "years before AGI" quantiles table """
+  """ Metrics for the "years before full automation" quantiles table """
 
   # This is hacky
   def __init__(self, name, get_values, interpolation = 'log', format_quantile = lambda x: str(x), remarks = None):
@@ -67,7 +67,7 @@ class YearsBeforeAgiMetric:
 
     return value
 
-class DoublingYearsBeforeAgiMetric(YearsBeforeAgiMetric):
+class DoublingYearsBeforeFullAutomationMetric(YearsBeforeAgiMetric):
   def __init__(self, attr, remarks = None):
     self.name = f'{attr} doubling time (years)'
     self.format_quantile = lambda x: f'{x:.1f}' if x <= 100 else 'N/A'
@@ -99,22 +99,22 @@ def mc_analysis(n_trials = 100, max_retries = 100):
       metric : [] for metric in ['biggest_training_run', 'gwp']
   }
 
-  # Metrics for the "years before AGI" tables
+  # Metrics for the "years before full economic automation" tables
 
-  years_before_agi = [0, 1, 2, 5, 10]
-  metrics_before_agi = []
+  years_before_full_automation = [0, 1, 2, 5, 10]
+  metrics_before_full_automation = []
 
   # Doubling times metrics
   def add_doubling_time_metric(metric, remarks = None):
-    metrics_before_agi.append(DoublingYearsBeforeAgiMetric(metric, remarks))
+    metrics_before_full_automation.append(DoublingYearsBeforeFullAutomationMetric(metric, remarks))
 
   add_doubling_time_metric('gwp')
   add_doubling_time_metric('hardware_performance')
   add_doubling_time_metric('software', 'N/A: at physical limit')
 
-  # Rest of the metric
+  # Rest of the metrics
   def add_model_var_metric(var, format_quantile):
-    metrics_before_agi.append(
+    metrics_before_full_automation.append(
       YearsBeforeAgiMetric(
         f'{var}',
         lambda model, _var=var: (model.timesteps, getattr(model, _var)),
@@ -126,8 +126,8 @@ def mc_analysis(n_trials = 100, max_retries = 100):
   add_model_var_metric('frac_compute_training', format_quantile = lambda x: f'{x:.2%}')
   add_model_var_metric('frac_gwp_compute', format_quantile = lambda x: f'{x:.2%}')
 
-  metrics_before_agi_values = {
-      metric: {year: [] for year in years_before_agi} for metric in metrics_before_agi
+  metrics_before_full_automation_values = {
+      metric: {year: [] for year in years_before_full_automation} for metric in metrics_before_full_automation
   }
 
   slow_takeoff_count = 0
@@ -207,7 +207,7 @@ def mc_analysis(n_trials = 100, max_retries = 100):
       assert metric_value.shape == (model.n_timesteps,)
       state_metrics[state_metric].append(metric_value)
 
-    if model.agi_year is not None:
+    if not np.isnan(model.timeline_metrics['automation_gns_100%']):
       no_automation_mc_params = mc_params.copy()
       no_automation_mc_params['full_automation_requirements_training'] = 1e100
       no_automation_mc_params['flop_gap_training'] = 2
@@ -216,9 +216,9 @@ def mc_analysis(n_trials = 100, max_retries = 100):
 
       assert(np.all(no_automation_model.frac_tasks_automated_goods < 1) and np.all(no_automation_model.frac_tasks_automated_rnd < 1))
 
-      for metric in metrics_before_agi:
-        for year, year_values in metrics_before_agi_values[metric].items():
-          value = metric.get_value_at_year(model.agi_year - year, model, no_automation_model)
+      for metric in metrics_before_full_automation:
+        for year, year_values in metrics_before_full_automation_values[metric].items():
+          value = metric.get_value_at_year(model.timeline_metrics['automation_gns_100%'] - year, model, no_automation_model)
           year_values.append(value)
 
     last_valid_indices.append(model.t_idx)
@@ -243,20 +243,20 @@ def mc_analysis(n_trials = 100, max_retries = 100):
       row[scalar_metric] = value if (value < t_end) else f'≥ {t_end}'
     metrics_quantiles.append(row)
 
-  # Summary of the "years before AGI" quantiles
-  metrics_before_agi_quantiles = {}
+  # Summary of the "years before full automation" quantiles
+  metrics_before_full_automation_quantiles = {}
   import dill as pickle
   with open('/home/edu/.tmp/trash/metrics.pickle', 'wb') as f:
-    pickle.dump(metrics_before_agi_values, f)
-  for metric, metric_samples in metrics_before_agi_values.items():
+    pickle.dump(metrics_before_full_automation_values, f)
+  for metric, metric_samples in metrics_before_full_automation_values.items():
     table = []
     for q in quantiles:
       row = {"Percentile" : f'{q:.0%}'}
       for year, values in metric_samples.items():
-        column_name = 'At time of AGI' if (year == 0) else f'{year} {pluralize("year", year)} before AGI'
+        column_name = 'At time of full economic automation' if (year == 0) else f'{year} {pluralize("year", year)} before'
         row[column_name] = np.quantile(values, q)
       table.append(row)
-    metrics_before_agi_quantiles[metric] = table
+    metrics_before_full_automation_quantiles[metric] = table
 
   ## Add mean
   row = {"Quantile" : "mean"}
@@ -282,7 +282,7 @@ def mc_analysis(n_trials = 100, max_retries = 100):
   results.rank_correlations            = params_dist.rank_correlations
   results.slow_takeoff_count           = slow_takeoff_count
   results.last_valid_indices           = last_valid_indices
-  results.metrics_before_agi_quantiles = metrics_before_agi_quantiles
+  results.metrics_before_full_automation_quantiles = metrics_before_full_automation_quantiles
 
   reqs_marginal = params_dist.marginals['full_automation_requirements_training']
   results.ajeya_cdf = reqs_marginal.cdf_pd if isinstance(reqs_marginal, AjeyaDistribution) else None
@@ -558,7 +558,7 @@ def write_mc_analysis_report(
   pdf_cdf_sub_container = add_pdf_cdf_sub_container('cdf')
   for method in ['cdf', 'pdf']:
     plt.figure(figsize=(10,6))
-    for i, metric in enumerate(['rampup_start', 'agi_year']):
+    for i, metric in enumerate(['rampup_start', 'automation_gns_100%']):
       plot = plot_ecdf if method == 'cdf' else plot_epdf
       plot(results.scalar_metrics[metric], limits = [results.t_start, results.t_end], label = metric_id_to_human[metric], color = colors[color_index + i])
     if method == 'cdf':
@@ -566,7 +566,7 @@ def write_mc_analysis_report(
     plt.ylabel(method.upper())
     plt.xlabel('Year')
     plt.title('AI Timelines Metrics')
-    plt.gca().legend(loc = (0.75, 0.15))
+    plt.gca().legend(loc = (0.7, 0.15))
 
     container = report.add_figure(parent = pdf_cdf_sub_container)
     report.add_class(container, method)
@@ -629,9 +629,9 @@ def write_mc_analysis_report(
 
   graph_container = report.add_html('<div style="margin-left: 17px"></div>')
   conditional_dist_graph(
-    results.scalar_metrics['agi_year'],
+    results.scalar_metrics['automation_gns_100%'],
     results.scalar_metrics['full_automation_gns'],
-    metric_id_to_human['agi_year'],
+    metric_id_to_human['automation_gns_100%'],
     metric_id_to_human['full_automation_gns'],
   )
   report.add_figure(parent = graph_container)
@@ -639,9 +639,9 @@ def write_mc_analysis_report(
   graph_container = report.add_html('<div style="margin-left: 0em"></div>')
   conditional_dist_graph(
     results.param_samples['full_automation_requirements_training'].to_numpy(),
-    np.where(results.scalar_metrics['agi_year'] < results.t_end, results.scalar_metrics['agi_year'], np.nan),
+    np.where(results.scalar_metrics['automation_gns_100%'] < results.t_end, results.scalar_metrics['automation_gns_100%'], np.nan),
     param_id_to_human['full_automation_requirements_training'],
-    metric_id_to_human['agi_year'],
+    metric_id_to_human['automation_gns_100%'],
   )
   plt.xscale('log')
   report.add_figure(parent = graph_container)
@@ -656,53 +656,53 @@ def write_mc_analysis_report(
   plt.xscale('log')
   report.add_figure(parent = graph_container)
 
-  # "Years before AGI" tables
+  # "Years before full automation" tables
 
-  header = report.add_header('"Years before AGI" tables', level = 3)
+  header = report.add_header('"Years before full economic automation" tables', level = 3)
   header.append(report.generate_tooltip(f"""
-    The distributions below are conditional on AGI actually happening before the end of the simulations ({results.t_end}).
+    The distributions below are conditional on full automation actually happening before the end of the simulations ({results.t_end}).
     <br><br>
-    When AGI happens early, we need to compute the value of the metrics before the start of the simulation
-    (e.g., if AGI happens in {results.t_start + 5} years, we need their values for the year {results.t_start - 5} to generate the last column).
+    When full automation happens early, we need to compute the value of the metrics before the start of the simulation
+    (e.g., if full automation happens in {results.t_start + 5} years, we need their values for the year {results.t_start - 5} to generate the last column).
     We do so using a geometric extrapolation (except for the doubling time metrics, where we use a linear interpolation).
   """))
 
-  metrics_before_agi_names = []
+  metrics_before_full_automation_names = []
 
   id_to_name = get_variable_names()
   id_to_name['biggest_training_run'] = 'Biggest training run (measured in 2022-FLOP)'
-  for i, (metric, table) in enumerate(results.metrics_before_agi_quantiles.items()):
+  for i, (metric, table) in enumerate(results.metrics_before_full_automation_quantiles.items()):
     metric_name = metric.name
     if get_option('human_names'):
       metric_id = metric.name.split()[0]
       metric_name = f'{id_to_name[metric_id]} {metric.name[len(metric_id):].strip()}'
-    metrics_before_agi_names.append(metric_name)
+    metrics_before_full_automation_names.append(metric_name)
 
-  metric_options = '\n'.join([f'<option value="{name}">{name}</option>' for name in metrics_before_agi_names])
+  metric_options = '\n'.join([f'<option value="{name}">{name}</option>' for name in metrics_before_full_automation_names])
   report.add_html(f'''
     <p>
-      <select id="years-before-agi-selector">
+      <select id="years-before-full-automation-selector">
         {metric_options}
       </select>
     </p>
   ''')
 
-  years_before_agi_container = report.add_html('<div id="years-before-agi-container"></div>')
+  years_before_full_automation_container = report.add_html('<div id="years-before-full-automation-container"></div>')
 
-  for i, (metric, table) in enumerate(results.metrics_before_agi_quantiles.items()):
+  for i, (metric, table) in enumerate(results.metrics_before_full_automation_quantiles.items()):
     dataframe = pd.DataFrame(table)
-    table_container = report.add_data_frame(dataframe, show_index = False, float_format = metric.format_quantile, parent = years_before_agi_container)
-    table_container.attrib['id'] = metrics_before_agi_names[i]
+    table_container = report.add_data_frame(dataframe, show_index = False, float_format = metric.format_quantile, parent = years_before_full_automation_container)
+    table_container.attrib['id'] = metrics_before_full_automation_names[i]
     if i == 0:
       report.add_class(table_container, 'selected')
     if metric.remarks:
-      report.add_html(f'<p class="years-before-agi-remarks">{metric.remarks}</p>', parent = table_container)
+      report.add_html(f'<p class="years-before-full-automation-remarks">{metric.remarks}</p>', parent = table_container)
 
   report.head.append(report.from_html('''
     <script>
       window.addEventListener('load', () => {
-        let selector = document.getElementById('years-before-agi-selector');
-        let container = document.getElementById('years-before-agi-container');
+        let selector = document.getElementById('years-before-full-automation-selector');
+        let container = document.getElementById('years-before-full-automation-container');
         selector.addEventListener('input', () => {
           let selected = container.querySelector('.selected');
           if (selected) {
@@ -716,15 +716,15 @@ def write_mc_analysis_report(
 
   report.head.append(report.from_html('''
     <style>
-      #years-before-agi-container > * {
+      #years-before-full-automation-container > * {
         display: none;
       }
 
-      #years-before-agi-container > .selected {
+      #years-before-full-automation-container > .selected {
         display: unset;
       }
 
-      .years-before-agi-remarks {
+      .years-before-full-automation-remarks {
         font-style: italic;
       }
     </style>
