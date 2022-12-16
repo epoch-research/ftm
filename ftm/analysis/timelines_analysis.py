@@ -31,7 +31,10 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
   for group in results.scenario_groups:
     for scenario in group:
       row = {
-        **{f'FLOP to train AGI using {scenario.model.t_start} algorithms': f'{group.full_automation_reqs:.0e}'.replace('+', ''), 'Scenario' : scenario.name},
+        **{f'FLOP to train AGI using {scenario.model.t_start} algorithms': f'{group.full_automation_reqs:.0e}'.replace('+', ''),
+           'Scenario' : scenario.name,
+           'Training FLOP gap': f"{scenario.params['flop_gap_training']:.1e}"
+        },
         **scenario.model.timeline_metrics,
         **scenario.model.takeoff_metrics,
       }
@@ -46,7 +49,7 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
     return '-'
 
   table_container = report.add_data_frame(table, show_index = False, nan_format = nan_format)
-  report.add_importance_selector(table_container, label = 'metrics', important_columns_to_keep = [0, 1])
+  report.add_importance_selector(table_container, label = 'metrics', important_columns_to_keep = [0, 1, 2])
 
 
   #
@@ -114,6 +117,7 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
   scenario = results.scenario_groups[0][0]
   tr.append(et.fromstring(f'<th>FLOP to train AGI using {scenario.model.t_start} algorithms</th>'))
   tr.append(et.fromstring(f'<th>Scenario</th>'))
+  tr.append(et.fromstring(f'<th>Training FLOP gap</th>'))
   for metric in scenario.model.get_summary_table().columns:
     possible_suffixes = [' growth rate', ' doubling time', '']
     for suffix in possible_suffixes:
@@ -134,6 +138,7 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
 
   summaries = {}
   requirements = {}
+  gaps = {}
   for group in results.scenario_groups:
     summaries_group = {}
     for scenario in group:
@@ -147,6 +152,7 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
         'mid rampup': 'Mid rampup',
         'full economic automation': 'Full economic automation',
       }
+      summary_dict['flop_gap_training'] = scenario.params['flop_gap_training']
       summary_dict['period'] = {k: human_period[v] for k, v in summary_dict['period'].items()}
       summary_dict['year'] = {k: f'> {scenario.model.t_end}' if (v == '-') else v for k, v in summary_dict['year'].items()}
 
@@ -349,7 +355,9 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
           html += '<tr>';
           html += `<td>${reqs}</td>`;
           html += `<td>${name}</td>`;
+          html += `<td>${summary['flop_gap_training'].toExponential(1)}</td>`;
           for (let col in summary) {
+            if (col == 'flop_gap_training') continue;
             let important = (col in most_important_metrics);
             html += `<td${important ? ' class="important"' : '' }>${formattedCols[col][rowIndex]}</td>`;
           }
