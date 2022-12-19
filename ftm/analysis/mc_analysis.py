@@ -301,7 +301,7 @@ def conditional_dist_graph(x, y, x_label=None, y_label=None):
   if y_label: plt.ylabel(y_label)
 
 def is_slow_takeoff(model):
-  return model.agi_year is not None and n_year_doubling_before_m_year_doubling(model.gwp[:model.t_idx], model.t_step, 4, 1)
+  return model.timeline_metrics['automation_gns_100%'] is not None and n_year_doubling_before_m_year_doubling(model.gwp[:model.t_idx], model.t_step, 4, 1)
 
 def n_year_doubling_before_m_year_doubling(array, t_step, n, m):
   delta_n = round(n/t_step)
@@ -383,9 +383,10 @@ def write_mc_analysis_report(
   for n in range(1, 20):
     row = []
     for m in range(1, 20):
-      # Only consider runs in which we have AGI before 2100
+      # Only consider runs in which we have full automation before 2100
       p = np.sum([
-        (n_year_doubling_before_m_year_doubling(gwps[i], results.t_step, n, m) and results.scalar_metrics['agi_year'][i] < results.t_end) for i in range(len(gwps))
+        (n_year_doubling_before_m_year_doubling(gwps[i], results.t_step, n, m) and results.scalar_metrics['automation_gns_100%'][i] < results.t_end) \
+          for i in range(len(gwps))
       ])/results.n_finished_trials if (n > m) else np.nan
       row.append(p)
     takeoff_probability_table.append(row)
@@ -394,7 +395,7 @@ def write_mc_analysis_report(
   report.add_paragraph(f"<span style='font-weight:bold'>Probability of full economic automation before {results.t_end}</span><span style='font-weight:bold'>:</span> {results.n_finished_trials/results.n_trials:.0%}")
 
   # Add the tooltip
-  description = '''Probability of a full <input class='doubling-years-inputs' id='doubling-years-input-m' value='4' style='display:inline-block'> year doubling of GWP before a <input class='doubling-years-inputs' id='doubling-years-input-n' value='1'> year doubling of GWP starts'''
+  description = f'''Probability of a full <input class='doubling-years-inputs' id='doubling-years-input-m' value='4' style='display:inline-block'> year doubling of GWP before a <input class='doubling-years-inputs' id='doubling-years-input-n' value='1'> year doubling of GWP starts, conditional on full economic automation before {results.t_end}'''
   report.add_paragraph(f"<span style='font-weight:bold'>Probability of slow takeoff</span>{report.generate_tooltip_html(description, on_mount = 'initialize_takeoff_probability_mini_widget()', triggers = 'mouseenter click', classes = 'slow-takeoff-probability-tooltip-info')}<span style='font-weight:bold'>:</span> <span id='slow-takeoff-probability'>{results.slow_takeoff_count/results.n_finished_trials:.0%}</span>")
 
   # Style
