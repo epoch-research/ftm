@@ -34,12 +34,12 @@ class YearsBeforeAgiMetric:
   """ Metrics for the "years before full automation" quantiles table """
 
   # This is hacky
-  def __init__(self, name, get_values, interpolation = 'log', format_quantile = lambda x: str(x), remarks = None):
+  def __init__(self, name, get_values, interpolation = 'log', format_quantile = lambda x: str(x), nan_remarks = None):
     self.name = name
     self.get_values = get_values
     self.interpolation = interpolation
     self.format_quantile = format_quantile
-    self.remarks = remarks
+    self.nan_remarks = nan_remarks
 
   def get_value_at_year(self, year, model, no_automation_model):
     ts, values = self.get_values(model)
@@ -68,11 +68,11 @@ class YearsBeforeAgiMetric:
     return value
 
 class DoublingYearsBeforeFullAutomationMetric(YearsBeforeAgiMetric):
-  def __init__(self, attr, remarks = None):
+  def __init__(self, attr, nan_remarks = None):
     self.name = f'{attr} doubling time (years)'
     self.format_quantile = lambda x: f'{x:.1f}' if x <= 100 else 'N/A'
     self.attr = attr
-    self.remarks = remarks
+    self.nan_remarks = nan_remarks
 
   def get_value_at_year(self, year, normal_model, no_automation_model):
     model = no_automation_model if (year < normal_model.t_start) else normal_model
@@ -105,8 +105,8 @@ def mc_analysis(n_trials = 100, max_retries = 100):
   metrics_before_full_automation = []
 
   # Doubling times metrics
-  def add_doubling_time_metric(metric, remarks = None):
-    metrics_before_full_automation.append(DoublingYearsBeforeFullAutomationMetric(metric, remarks))
+  def add_doubling_time_metric(metric, nan_remarks = None):
+    metrics_before_full_automation.append(DoublingYearsBeforeFullAutomationMetric(metric, nan_remarks))
 
   add_doubling_time_metric('gwp')
   add_doubling_time_metric('hardware_performance')
@@ -264,7 +264,7 @@ def mc_analysis(n_trials = 100, max_retries = 100):
     row[scalar_metric] = np.mean(filter_nans(scalar_metrics[scalar_metric]))
   metrics_quantiles.append(row)
 
-  n_finished_trials = np.sum(scalar_metrics['agi_year'] < t_end)
+  n_finished_trials = np.sum(scalar_metrics['automation_gns_100%'] < t_end)
 
   results = McAnalysisResults()
   results.quantiles                    = quantiles
@@ -391,7 +391,7 @@ def write_mc_analysis_report(
     takeoff_probability_table.append(row)
 
   # Probability of 
-  report.add_paragraph(f"<span style='font-weight:bold'>Probability of AGI before {results.t_end}</span><span style='font-weight:bold'>:</span> {results.n_finished_trials/results.n_trials:.0%}")
+  report.add_paragraph(f"<span style='font-weight:bold'>Probability of full economic automation before {results.t_end}</span><span style='font-weight:bold'>:</span> {results.n_finished_trials/results.n_trials:.0%}")
 
   # Add the tooltip
   description = '''Probability of a full <input class='doubling-years-inputs' id='doubling-years-input-m' value='4' style='display:inline-block'> year doubling of GWP before a <input class='doubling-years-inputs' id='doubling-years-input-n' value='1'> year doubling of GWP starts'''
@@ -695,8 +695,8 @@ def write_mc_analysis_report(
     table_container.attrib['id'] = metrics_before_full_automation_names[i]
     if i == 0:
       report.add_class(table_container, 'selected')
-    if metric.remarks:
-      report.add_html(f'<p class="years-before-full-automation-remarks">{metric.remarks}</p>', parent = table_container)
+    if metric.nan_remarks and dataframe.isna().values.any():
+      report.add_html(f'<p class="years-before-full-automation-remarks">{metric.nan_remarks}</p>', parent = table_container)
 
   report.head.append(report.from_html('''
     <script>
