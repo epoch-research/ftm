@@ -596,8 +596,9 @@ class SimulateTakeOff():
       if self.automation_multiplier_rnd[t_idx-1] <= 10:
         return True
 
-      # Haven't we automated every task yet?
-      if self.frac_tasks_automated_goods[t_idx-1] < 1 or self.frac_tasks_automated_rnd[t_idx-1] < 1:
+      # Haven't we automated every task yet? (We'll extend the simulation for a year, in order to be able to compute growth rates)
+      one_year_ago_idx = int(math.floor(t_idx - 1/self.t_step))
+      if self.frac_tasks_automated_goods[one_year_ago_idx-1] < 1 or self.frac_tasks_automated_rnd[one_year_ago_idx-1] < 1:
         return True
 
       # Can't we compute the gwp_growth metric?
@@ -1996,9 +1997,6 @@ class SimulateTakeOff():
         diff = idx_end - (len(self.timesteps) - 1)
         idx -= diff
         idx_end -= diff
-
-        t = self.index_to_time(idx)
-        t_end = self.index_to_time(idx_end)
 
       summary_row = {
         'period' : period,
