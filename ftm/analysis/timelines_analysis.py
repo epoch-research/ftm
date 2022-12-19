@@ -81,11 +81,14 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
 
   report.add_header("Model summary", level = 3)
 
-  scenario_options = "\n".join([
-    f'''<option value="{group.name} - {scenario.name}">{format(group.full_automation_reqs).replace('+', '')} FLOP - {scenario.name}</option>'''
-    for group in results.scenario_groups
-    for scenario in group
-  ])
+  scenario_options = []
+  for group in results.scenario_groups:
+    for scenario in group:
+      id = f'{group.name} - {scenario.name}'
+      scenario_options.append(
+          f'''<option {'selected="true"' if id == 'Med timelines - Best guess' else ''} value="{id}">{format(group.full_automation_reqs).replace('+', '')} FLOP - {scenario.name}</option>'''
+      )
+  scenario_options = "\n".join(scenario_options)
 
   report.add_html(f'''
     <p>
@@ -101,7 +104,7 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
       Compare to <br></br>
       <select id="scenario-2-selector">
         <option value="null">(none)</option>
-        {scenario_options}
+        {scenario_options.replace('selected="true"', '')}
       </select>
     </p>
   ''')
@@ -181,7 +184,7 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
       Compare to <br></br>
       <select id="scenario-2-selector-inputs">
         <option value="null">(none)</option>
-        {scenario_options}
+        {scenario_options.replace('selected="true"', '')}
       </select>
     </p>
   ''')
