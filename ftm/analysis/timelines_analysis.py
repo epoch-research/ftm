@@ -218,6 +218,7 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
       if params['runtime_training_tradeoff'] <= 0:
         params['runtime_training_tradeoff'] = '(disabled)'
         params['runtime_training_max_tradeoff'] = '(disabled)'
+      del params['dynamic_t_end']
       group_inputs[scenario.name] = params
     inputs[group.name] = group_inputs
   inputs_json = json.dumps(inputs)
