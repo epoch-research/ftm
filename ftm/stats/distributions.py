@@ -16,11 +16,11 @@ class TakeoffParamsDist():
   """ Joint parameter distribution. """
 
   def __init__(self, max_frac_automatable_tasks_goods = 0, max_frac_automatable_tasks_rnd = 0,
-      ignore_rank_correlations = False, use_ajeya_dist = True, resampling_method = 'gap_and_correlations_only',
+      ignore_rank_correlations = False, use_ajeya_dist = True, resampling_method = 'all_but_training_requirements',
       tradeoff_enabled = True, parameter_table = None):
 
-    if resampling_method not in ('gap_and_correlations_only', 'resample_all'):
-      raise ValueError("`resampling_method` must be one of 'gap_and_correlations_only' or 'resample_all'")
+    if resampling_method not in ('all_but_training_requirements', 'resample_all'):
+      raise ValueError("`resampling_method` must be one of 'all_but_training_requirements' or 'resample_all'")
 
     self.resampling_method = resampling_method
 
@@ -128,24 +128,14 @@ class TakeoffParamsDist():
 
     # TODO Simplify
 
-    if resampling_method == 'gap_and_correlations_only':
+    if resampling_method == 'all_but_training_requirements':
       # statsmodels.distributions.copula.copulas throws an exception when we ask less than 2 samples from it
       actual_count = max(count, 2)
       samples = self.joint_dist.rvs(actual_count, random_state = random_state, conditions = conditions)[:count]
 
-      # We are gonna resample only the training gap and associated parameters
-      training_gap_parameters = [
-        'flop_gap_training',
-        'goods_vs_rnd_requirements_training',
-        'flop_gap_runtime',
-        'goods_vs_rnd_requirements_runtime',
-        'runtime_training_tradeoff',
-        'runtime_training_max_tradeoff',
-      ]
-
       for sample_index, sample in samples.iterrows():
         while not self.sample_is_admissible(sample):
-          # Can we use this sample?
+          # We can't use this sample at all. Let's try again.
           log.trace('Inadmissible sample. Resampling all parameters.')
 
           new_sample = self.joint_dist.rvs(2, random_state = random_state, conditions = conditions).iloc[0].to_dict()
@@ -158,14 +148,11 @@ class TakeoffParamsDist():
           log.trace('Resampling')
 
           sub_conditions = conditions.copy()
-          for param in sample.index:
-            if param not in training_gap_parameters:
-              sub_conditions[param] = sample[param]
+          sub_conditions['full_automation_requirements_training'] = sample['full_automation_requirements_training']
 
-          new_sample = self.joint_dist.rvs(2, random_state = random_state, conditions = sub_conditions).iloc[0].to_dict()
+          new_sample = self.joint_dist.rvs(2, random_state = random_state, conditions = sub_conditions).iloc[0]
 
-          for param in training_gap_parameters:
-            samples.loc[sample_index, param] = new_sample[param]
+          samples.loc[sample_index] = new_sample
 
       return samples
     else:

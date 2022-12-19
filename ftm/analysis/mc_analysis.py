@@ -139,7 +139,7 @@ def mc_analysis(n_trials = 100, max_retries = 100):
       parameter_table=parameter_table,
       max_frac_automatable_tasks_goods=0,
       max_frac_automatable_tasks_rnd=0.05,
-      resampling_method='resample_all',
+      resampling_method='all_but_training_requirements',
   )
   samples = []
 
