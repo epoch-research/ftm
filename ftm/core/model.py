@@ -1885,7 +1885,7 @@ class SimulateTakeOff():
 
 
 
-  def plot_compute_decomposition(self, new_figure=True, crop_after_full_automation = True):
+  def plot_compute_decomposition(self, new_figure = True, crop_after_full_automation = True, crop_at_year = None):
     """ Show the growth of the factors that drive compute
     """
 
@@ -1896,7 +1896,10 @@ class SimulateTakeOff():
 
     start_idx = 0
     reference_idx = self.time_to_index(self.rampup_start) if self.rampup_start is not None else 0
-    end_idx = min(self.time_to_index(full_automation_year+5), self.t_idx) if not np.isnan(full_automation_year) and crop_after_full_automation else self.t_idx
+    if crop_at_year is not None:
+      end_idx = self.time_to_index(crop_at_year)
+    else:
+      end_idx = min(self.time_to_index(full_automation_year+5), self.t_idx) if not np.isnan(full_automation_year) and crop_after_full_automation else self.t_idx
 
     plt.plot(self.timesteps[start_idx:end_idx], self.compute_investment[start_idx:end_idx]/self.compute_investment[reference_idx], label='$ on FLOP globally', color = 'blue')
     plt.plot(self.timesteps[start_idx:end_idx], self.hardware_performance[start_idx:end_idx]/self.hardware_performance[reference_idx], label='Hardware (FLOP/$)', color = 'orange')
