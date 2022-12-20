@@ -93,27 +93,24 @@ class TakeoffParamsDist():
           correlations[(left, right)] = r * directions[left]*directions[right]
     return correlations
 
-  def sample_is_admissible(self, pd_sample):
-    # Will we be able to draw a good sample from this one?
-    most_favorable_params = pd_sample.to_dict()
-    params_to_set = [
-        'flop_gap_training',
-        'goods_vs_rnd_requirements_training',
-        'runtime_training_tradeoff',
-        'runtime_training_max_tradeoff',
-    ]
-    for param in params_to_set:
-      most_favorable_params[param] = self.marginals[param].a
+  def sample_is_admissible(self, training_reqs):
+    # Will we be able to draw a good sample with these training reqs?
 
-    model = SimulateTakeOff(**most_favorable_params, t_start = 2022, t_end = 2023)
-    model.initialize_inputs()
-    model.automate_tasks(0)
+    # Set all parameters on which the fraction of automatable task depends
+    # to their lowest values (except for the training requirements).
+    # And we might as well set _all_ parameters.
+    most_favorable_params = {}
+    for name, marginal in self.marginals.items():
+      most_favorable_params[name] = marginal.a
+    most_favorable_params['full_automation_requirements_training'] = training_reqs
 
-    return model.frac_automatable_tasks_goods[0] <= self.max_frac_automatable_tasks_goods \
-        and model.frac_automatable_tasks_rnd[0] <= self.max_frac_automatable_tasks_rnd
+    return self.params_are_good(most_favorable_params)
 
   def sample_is_good(self, pd_sample):
-    model = SimulateTakeOff(**pd_sample.to_dict(), t_start = 2022, t_end = 2023)
+    return self.params_are_good(pd_sample.to_dict())
+
+  def params_are_good(self, params):
+    model = SimulateTakeOff(**params, t_start = 2022, t_end = 2023)
     model.initialize_inputs()
     model.automate_tasks(0)
 
@@ -129,32 +126,30 @@ class TakeoffParamsDist():
     # TODO Simplify
 
     if resampling_method == 'all_but_training_requirements':
-      # statsmodels.distributions.copula.copulas throws an exception when we ask less than 2 samples from it
-      actual_count = max(count, 2)
-      samples = self.joint_dist.rvs(actual_count, random_state = random_state, conditions = conditions)[:count]
+      samples = []
+      for sample_index in range(count):
+        while True:
+          training_reqs_sample = self.marginals['full_automation_requirements_training'].rvs(count)
+          if self.sample_is_admissible(training_reqs_sample):
+            break
 
-      for sample_index, sample in samples.iterrows():
-        while not self.sample_is_admissible(sample):
-          # We can't use this sample at all. Let's try again.
-          log.trace('Inadmissible sample. Resampling all parameters.')
+          log.trace('Inadmissible sample. Resampling.')
 
-          new_sample = self.joint_dist.rvs(2, random_state = random_state, conditions = conditions).iloc[0].to_dict()
+        sub_conditions = conditions.copy()
+        sub_conditions['full_automation_requirements_training'] = training_reqs_sample
 
-          for param in new_sample:
-            samples.loc[sample_index, param] = new_sample[param]
+        # Resample until we get a good sample
+        while True:
+        # statsmodels.distributions.copula.copulas throws an exception when we ask less than 2 samples from it
+          sample = self.joint_dist.rvs(2, random_state = random_state, conditions = sub_conditions).iloc[0]
+          if self.sample_is_good(sample):
+            break
 
-        while not self.sample_is_good(sample):
-          # Modify the sample until it makes sense
           log.trace('Resampling')
 
-          sub_conditions = conditions.copy()
-          sub_conditions['full_automation_requirements_training'] = sample['full_automation_requirements_training']
+        samples.append(sample)
 
-          new_sample = self.joint_dist.rvs(2, random_state = random_state, conditions = sub_conditions).iloc[0]
-
-          samples.loc[sample_index] = new_sample
-
-      return samples
+      return pd.DataFrame(samples)
     else:
       output_samples = pd.DataFrame(columns = [name for name in self.marginals], index = range(count), dtype = np.float64)
       output_samples_count = 0
