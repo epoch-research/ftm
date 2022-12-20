@@ -257,6 +257,10 @@ function export_scenario() {
 function import_scenario(params) {
   for (let param in params) {
     let input = document.getElementById(param);
+    if (!input) {
+      continue;
+    }
+
     if (param == 'runtime_training_tradeoff_enabled') {
       update_tradeoff_disabled(params[param]);
     } else {
