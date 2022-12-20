@@ -69,7 +69,7 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
   graph_container = report.add_html('<div style="display: flex; overflow-x: auto;"></div>')
 
   for i, group in enumerate(results.scenario_groups):
-    plot_compute_increase(group, title = f'Training requirements: {group.reqs_label} FLOP', show_legend = False)
+    plot_compute_increase(group, title = f'{group.name}\nTraining requirements: {group.reqs_label} FLOP', show_legend = False)
     figure = report.add_figure(parent = graph_container)
     figure.set('style', 'min-width: 900px')
 
