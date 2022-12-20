@@ -22,19 +22,32 @@ class ScenarioRunner:
     for timeline in timelines_parameters:
       parameters = timelines_parameters[timeline]
 
-      parameter_table = parameter_table.copy()
+      timeline_table = parameter_table.copy()
 
-      parameter_table.loc['full_automation_requirements_training', 'Conservative'] = parameters['Full automation requirements']
-      parameter_table.loc['full_automation_requirements_training', 'Best guess']   = parameters['Full automation requirements']
-      parameter_table.loc['full_automation_requirements_training', 'Aggressive']   = parameters['Full automation requirements']
+      timeline_table.loc['full_automation_requirements_training', 'Conservative'] = parameters['Full automation requirements']
+      timeline_table.loc['full_automation_requirements_training', 'Best guess']   = parameters['Full automation requirements']
+      timeline_table.loc['full_automation_requirements_training', 'Aggressive']   = parameters['Full automation requirements']
 
-      parameter_table.loc['flop_gap_training', 'Conservative'] = parameters['Long FLOP gap']
-      parameter_table.loc['flop_gap_training', 'Best guess']   = parameters['Med FLOP gap']
-      parameter_table.loc['flop_gap_training', 'Aggressive']   = parameters['Short FLOP gap']
+      if timeline == 'Very short timelines':
+        runtime_requirements = parameter_table.loc['full_automation_requirements_runtime', 'Aggressive']
+      elif timeline == 'Med timelines':
+        runtime_requirements = parameter_table.loc['full_automation_requirements_runtime', 'Best guess']
+      elif timeline == 'Very long timelines':
+        runtime_requirements = parameter_table.loc['full_automation_requirements_runtime', 'Conservative']
+      else:
+        raise Exception(f'Unknown timeline: "{timeline}"')
+
+      timeline_table.loc['full_automation_requirements_runtime', 'Conservative'] = runtime_requirements
+      timeline_table.loc['full_automation_requirements_runtime', 'Best guess']   = runtime_requirements
+      timeline_table.loc['full_automation_requirements_runtime', 'Aggressive']   = runtime_requirements
+
+      timeline_table.loc['flop_gap_training', 'Conservative'] = parameters['Long FLOP gap']
+      timeline_table.loc['flop_gap_training', 'Best guess']   = parameters['Med FLOP gap']
+      timeline_table.loc['flop_gap_training', 'Aggressive']   = parameters['Short FLOP gap']
 
       log.indent()
-      scenarios = self.simulate_scenario_group(parameter_table)
-      groups.append(ScenarioGroup(timeline, scenarios, parameter_table, parameters['Full automation requirements']))
+      scenarios = self.simulate_scenario_group(timeline_table)
+      groups.append(ScenarioGroup(timeline, scenarios, timeline_table, parameters['Full automation requirements']))
       log.deindent()
 
       log.info('')
