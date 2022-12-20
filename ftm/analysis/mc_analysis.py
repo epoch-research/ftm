@@ -289,16 +289,72 @@ def mc_analysis(n_trials = 100, max_retries = 100):
 
   return results
 
-def conditional_dist_graph(x, y, x_label=None, y_label=None):
+def conditional_dist_graph(x, y, x_label=None, y_label=None, xscale="linear"):
   indices_to_keep = np.where(np.logical_not(np.isnan(x) | np.isnan(y)))
   x = x[indices_to_keep]
   y = y[indices_to_keep]
 
+  # Calculate the parameters for the graphs by naively interpolating
+  # their optimal values for a finite set of point counts
+
+  params = {
+    # Parameters when the point count is 1000
+    1000: {
+      'point_alpha': 0.5,
+      'point_size': 16,
+      'bin_count': 20
+    },
+
+    # Parameters when the point count is 10000
+    10000: {
+      'point_alpha': 0.1,
+      'point_size': 1,
+      'bin_count': 30
+    }
+  }
+
+  param_arrays = {}
+  counts = sorted(params.keys())
+  for count in counts:
+    for var, value in params[count].items():
+      if var not in param_arrays:
+        param_arrays[var] = []
+      param_arrays[var].append(value)
+
+  param_values = {
+    param: float(interp1d(counts, array, fill_value = 'extrapolate')(len(x)))
+    for param, array in param_arrays.items()
+  }
+
+  point_size = param_values['point_size']
+  point_alpha = param_values['point_alpha']
+  bin_count = int(param_values['bin_count'])
+
   plt.figure(figsize=(10,6))
-  plt.scatter(x, y, s = 16, alpha = 0.5)
+  plt.scatter(x, y, s = point_size, alpha = point_alpha)
+
+  # Draw the median for each x
+  if xscale == 'log':
+    bins = np.logspace(np.log10(np.min(x)), np.log10(np.max(x)), bin_count)
+  else:
+    bins = np.linspace(np.min(x), np.max(x), bin_count)
+  bin_indices = np.digitize(x, bins)
+
+  medians_x = []
+  medians_y = []
+
+  for bin_index in range(bin_count):
+      ys = y[bin_indices == bin_index]
+      if len(ys) > 10:
+          medians_x.append(bins[bin_index])
+          medians_y.append(np.median(ys))
+
+  plt.plot(medians_x, medians_y, color = 'red')
 
   if x_label: plt.xlabel(x_label)
   if y_label: plt.ylabel(y_label)
+
+  plt.xscale(xscale)
 
 def is_slow_takeoff(model):
   return model.timeline_metrics['automation_gns_100%'] is not None and n_year_doubling_before_m_year_doubling(model.gwp[:model.t_idx], model.t_step, 4, 1)
@@ -643,8 +699,8 @@ def write_mc_analysis_report(
     np.where(results.scalar_metrics['automation_gns_100%'] < results.t_end, results.scalar_metrics['automation_gns_100%'], np.nan),
     param_id_to_human['full_automation_requirements_training'],
     metric_id_to_human['automation_gns_100%'],
+    xscale = 'log'
   )
-  plt.xscale('log')
   report.add_figure(parent = graph_container)
 
   graph_container = report.add_html('<div style="margin-left: 17px"></div>')
@@ -653,8 +709,8 @@ def write_mc_analysis_report(
     np.where(results.scalar_metrics['full_automation_gns'] < results.t_end, results.scalar_metrics['full_automation_gns'], np.nan),
     param_id_to_human['full_automation_requirements_training'],
     metric_id_to_human['full_automation_gns'],
+    xscale = 'log'
   )
-  plt.xscale('log')
   report.add_figure(parent = graph_container)
 
   # "Years before full automation" tables
