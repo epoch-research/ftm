@@ -1039,14 +1039,14 @@ class Report:
     element.set('class', 'banner ' + ' '.join(classes))
     self.body.insert(0, element)
 
-  def generate_tooltip_html(self, content, on_mount = None, triggers = None, classes = ''):
+  def generate_tooltip_html(self, content, on_mount = None, triggers = None, classes = '', superscript = True):
     if classes: classes = ' ' + classes
     data_triggers = '' if triggers is None else f'data-tooltip-triggers="{triggers}"'
     data_on_mount = '' if on_mount is None else f'data-tooltip-on-mount="{on_mount}"'
-    return f'''<i class="bi-info-circle super-info-icon{classes}" {data_triggers} {data_on_mount} data-tooltip-content="{Report.escape(content)}"></i>'''
+    return f'''<i class="bi-info-circle {"super" if superscript else ""}-info-icon{classes}" {data_triggers} {data_on_mount} data-tooltip-content="{Report.escape(content)}"></i>'''
 
-  def generate_tooltip(self, content, on_mount = None, triggers = None, classes = ''):
-    return et.fromstring(self.generate_tooltip_html(content, on_mount, triggers, classes))
+  def generate_tooltip(self, content, on_mount = None, triggers = None, classes = '', superscript = True):
+    return et.fromstring(self.generate_tooltip_html(content, on_mount, triggers, classes, superscript))
 
   # ---------------------------------------------------------------------------
   # Tabs

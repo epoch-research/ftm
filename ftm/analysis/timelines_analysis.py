@@ -6,6 +6,8 @@ from . import *
 from .exploration_analysis import plot_compute_increase
 from ..core.scenarios import ScenarioRunner
 
+scenario_tooltip_content = 'Aggressive values make takeoff shorter, while conservative values make takeoff longer. Note that some values that make takeoff shorter make timelines longer (eg the aggressive value for the Growth rate fraction GWP compute).'
+
 class TimelinesAnalysisResults:
   pass
 
@@ -51,6 +53,10 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
   table_container = report.add_data_frame(table, show_index = False, nan_format = nan_format)
   report.add_importance_selector(table_container, label = 'metrics', important_columns_to_keep = [0, 1, 2])
 
+  for th in table_container.findall('.//th'):
+    if th.text == 'Scenario':
+      th.text = th.text + ' '
+      th.append(report.generate_tooltip(scenario_tooltip_content, superscript = False))
 
   #
   # Graphs
@@ -119,7 +125,7 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
 
   scenario = results.scenario_groups[0][0]
   tr.append(et.fromstring(f'<th>FLOP to train AGI using {scenario.model.t_start} algorithms</th>'))
-  tr.append(et.fromstring(f'<th>Scenario</th>'))
+  tr.append(et.fromstring(f'<th>Scenario {report.generate_tooltip_html(scenario_tooltip_content, superscript = False)}</th>'))
   tr.append(et.fromstring(f'<th>Training FLOP gap</th>'))
   for metric in scenario.model.get_summary_table().columns:
     possible_suffixes = [' growth rate', ' doubling time', '']
