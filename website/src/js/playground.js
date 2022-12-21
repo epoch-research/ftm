@@ -206,8 +206,6 @@ for (let checkbox of tradeoff_enabled) {
   });
 }
 
-update_tradeoff_disabled();
-
 document.getElementById('simulate-button').addEventListener('click', () => run_simulation(true));
 for (let input of document.querySelectorAll('.input-parameter input')) {
   input.addEventListener("keydown", (e) => {
