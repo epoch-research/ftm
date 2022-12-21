@@ -15,7 +15,7 @@ important_params_and_metrics = pd.read_excel(
 important_params = important_params_and_metrics['Parameter id'].tolist()
 
 def generate_sidebar_content():
-  parameter_table = get_parameter_table()
+  parameter_table = get_parameter_table(tradeoff_enabled=True)
   best_guess_parameters = {parameter : row['Best guess'] for parameter, row in parameter_table.iterrows()}
   param_names = get_param_names()
 
@@ -31,9 +31,11 @@ def generate_sidebar_content():
     label_target = param
 
     if param in ['runtime_training_tradeoff', 'runtime_training_max_tradeoff']:
-      classes += ' disabled'
+      enabled = best_guess_parameters['runtime_training_tradeoff'] > 0
+      if not enabled:
+        classes += ' disabled'
       id = "runtime_training_tradeoff_enabled_1" if param == 'runtime_training_tradeoff' else "runtime_training_tradeoff_enabled_2"
-      additional_inputs += f' <input id="{id}" class="runtime_training_tradeoff_enabled" type="checkbox">'
+      additional_inputs += f' <input id="{id}" class="runtime_training_tradeoff_enabled" {"checked" if enabled else ""} type="checkbox">'
       label_target = id
 
     if param == 'runtime_training_tradeoff' and value < 0:
@@ -69,6 +71,13 @@ def generate_dictionaries():
   print(f'let metric_meanings = {json.dumps(get_metrics_meanings())};')
 
   print(f'let variable_names = {json.dumps(get_variable_names())};')
+
+  print()
+
+  parameter_table = get_parameter_table()
+  best_guess_parameters = {parameter : row['Best guess'] for parameter, row in parameter_table.iterrows()}
+
+  print(f'let best_guess_parameters = {json.dumps(best_guess_parameters)};')
 
 def generate_arrays():
   print(f'let important_metrics = {json.dumps([x for x in important_params_and_metrics["Metric id"] if not pd.isnull(x)])};')
