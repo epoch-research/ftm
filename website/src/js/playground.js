@@ -1566,8 +1566,9 @@ for (let input of document.querySelectorAll('.input-parameter')) {
 
   let initialized = false;
   tippy_instances.push(
-    tippy(input, {
+    tippy(input.querySelector('input'), {
       content: tooltip,
+      triggerTarget: input,
       allowHTML: true,
       interactive: true,
       placement: 'right',
