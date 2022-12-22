@@ -428,6 +428,7 @@ class SkewedLogUniform(rv_continuous):
       high = -high
 
     elif kind == "inv_frac":
+      # Ensure we don't divide by 0 below
       if low == 1: low += 1e-8
       if med == 1: med += 1e-8
       if high == 1: high += 1e-8
