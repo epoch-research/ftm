@@ -1677,6 +1677,64 @@ document.querySelector('#parameter-tabs .tab-content').addEventListener('scroll'
   }
 });
 
+// ------------------------------------------------------------------------
+// Presets
+// ------------------------------------------------------------------------
+let presetModal = document.querySelector('#preset-selector-modal');
+let presetModalButton = document.querySelector('#preset-modal-button');
+let presetContainer = document.querySelector('#preset-container');
+
+let presets = {
+  "Aggressive": aggressive_parameters,
+  "Best guess": best_guess_parameters,
+  "Conservative": conservative_parameters,
+};
+
+for (let presetName in presets) {
+  let button = html(`<div><button class="preset-load-button">${presetName}</button></div>`);
+  presetContainer.appendChild(button);
+  button.addEventListener('click', () => {
+
+    let params = get_parameters();
+    params = {
+      ...params,
+      ...presets[presetName],
+    };
+
+    import_scenario(params);
+
+    presetModal.classList.add('hidden');
+  });
+}
+
+presetModalButton.addEventListener('click', () => {
+  if (presetModal.classList.contains('hidden')) {
+    presetModal.classList.remove('hidden');
+  } else {
+    presetModal.classList.add('hidden');
+  }
+});
+
+// Hide modal if the user clicks outside
+document.body.addEventListener('mousedown', (e) => {
+  function isInsideModalOrButton(node) {
+    if (node == null) return false;
+    if (node == presetModal) return true;
+    if (node == presetModalButton) return true;
+    return isInsideModalOrButton(node.parentElement);
+  }
+
+  if (!isInsideModalOrButton(e.target)) {
+    presetModal.classList.add('hidden');
+  }
+});
+
+// Hide modal if the user presses Esc
+document.addEventListener('keyup', (e) => {
+  if(e.key === "Escape") {
+    presetModal.classList.add('hidden');
+  }
+});
 
 // ------------------------------------------------------------------------
 // Misc

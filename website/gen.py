@@ -74,10 +74,30 @@ def generate_dictionaries():
 
   print()
 
-  parameter_table = get_parameter_table()
+  parameter_table = get_parameter_table(tradeoff_enabled=True)
+
   best_guess_parameters = {parameter : row['Best guess'] for parameter, row in parameter_table.iterrows()}
 
+  conservative_parameters = {
+    parameter: row['Conservative'] if not np.isnan(row['Aggressive']) else row['Best guess'] for parameter, row in parameter_table.iterrows()
+  }
+
+  aggressive_parameters = {
+    parameter: row['Aggressive'] if not np.isnan(row['Aggressive']) else row['Best guess'] for parameter, row in parameter_table.iterrows()
+  }
+
+  if best_guess_parameters['runtime_training_tradeoff'] > 0:
+    best_guess_parameters['runtime_training_tradeoff_enabled'] = True
+
+  if conservative_parameters['runtime_training_tradeoff'] > 0:
+    conservative_parameters['runtime_training_tradeoff_enabled'] = True
+
+  if aggressive_parameters['runtime_training_tradeoff'] > 0:
+    aggressive_parameters['runtime_training_tradeoff_enabled'] = True
+
+  print(f'let conservative_parameters = {json.dumps(conservative_parameters)};')
   print(f'let best_guess_parameters = {json.dumps(best_guess_parameters)};')
+  print(f'let aggressive_parameters = {json.dumps(aggressive_parameters)};')
 
 def generate_arrays():
   print(f'let important_metrics = {json.dumps([x for x in important_params_and_metrics["Metric id"] if not pd.isnull(x)])};')

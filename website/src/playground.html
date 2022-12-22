@@ -12,6 +12,10 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
     min-width: 1333px; /* I hope you understand */
   }
 
+  .hidden {
+    display: none;
+  }
+
   #spinner {
     display: none;
     position: absolute;
@@ -201,9 +205,10 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
   #import-export-container .button {
     display: flex;
     align-items: center;
+    text-align: center;
     justify-content: center;
 
-    width: calc(50% - 10px);
+    width: calc(33% - 10px);
     border-radius: 5px;
     border: 2px solid #333;
     background-color: white;
@@ -218,6 +223,38 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
 
   #import-export-container .button:active {
     background-color: #e7e5e5;
+  }
+
+  #preset-selector-modal {
+    position: absolute;
+    left: 16px;
+    top: 102px;
+    z-index: 999;
+    background-color: white;
+    padding: 1em;
+    border-radius: var(--border-radius);
+    border: 2px solid #333;
+    box-shadow: 0px 0px 3px 3px rgb(0 0 0 / 20%);
+  }
+
+  .preset-container {
+    width: 200px;
+  }
+
+  .preset-load-button {
+    background-color: #f9f9f9;
+    color: black;
+    width: 100%;
+    font-size: 1em;
+    padding: 7px;
+    margin-top: 1em;
+    cursor: pointer;
+    border: 1px solid #333;
+    border-radius: 3px;
+  }
+
+  .preset-load-button:hover {
+    box-shadow: 0px 0px 2px 2px rgb(0 0 0 / 20%);
   }
 
   /* Hide scrollbars */
@@ -433,6 +470,12 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
 <div class="playground">
   <div class="sidebar-wrapper">
     <div class="sidebar">
+
+    <div id="preset-selector-modal" class="hidden">
+      <div style="font-weight: bold">Load preset scenario</div>
+      <div id="preset-container"></div>
+    </div>
+
       <div class="sidebar-header">
         <div id="simulate-button-container">
           <!-- <button id="simulate-button">Simulate</button> -->
@@ -440,10 +483,12 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
         </div>
 
         <div id="import-export-container">
-            <label class="button" id="export-button">Export scenario</label>
+            <label class="button" id="preset-modal-button">Presets</label>
 
             <input type="file" id="import-button" multiple hidden />
             <label class="button" for="import-button">Import scenario</label>
+
+            <label class="button" id="export-button">Export scenario</label>
         </div>
       </div>
 
@@ -466,7 +511,7 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
 <div class="input-parameter"><label for="flop_gap_training">Effective FLOP gap (training)</label> <input class="input" id="flop_gap_training" value="1e04"></div>
 <div class="input-parameter"><label for="goods_vs_rnd_requirements_training">Training goods vs R&D</label> <input class="input" id="goods_vs_rnd_requirements_training" value="3.0"></div>
 <div class="input-parameter"><label for="full_automation_requirements_runtime">AGI runtime requirements</label> <input class="input" id="full_automation_requirements_runtime" value="5.256e23"></div>
-<div class="input-parameter"><label for="runtime_training_tradeoff_enabled_2">Maximum trade-off</label> <input id="runtime_training_tradeoff_enabled_2" class="runtime_training_tradeoff_enabled" checked type="checkbox"> <input class="input" id="runtime_training_max_tradeoff" value="30.0"></div>
+<div class="input-parameter"><label for="runtime_training_tradeoff_enabled_2">Maximum trade-off</label> <input id="runtime_training_tradeoff_enabled_2" class="runtime_training_tradeoff_enabled" checked type="checkbox"> <input class="input" id="runtime_training_max_tradeoff" value="30"></div>
 <div class="input-parameter"><label for="labour_substitution_rnd">Labour substitution R&D</label> <input class="input" id="labour_substitution_rnd" value="-0.5"></div>
 <div class="input-parameter"><label for="hardware_returns">Returns to hardware</label> <input class="input" id="hardware_returns" value="5.2"></div>
 <div class="input-parameter"><label for="software_returns">Returns to software</label> <input class="input" id="software_returns" value="1.25"></div>
@@ -571,6 +616,8 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
   </div>
 </div> <!-- Playground -->
 
+<script src="js/utils.js"></script>
+
 <script src="js/tabs.js"></script>
 <script>
   init_tabs(false);
@@ -582,4 +629,5 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
 <script src="js/ftm/ftm.js"></script>
 <script src="js/ftm/bridge.js"></script>
 
+<script src="js/presets.js"></script>
 <script src="js/playground.js"></script>
