@@ -281,6 +281,7 @@ function download(content, filename, type) {
 document.getElementById('export-button').addEventListener('click', () => export_scenario());
 
 document.getElementById('import-button').addEventListener('change', function() {
+  console.log(this.files);
   if (this.files.length == 0) {
     return;
   }
@@ -1694,15 +1695,7 @@ for (let presetName in presets) {
   let button = html(`<div><button class="preset-load-button">${presetName}</button></div>`);
   presetContainer.appendChild(button);
   button.addEventListener('click', () => {
-
-    let params = get_parameters();
-    params = {
-      ...params,
-      ...presets[presetName],
-    };
-
-    import_scenario(params);
-
+    import_scenario(presets[presetName]);
     presetModal.classList.add('hidden');
   });
 }
