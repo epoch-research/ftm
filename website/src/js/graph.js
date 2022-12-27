@@ -339,7 +339,6 @@ class Graph {
 
       legend.attr('data-rd-drag-enabled', true);
       legend.attr('data-rd-resize-enabled', false);
-      //resizedrag(legend.node(), legend.node()); # tmp-test TODO
 
       this.nodes.legend = legend;
 
