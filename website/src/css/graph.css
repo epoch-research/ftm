@@ -1,0 +1,44 @@
+.graph-plot {
+  position: relative;
+}
+
+.svg-container {
+  position: relative;
+  display: inline-block;
+}
+
+.legend {
+  background-color: white;
+  border: 2px solid #ddd;
+  border-radius: 3px;
+  padding: 3px;
+}
+
+.legend-section:not(:last-child) {
+  text-align: left;
+  margin-bottom: 10px;
+}
+
+.legend-section {
+  text-align: left;
+}
+
+.legend-section-header {
+  font-weight: bold;
+}
+
+.legend-item {
+  display: grid;
+  grid-template-columns: 30px 1fr;
+}
+
+.legend-item-line {
+  margin-right: 5px;
+  position: relative;
+  top: 7px;
+  justify-self: center;
+}
+
+.grid path, .grid line {
+  stroke: #888;
+}

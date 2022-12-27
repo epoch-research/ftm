@@ -1,0 +1,520 @@
+  <style>
+    .todo {
+      font-weight: bold;
+      color: white;
+      background-color: red;
+    }
+
+    :root {
+      --card-radius: 7px;
+    }
+
+    :root {
+        --border-radius: 7px !important;
+        --border-color: #333;
+        --border: 2px solid #333;
+    }
+
+    body {
+      padding: 0;
+      margin: 0;
+      background-color: #666;
+    }
+
+    .omni-wrapper {
+      padding: 1em;
+      margin: 1em;
+      background-color: white;
+      border-radius: var(--border-radius);
+      border: 2px solid #333;
+    }
+
+    /*
+    .header {
+      border-top-left-radius: var(--card-radius);
+      border-top-right-radius: var(--card-radius);
+    }
+
+    .header, .context, .overview, .appendices {
+      border: 1px solid black;
+      padding: 0.5em;
+    }
+    */
+
+    .appendices {
+      border-bottom-left-radius: var(--border-radius);
+      border-bottom-right-radius: var(--border-radius);
+    }
+
+    .section-header {
+      margin: 0;
+    }
+
+    :not(.header) .section-header {
+      margin-bottom: 0.5em;
+    }
+
+    .map {
+      max-width: 100%;
+    }
+
+    .tippy-box[data-theme~='variable'] {
+      background-color: #eee;
+      color: black;
+    }
+
+    .tippy-box[data-theme~='variable'][data-placement^='top'] > .tippy-arrow::before {
+      border-top-color: #eee;
+    }
+    .tippy-box[data-theme~='variable'][data-placement^='bottom'] > .tippy-arrow::before {
+      border-bottom-color: #eee;
+    }
+    .tippy-box[data-theme~='variable'][data-placement^='left'] > .tippy-arrow::before {
+      border-left-color: #eee;
+    }
+    .tippy-box[data-theme~='variable'][data-placement^='right'] > .tippy-arrow::before {
+      border-right-color: #eee;
+    }
+
+    .invisible {
+      display: none;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    table, th, td {
+      border: 1px solid black;
+      padding: 5px;
+    }
+
+    .view-column {
+      text-align: center;
+      padding-top: 0;
+      padding-bottom: 0;
+    }
+
+    .view-button {
+      width: 45px;
+      background-color: #5e5e5e;
+      padding: 4px;
+      border-radius: var(--card-radius);
+      color: white;
+      display: inline-block;
+    }
+
+    .view-button-hitbox {
+      cursor: pointer;
+      width: fit-content;
+      padding-top: 2.5px;
+      padding-bottom: 2.5px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .plot-title {
+      font-weight: bold;
+      text-align-last: center;
+      margin-top: 5px;
+    }
+
+    figure {
+      margin-left: auto;
+      margin-right: auto;
+      max-width: 700px;
+    }
+
+    figure img {
+      width: 100%;
+    }
+
+    figcaption {
+      color: #444;
+      text-align: center;
+    }
+  </style>
+
+  <style>
+    .box:hover {
+      cursor: pointer;
+    }
+
+    .box .bounds , .box .bounds * {
+      stroke: #2e598b !important;
+      transition: transform 0.1s ease-in-out, transform-origin 0.1s ease-in-out;
+    }
+
+    .box.selected .bounds, .box:hover .bounds,
+    .box.selected .bounds *, .box:hover .bounds * {
+      stroke: purple !important;
+      stroke-width: 2px !important;
+    }
+  </style>
+
+  <style>
+    .card {
+      display: flex;
+      margin-top: 1em;
+      max-width: calc(min(900px, 80%));
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .card .title {
+      margin-top: 0;
+    }
+
+    .section {
+      border: 1px solid black;
+    }
+
+    .section-label {
+      color: #ffffff;
+      background-color: #2b3d52;
+      font-weight: bold;
+      font-size: 15px;
+      padding-left: 1em;
+      padding-top: 10px;
+      padding-bottom: 10px;
+      text-align: center;
+      border-top: none;
+    }
+
+    .section-content {
+      padding: 1em;
+    }
+
+    .right .section-content {
+      overflow-y: auto;
+      max-height: 255px;
+    }
+
+    .card .left {
+      width: 30em;
+      overflow-y: auto;
+      border-top-left-radius: var(--border-radius);
+      border-bottom-left-radius: var(--border-radius);
+      border-right: none;
+      box-sizing: border-box;
+    }
+
+    .card .right {
+      height: fit-content;
+    }
+
+    .card .right {
+      //min-height: 600px;
+      //max-height: 90vh;
+    }
+
+    .card .right .equations-box {
+      border-top-right-radius: var(--border-radius);
+    }
+
+    .card .right .equations-box .section-content {
+      padding-top: 0;
+      padding-bottom: 0;
+    }
+
+    .card .right .parameters-box {
+      border-bottom-right-radius: var(--border-radius);
+    }
+
+    .output-figures {
+      display: flex;
+      flex-wrap: wrap;
+    }
+
+    .output-figures figure {
+      width: 600px;
+      /*
+      width: 50%;
+      */
+    }
+
+    .card .abstract {
+      padding: 4px;
+      border-radius: var(--border-radius);
+      border: 1px solid grey;
+    }
+
+    .card .abstract p {
+      margin: 0;
+    }
+  </style>
+
+  <style>
+      .learn-more {
+        padding-left: 9px;
+        padding-right: 9px;
+        padding-top: 7px;
+        padding-bottom: 7px;
+        border: 1px solid #ccc;
+        border-radius: 7px;
+        background-color: #f9f9f9;
+        margin-bottom: 1em;
+      }
+
+      .learn-more-header {
+        font-weight: bold;
+        font-size: 1em;
+      }
+
+      .learn-more >*:first-child {
+        margin-top: 0;
+        margin-bottom: 0;
+        cursor: pointer;
+      }
+
+      .learn-more >*:last-child {
+        margin-bottom: 0;
+      }
+
+      .learn-more-content {
+        overflow-y: hidden;
+        overflow-x: auto;
+        transition: max-height 0.2s ease-in-out;
+      }
+  </style>
+
+  <!-- Accordion library -->
+  <link rel="stylesheet" href="libs/handorgel.min.css">
+  <script src="libs/handorgel.min.js"></script>
+
+  <style>
+    .handorgel__content__inner {
+      opacity: 1;
+    }
+
+    .handorgel__header__button {
+      padding-left: 1em;
+    }
+
+    .learn-more > h3 {
+      border-top-left-radius: var(--border-radius);
+      border-top-right-radius: var(--border-radius);
+      border: 1px solid #333;
+      border-bottom: 0;
+    }
+
+    .learn-more > h3 button {
+      padding-left: 8px;
+      padding-top: 10px;
+      padding-bottom: 10px;
+      background-color: transparent;
+      font-size: 0.8em;
+    }
+
+    table th {
+      text-align: left;
+    }
+  </style>
+
+<body>
+  <div class="omni-wrapper">
+
+    <div class="main-card">
+      <div class="header">
+        <h2 class="section-header">Description of the Full Takeoff Model</h2>
+      </div>
+
+      <div class="context">
+        <h4 class="section-header">Context</h4>
+
+        <p>The Full Takeoff Model (FTM) is an endogenous economic growth model developed by Tom Davidson. It is meant to illustrate the future trajectory of Artificial Intelligence, the economy and associated factors. In particular, it helps us answer how long it will take to go from a partial automation of the economy to a total automation of the economy.</p>
+
+        <p>This model combines features from the <a href="https://www.cold-takes.com/forecasting-transformative-ai-the-biological-anchors-method-in-a-nutshell/">biological anchors' AI timelines framework by Ajeya Cotra</a>, and previous macroeconomic models of automation, e.g. <a href="https://web.stanford.edu/~chadj/AJJ-AIandGrowth.pdf">the one by Aghion, Jones and Jones</a>.</p>
+
+        <p>This section details a succinct mathematical description of the Full Takeoff Model (FTM). This will be helpful to mathematically oriented readers who want to see all the dynamics of the model written down in a single place.</p>
+
+        <p>Readers who want to understand the model's conclusions would be better served reading the <span class="todo">short summary of Tom's report</span>. Readers who want to understand why the model is built the way it is or how the different parameters are estimated will be better-served reading <span class="todo">[the report]</span>. If you want to play with the model, you can do so in the <a href="playground.html">playground</a>.</p>
+      </div>
+
+      <div class="overview">
+        <h4 class="section-header">Overview of the model</h4>
+
+        <p>The core of the FTM is three <a href="https://en.wikipedia.org/wiki/Constant_elasticity_of_substitution">CES production functions</a> that govern the production of goods and services (G&S), hardware research, and software research.</p>
+
+        <p>Each of these functions takes as input an amount of capital (K), labour (L), effective compute (C), a level of automation (A), and the total factor productivity (TFP). Their output is used to estimate the amount of capital, compute and automation available in the next timestep, while labour and the TFP vary exogenously.</p>
+
+        <p>The rest of the model determines how the output of the production functions translates to improvements to the efficiency of hardware and software, how the different input factors are split up across the production functions and what is the current level of automation.</p>
+
+        <!-- Start of the SVG -->
+        <svg xmlns="http://www.w3.org/2000/svg" id="svg386" width="100%" viewbox="0 0 1477.246 242.477" version="1.1"><defs id="defs4"><style id="style2">@font-face{font-family:&quot;Virgil&quot;;src:url(https://excalidraw.com/Virgil.woff2)}@font-face{font-family:&quot;Cascadia&quot;;src:url(https://excalidraw.com/Cascadia.woff2)}</style></defs><mask id="mask78"/><mask id="mask98"/><g id="g112" stroke-linecap="round" transform="translate(-6.779 -116.371)"><g id="g102" transform="translate(1085.171 313.829)"><path id="path100" fill="none" stroke="#000" stroke-width="1" d="M1.14.59C22.13.55 105.26-.13 126.17-.38M.28-.15C21.13 0 104.46.94 125.46.96"/></g><g id="g106" transform="translate(1085.171 313.829)"><path id="path104" fill="none" stroke="#000" stroke-width="1" d="M98.18 11.78c7.48-2.81 15.7-7.66 25.52-12.45M97.08 11.91c7.13-3.73 13.01-5.68 29.25-11.31"/></g><g id="g110" transform="translate(1085.171 313.829)"><path id="path108" fill="none" stroke="#000" stroke-width="1" d="M98.32-8.74c7.41 3.78 15.58 5.53 25.38 8.07M97.21-8.61c7.03.92 12.88 3.64 29.12 9.21"/></g></g><mask id="mask114"/><g id="g128" stroke-linecap="round" transform="translate(-6.779 -116.371)"><g id="g118" transform="translate(804 265.718)"><path id="path116" fill="none" stroke="#000" stroke-width="1" d="M.96.64C15.6.4 73.91-.31 88.23-.28M.01-.07c14.48.41 72.58 1.18 87.45.98"/></g><g id="g122" transform="translate(804 265.718)"><path id="path120" fill="none" stroke="#000" stroke-width="1" d="M60.31 11.67c7.04-5.86 18.23-7.63 28.52-8.86m-29.71 9.17C67.93 7.27 78.3 5.01 88.03 1.74"/></g><g id="g126" transform="translate(804 265.718)"><path id="path124" fill="none" stroke="#000" stroke-width="1" d="M60.35-8.85c7.23.93 18.41 5.93 28.48 11.66M59.16-8.55C68.11-6.4 78.47-1.81 88.03 1.74"/></g></g><mask id="mask130"/><g id="g144" stroke-linecap="round" transform="translate(-6.779 -116.371)"><g id="g134" transform="translate(799 312.004)"><path id="path132" fill="none" stroke="#000" stroke-width="1" d="M-1.07-.82C15.45-.7 83.24.68 99.92 1.03M.57 1.36c16.29-.24 81.6-1.7 98.42-2.01"/></g><g id="g138" transform="translate(799 312.004)"><path id="path136" fill="none" stroke="#000" stroke-width="1" d="M69.64 10.24c13-5.22 23.63-7.05 28.46-10.97M71.47 9.8c5.5-1.89 13.72-3.72 28.21-10.67"/></g><g id="g142" transform="translate(799 312.004)"><path id="path140" fill="none" stroke="#000" stroke-width="1" d="M69.22-10.28C82.43-7.99 93.21-2.31 98.1-.73m-27.05-9.98c5.74 3.05 14.06 6.16 28.63 9.84"/></g></g><mask id="mask146"/><mask id="mask162"/><mask id="mask178"/><g id="g184" transform="translate(1364.61 131.458)"><text id="text180" x="44.5" y="14" fill="#000" direction="ltr" font-family="Virgil, 'Segoe UI Emoji'" font-size="16" style="white-space:pre" text-anchor="middle">Population </text><text id="text182" x="44.5" y="34" fill="#000" direction="ltr" font-family="Virgil, 'Segoe UI Emoji'" font-size="16" style="white-space:pre" text-anchor="middle">growth</text></g><g id="g188" stroke-linecap="round" transform="translate(1344.11 122.458)"><path id="path186" fill="none" stroke="#000" stroke-width="1" d="M63.92-.19c10.52-.72 24.51.48 34.47 2.95 9.96 2.47 19.59 7.48 25.3 11.88 5.71 4.4 8.78 9.6 8.94 14.52.16 4.91-2.91 10.74-8.01 14.95-5.1 4.2-13.53 7.63-22.61 10.25-9.08 2.63-20.74 5.18-31.86 5.51-11.13.34-24.99-1.29-34.88-3.5-9.9-2.21-18.68-5.71-24.5-9.76S1.01 36.99.36 32.06C-.29 27.12 1.74 21.44 6.85 17c5.12-4.43 13.75-8.87 24.18-11.57C41.46 2.73 62.3 1.62 69.45.8c7.15-.81 4.6-.62 4.49-.27m-29.63.8c9.4-1.98 23.7-.6 34.66.29 10.96.89 22.87 1.85 31.1 5.04s14.9 9.03 18.28 14.1c3.37 5.08 3.94 11.71 1.97 16.35-1.97 4.64-6.58 8.12-13.79 11.5-7.21 3.38-18.76 7.09-29.47 8.76-10.72 1.67-24.15 2.04-34.82 1.26-10.68-.78-20.91-2.82-29.24-5.92-8.34-3.1-17.26-7.72-20.76-12.69-3.51-4.97-2.87-11.88-.28-17.11 2.6-5.23 8.64-10.72 15.85-14.25 7.21-3.53 22.63-5.84 27.41-6.92 4.78-1.07.68-.2 1.29.49"/></g><mask id="mask204"/><mask id="mask212"/><g id="g218" stroke-linecap="round" transform="translate(-6.779 -116.371)"><g id="g216" transform="translate(23.628 357.718)"><path id="path214" fill="none" stroke="#000" stroke-width="1" d="M.06.54C91.84.62 459.88-.48 551.57-.6M-1.37-.22C90.2.1 458.42.41 550.72.63"/></g></g><mask id="mask220"/><g id="g226" stroke-linecap="round" transform="translate(-6.779 -116.371)"><g id="g224" transform="translate(574 354.898)"><path id="path222" fill="none" stroke="#000" stroke-width="1" d="M.33 1.18C.36-22.78-.42-119.16-.3-143.04M-.95.75c-.12-23.8-.76-118.07-.45-142.17"/></g></g><mask id="mask228"/><g id="g242" stroke-linecap="round" transform="translate(-6.779 -116.371)"><g id="g232" transform="translate(572 217.718)"><path id="path230" fill="none" stroke="#000" stroke-width="1" d="M-.2-.11c5.29.05 27.46.22 33.03.17M-1.76-1.21c5.54-.24 30.44-.09 36.69-.3"/></g><g id="g236" transform="translate(572 217.718)"><path id="path234" fill="none" stroke="#000" stroke-width="1" d="M18.87 2.84C26.8 1.07 32.36-1.08 34.83-.74M18.59 4.37c4.56-1.68 7.14-1.56 16.19-6.56"/></g><g id="g240" transform="translate(572 217.718)"><path id="path238" fill="none" stroke="#000" stroke-width="1" d="M18.73-8.8c7.96 2.82 13.58 5.27 16.1 8.06M18.45-7.26c4.51.73 7.11 3.26 16.33 5.07"/></g></g><mask id="mask244"/><g id="g258" stroke-linecap="round" transform="translate(-6.779 -116.371)"><g id="g248" transform="translate(573 264.718)"><path id="path246" fill="none" stroke="#000" stroke-width="1" d="M-.66.54c5.97.1 29.87-.39 35.92-.56M1.2-.23c5.88-.16 27.58-1.01 33.24-1.4"/></g><g id="g252" transform="translate(573 264.718)"><path id="path250" fill="none" stroke="#000" stroke-width="1" d="M19.11 5.58c4.75-1.11 8.12-3.12 14.85-7.37M18.57 5.62c4.19-1.26 7.88-4.11 15.27-8.02"/></g><g id="g256" transform="translate(573 264.718)"><path id="path254" fill="none" stroke="#000" stroke-width="1" d="M18.49-6.38c4.84 1.91 8.37 2.92 15.47 4.59M17.95-6.34c4.27 1.64 8.11 1.67 15.89 3.94"/></g></g><mask id="mask260"/><g id="g274" stroke-linecap="round" transform="translate(-6.779 -116.371)"><g id="g264" transform="translate(573 312.718)"><path id="path262" fill="none" stroke="#000" stroke-width="1" d="M.63.52c5.97.15 28.63.34 34.48.4M-.5-.25C5.9-.43 31.47-.6 37.35-.73"/></g><g id="g268" transform="translate(573 312.718)"><path id="path266" fill="none" stroke="#000" stroke-width="1" d="M21.3 4.31c4.68-.76 8.72-1.85 15.38-5.37M21.07 5C26.38 2.63 33.18.44 37.25-.57"/></g><g id="g272" transform="translate(573 312.718)"><path id="path270" fill="none" stroke="#000" stroke-width="1" d="M21.14-8c4.72 2.23 8.8 4.14 15.54 6.94M20.91-7.32c5.33 2.4 12.19 4.96 16.34 6.75"/></g></g><mask id="mask276"/><mask id="mask284"/><mask id="mask292"/><mask id="mask300"/><g id="g314" stroke-linecap="round" transform="translate(-6.779 -116.371)"><g id="g304" transform="translate(148 318.718)"><path id="path302" fill="none" stroke="#000" stroke-width="1" d="M-.23.26c15.85-1.9 78.9 8.05 95.84-10.91 16.94-18.97-.11-85.5 5.82-102.87 5.93-17.37 24.92-1.15 29.75-1.37M-1.81-.65c15.7-1.81 79.67 9.83 96.79-8.81 17.12-18.64-.18-85.55 5.91-103.02 6.09-17.46 25.4-1.38 30.63-1.77"/></g><g id="g308" transform="translate(148 318.718)"><path id="path306" fill="none" stroke="#000" stroke-width="1" d="M116.84-113.35c4-.24 9.3-.6 13.57-1.63m-13.79 1.43c3.45-1.09 6.66-1.26 15.21-1.23"/></g><g id="g312" transform="translate(148 318.718)"><path id="path310" fill="none" stroke="#000" stroke-width="1" d="M120.26-123.03c2.89 3.07 7.02 6.03 10.15 8.05m-10.37-8.25c2.63 1.18 5.04 3.28 11.79 8.45"/></g></g><mask id="mask316"/><g id="g322" stroke-linecap="round" transform="translate(-6.779 -116.371)"><g id="g320" transform="translate(534 252.718)"><path id="path318" fill="none" stroke="#000" stroke-width="1" d="M-.16.49C6.85.25 34.76-.79 41.47-1.12M-1.7-.29c6.94-.08 35.09.66 42.47.65"/></g></g><mask id="mask324"/><g id="g330" stroke-linecap="round" transform="translate(-6.779 -116.371)"><g id="g328" transform="translate(535 293.718)"><path id="path326" fill="none" stroke="#000" stroke-width="1" d="M.78-.45C6.4-.74 28-.93 33.54-.81M-.27-1.73C5.75-1.97 30.25-.28 35.8.3"/></g></g><mask id="mask332"/><g id="investment-box" class="box" transform="translate(-6.779 -116.371)"><rect id="rect1146" width="211.45" height="209.97" x="9.1" y="126.128" ry="0" style="fill:#fff;fill-opacity:.00392157;stroke:none;stroke-width:1.131;stroke-dasharray:13.572,13.572;paint-order:stroke fill markers;stop-color:#000"/><g id="g26" transform="translate(33.6 138.418)"><text id="text24" x="0" y="25" fill="#000" direction="ltr" font-family="Virgil, 'Segoe UI Emoji'" font-size="28" style="white-space:pre" text-anchor="start">Investment</text></g><g id="g30" transform="translate(68.6 210.718)"><text id="text28" x="0" y="14" fill="#000" direction="ltr" font-family="Virgil, 'Segoe UI Emoji'" font-size="16" style="white-space:pre" text-anchor="start">Capital</text></g><g id="g34" transform="translate(69.4 256.718)"><text id="text32" x="0" y="14" fill="#000" direction="ltr" font-family="Virgil, 'Segoe UI Emoji'" font-size="16" style="white-space:pre" text-anchor="start">Labour</text></g><g id="g38" transform="translate(63.6 300.618)"><text id="text36" x="0" y="14" fill="#000" direction="ltr" font-family="Virgil, 'Segoe UI Emoji'" font-size="16" style="white-space:pre" text-anchor="start">Compute</text></g><g id="g210" stroke-linecap="round"><g id="g208" transform="translate(29.057 215.094)"><path id="path206" fill="none" stroke="#000" stroke-width="1" d="M.06-.38c-.07 23.62-.93 119.17-.79 143.01M-1.37-1.62C-1.02 21.54 1.26 117 1.6 140.69"/></g></g><g id="g282" stroke-linecap="round"><g id="g280" transform="translate(34 220.718)"><path id="path278" fill="none" stroke="#000" stroke-width="1" d="M.4.06C3.71 0 17.04.59 20.65.57M-.85-.95c3.05-.51 16.58-.67 20.37-.3"/></g></g><g id="g290" stroke-linecap="round"><g id="g288" transform="translate(33 265.718)"><path id="path286" fill="none" stroke="#000" stroke-width="1" d="M-.93-.04c4.11-.22 20.78-.91 24.95-.75M.79-1.11C4.89-1.24 19.75.3 23.61.33"/></g></g><g id="g298" stroke-linecap="round"><g id="g296" transform="translate(34.4 311.118)"><path id="path294" fill="none" stroke="#000" stroke-width="1" d="M-.68 1.15C2.08.83 13.73-.8 16.8-.98M1.16.71C4.25.5 16.26.97 18.89.57"/></g></g><g id="g340" stroke-linecap="round" class="bounds" transform="translate(10 125.718)"><path id="path338" fill="none" stroke="#000" stroke-width="1" d="M-1.15-.95c69.57.38 138.84-.47 212.56.42M-.9.41C71.91.96 144.59 1.68 207.44-.68m.58-.8c-2.05 46.13-4.76 85.17-1.96 212.68m.36-209.62c3.78 62.98 5.03 128.07-.14 205.9m4.27 2.9c-81.7-4.63-157.38-3.76-207.63 2.02m203.72-5.07c-72.65-1.19-142.44 1.77-206.7 1.03m2.21 1.14C-4.26 148.67-.51 89.57-1.32-1.3m1.15 208.55C-4.01 163.95-2.91 114.94-.81.18"/></g></g><g id="production-box" class="box"><path id="rect5352" d="M580.071 5.957h233.49v221.09h-233.49z" style="fill:#fff;fill-opacity:.00392157;stroke:none;stroke-width:1.131;stroke-dasharray:13.572,13.572;paint-order:stroke fill markers;stop-color:#000"/><g id="g14" transform="translate(620.221 23.447)"><text id="text12" x="0" y="25" fill="#000" direction="ltr" font-family="Virgil, 'Segoe UI Emoji'" font-size="28" style="white-space:pre" text-anchor="start">Production</text></g><g id="g42" transform="translate(614.021 89.147)"><text id="text40" x="0" y="14" fill="#000" direction="ltr" font-family="Virgil, 'Segoe UI Emoji'" font-size="16" style="white-space:pre" text-anchor="start">Gross World Product</text></g><g id="g46" transform="translate(613.621 137.147)"><text id="text44" x="0" y="14" fill="#000" direction="ltr" font-family="Virgil, 'Segoe UI Emoji'" font-size="16" style="white-space:pre" text-anchor="start">Hardware R&amp;D Input</text></g><g id="g50" transform="translate(615.021 184.247)"><text id="text48" x="0" y="14" fill="#000" direction="ltr" font-family="Virgil, 'Segoe UI Emoji'" font-size="16" style="white-space:pre" text-anchor="start">Software R&amp;D Input</text></g><g id="g348" stroke-linecap="round" transform="translate(581.221 5.347)"><path id="path346" fill="none" stroke="#000" stroke-width="1" d="M-3.33 2.04C51.72-.2 99.93 4.23 234.12-2.33M-1.15.61C68.09.6 139.46.41 233.53.79m1.66-.31c-4.42 76.92-7.32 158.54-4.02 221.4m.22-222.17c-.34 43.84.1 88.92 1.71 221.25m-1.26-1.83c-84.61.72-172.51-1.06-231.61-.43m232.11 3c-86.77 1.68-171.51 2.81-233.8-1.44m4.5.5C1.36 167.15 1.08 107.42-2.07-1.81m.98 224.24C-4.37 151.37-3.51 80.12 1.32-1.1" class="bounds"/></g></g><g id="g160" stroke-linecap="round" transform="translate(-6.779 -116.371)"><g id="g150" transform="translate(795 216.568)"><path id="path148" fill="none" stroke="#000" stroke-width="1" d="M1.1.14c69.21-.71 345.81-2.81 415.04-3.37M.21-.83c69.53-.05 349.03-.96 418.24-1.18"/></g><g id="g154" transform="translate(795 216.568)"><path id="path152" fill="none" stroke="#000" stroke-width="1" d="M390.53 7.09c9.16-3.57 19.7-7.15 27.17-8.62m-26.98 9.7c10.26-3.33 19.97-7.65 27.88-9.35"/></g><g id="g158" transform="translate(795 216.568)"><path id="path156" fill="none" stroke="#000" stroke-width="1" d="M390.47-13.43c9.36 4.08 19.93 8.14 27.23 11.9m-27.04-10.82c10.44 4.32 20.17 7.64 27.94 11.17"/></g></g><g id="rnd-box" class="box"><path id="rect13706" d="M847.85 5.588h252.29v230.39H847.85z" style="fill:#fff;fill-opacity:.00392157;stroke:none;stroke-width:1.131;stroke-dasharray:13.572,13.572;paint-order:stroke fill markers;stop-color:#000"/><g id="g18" transform="translate(936.71 14.558)"><text id="text16" x="0" y="25" fill="#000" direction="ltr" font-family="Virgil, 'Segoe UI Emoji'" font-size="28" style="white-space:pre" text-anchor="start">R&amp;D</text></g><g id="g54" transform="translate(902.31 139.058)"><text id="text52" x="0" y="14" fill="#000" direction="ltr" font-family="Virgil, 'Segoe UI Emoji'" font-size="16" style="white-space:pre" text-anchor="start">Hardware efficiency</text></g><g id="g58" transform="translate(903.71 189.258)"><text id="text56" x="0" y="14" fill="#000" direction="ltr" font-family="Virgil, 'Segoe UI Emoji'" font-size="16" style="white-space:pre" text-anchor="start">Software efficiency</text></g><g id="g96" stroke-linecap="round" transform="translate(-6.779 -116.371)"><g id="g94" transform="translate(1085.889 258.829)"><path id="path92" fill="none" stroke="#000" stroke-width="1" d="M-1.08-.43c-.03 12.56.99 63.77 1.24 76.52M.55-1.7C.87 11 2.63 64.48 2.43 77.67"/></g></g><g id="g352" stroke-linecap="round" transform="translate(847.11 4.458)"><path id="path350" fill="none" stroke="#000" stroke-width="1" d="M-2.6.31c73.38-3.8 145.75-5.52 251.98-3.25M.74 1.13c100.55-2.57 199.89-2.14 250.37-2.56m4.02 1.3c-4.7 53.56-6.26 101.13-2.83 231.41m.09-232.76c-2.71 51.68-2.7 97.6.11 232.11m.08 2.2c-76.36-4.81-156.43-8.23-253.77.38m254.22-1.69C158.55 233.9 62.58 233.76.39 228.4m.75 3.87c.93-82.47.24-168.38-2.25-231.14M.9 228.96c-4.29-62.34-5.03-121.44.7-229.35" class="bounds"/></g></g><g id="reinvestment-box" class="box"><path id="rect6084" d="M1118.211-.163h220.141v237.429h-220.141z" style="fill:#fff;fill-opacity:.00392157;stroke:none;stroke-width:1.131;stroke-dasharray:13.572,13.572;paint-order:stroke fill markers;stop-color:#000"/><g id="g82" transform="translate(1216.11 80.458)"><text id="text80" x="0" y="14" fill="#000" direction="ltr" font-family="Virgil, 'Segoe UI Emoji'" font-size="16" style="white-space:pre" text-anchor="start">Capital</text></g><g id="g86" transform="translate(1217.31 136.458)"><text id="text84" x="0" y="14" fill="#000" direction="ltr" font-family="Virgil, 'Segoe UI Emoji'" font-size="16" style="white-space:pre" text-anchor="start">Labour</text></g><g id="g90" transform="translate(1213.11 191.458)"><text id="text88" x="0" y="14" fill="#000" direction="ltr" font-family="Virgil, 'Segoe UI Emoji'" font-size="16" style="white-space:pre" text-anchor="start">Compute</text></g><g id="g176" stroke-linecap="round" transform="translate(-6.779 -116.371)"><g id="g166" transform="translate(1146.889 213.829)"><path id="path164" fill="none" stroke="#000" stroke-width="1" d="M-.36-.09C-.41 16.48.57 83.28.45 100.3M1.65-1.18C1.41 15.44-.19 84.48-.25 101.38"/></g><g id="g170" transform="translate(1146.889 213.829)"><path id="path168" fill="none" stroke="#000" stroke-width="1" d="M-10.24 73.79c2.47 7.87 9.02 19.04 10.99 29.53m-11.05-30.8c3.05 8.15 5.05 16.53 9.72 29"/></g><g id="g174" transform="translate(1146.889 213.829)"><path id="path172" fill="none" stroke="#000" stroke-width="1" d="M10.27 74.1C5.25 81.79 4.3 92.86.75 103.32m9.47-30.5c-2.65 8.22-6.35 16.52-10.8 28.7"/></g></g><g id="g202" stroke-linecap="round" transform="translate(-6.779 -116.371)"><g id="g192" transform="translate(1346.889 265.829)"><path id="path190" fill="none" stroke="#000" stroke-width="1" d="M-.99-.02c-10.19.01-49.93.37-59.86.43M.69-1.08c-9.84-.39-48.89-.9-59.28-.42"/></g><g id="g196" transform="translate(1346.889 265.829)"><path id="path194" fill="none" stroke="#000" stroke-width="1" d="M-30.57-13.53c-8.31 3.65-17.53 7.79-29.2 10.09m29.64-9.48C-39.5-8.08-47.87-4.73-58.2-.97"/></g><g id="g200" transform="translate(1346.889 265.829)"><path id="path198" fill="none" stroke="#000" stroke-width="1" d="M-30.31 6.99c-8.45-2.98-17.75-5.47-29.46-10.43m29.9 11.04C-39.51 6.06-47.96 3.03-58.2-.97"/></g></g><g id="g336" transform="translate(1121.11 13.958)"><text id="text334" x="107" y="25" fill="#000" direction="ltr" font-family="Virgil, 'Segoe UI Emoji'" font-size="28" style="white-space:pre" text-anchor="middle">(Re) investment</text></g><g id="g352-3" stroke-linecap="round" class="bounds" transform="matrix(.86572 0 0 1.0003 1120.26 3.984)"><path id="path350-6" fill="none" stroke="#000" stroke-width="1" d="M-3.26.694c73.38-3.8 145.75-5.52 251.98-3.25M.08 1.514c100.55-2.57 199.89-2.14 250.37-2.56m4.02 1.3c-4.7 53.56-6.26 101.13-2.83 231.41m.09-232.76c-2.71 51.68-2.7 97.6.11 232.11m.08 2.2c-76.36-4.81-156.43-8.23-253.77.38m254.22-1.69c-94.48 2.38-190.45 2.24-252.64-3.12m.75 3.87c.93-82.47.24-168.38-2.25-231.14m2.01 227.83c-4.29-62.34-5.03-121.44.7-229.35" class="bounds" style="stroke:#000;stroke-width:1.00045486;stroke-miterlimit:4;stroke-dasharray:12.00545833,12.00545833;stroke-dashoffset:0;stroke-opacity:1"/></g></g><mask id="mask368"/><g id="automation-box" class="box"><path id="rect5146" d="M243.281 7.547h290.13v209.98h-290.13z" style="fill:#fff;fill-opacity:.00392157;stroke:none;stroke-width:1.131;stroke-dasharray:13.572,13.572;paint-order:stroke fill markers;stop-color:#000"/><g id="g22" transform="translate(290.021 23.047)"><text id="text20" x="0" y="25" fill="#000" direction="ltr" font-family="Virgil, 'Segoe UI Emoji'" font-size="28" style="white-space:pre" text-anchor="start">Automation</text></g><g id="g62" transform="translate(281.621 81.347)"><text id="text60" x="0" y="14" fill="#000" direction="ltr" font-family="Virgil, 'Segoe UI Emoji'" font-size="16" style="white-space:pre" text-anchor="start">Biggest training run</text></g><g id="g66" transform="translate(390.021 123.947)"><text id="text64" x="0" y="14" fill="#000" direction="ltr" font-family="Virgil, 'Segoe UI Emoji'" font-size="16" style="white-space:pre" text-anchor="start">G&amp;S automation</text></g><g id="g70" transform="translate(388.021 165.347)"><text id="text68" x="0" y="14" fill="#000" direction="ltr" font-family="Virgil, 'Segoe UI Emoji'" font-size="16" style="white-space:pre" text-anchor="start">R&amp;D automation</text></g><g id="g76" stroke-linecap="round" transform="translate(-6.779 -116.371)"><g id="g74" transform="translate(354.2 228.518)"><path id="path72" fill="none" stroke="#000" stroke-width="1" d="M-.86-.32C-.95 9.7.15 49.8.44 59.64M.88-1.53C.6 8.19-.23 47.65-.27 57.9"/></g></g><g id="g344" stroke-linecap="round" transform="translate(244.221 7.347)"><path id="path342" fill="none" stroke="#000" stroke-width="1" d="M.75-.53c76.07 4.34 152.38 2.79 289.16-.96M-.74 1C71.34-.98 142.36-1.92 285.92-.62m2.7-1.48c-5.52 63.3-.98 128.69.57 212.28M286.9 1.16c3.73 41.41 1.9 88.66 1.62 208.45m-3.59-.27c-105.97.56-208.46-.44-285.65-.32m286.31 2.29c-61.6-4.63-127.37-4.89-284.36-.43m-3.18 1.61C-3.18 132.94-1.82 55.79 2.31.7m-.82 208.81C2.69 148.26 3.84 88.62-.94.2" class="bounds"/></g><g id="g366" stroke-linecap="round" transform="translate(-6.779 -116.371)"><g id="g356" transform="translate(355.5 288.218)"><path id="path354" fill="none" stroke="#000" stroke-width="1" d="M.12.84C4.74.65 23.04-.49 27.6-.77M-1.28.24C3.25.15 22.26.4 26.96.37"/></g><g id="g360" transform="translate(355.5 288.218)"><path id="path358" fill="none" stroke="#000" stroke-width="1" d="M15.2 5.61c1.84-1.47 5.41-4.53 13-5.47M14.44 5.39c3.8-2.67 8.4-3.41 12.91-5.59"/></g><g id="g364" transform="translate(355.5 288.218)"><path id="path362" fill="none" stroke="#000" stroke-width="1" d="M15.24-3.63c1.86 1.19 5.41.79 12.96 3.77M14.47-3.84c3.85.67 8.44 3.29 12.88 3.64"/></g></g><g id="g382" stroke-linecap="round" transform="translate(-6.779 -116.371)"><g id="g372" transform="translate(354.5 250.218)"><path id="path370" fill="none" stroke="#000" stroke-width="1" d="M-1.13 1.16C3.98 1.15 25.68.84 30.92.6M.48.72C5.49.3 25.58-1.23 30.46-1.2"/></g><g id="g376" transform="translate(354.5 250.218)"><path id="path374" fill="none" stroke="#000" stroke-width="1" d="M18.03 5.67C21.8 3.24 25.18.21 30.1-1.54M15.91 4.94c5.88-2.23 10.65-5.36 14.34-5.9"/></g><g id="g380" transform="translate(354.5 250.218)"><path id="path378" fill="none" stroke="#000" stroke-width="1" d="M17.6-4.58c3.96.89 7.48 1.17 12.5 3.04M15.48-5.31c6 1.7 10.94 2.51 14.77 4.35"/></g></g></g><mask id="mask384"/></svg>
+        <!-- End of the SVG -->
+
+        <p>(Click on the different parts of the model to understand how each one works)</p>
+
+        <div id="node-container">
+        </div>
+
+        <p>We aim to use this framework to estimate 1) when we'll develop AI that could fully automate cognitive labour and 2) how much earlier we'll have AI could that could automate 20% of cognitive labour (with tasks weighted by their share of output in 2020).</p>
+
+        <p>Through a Monte Carlo analysis, we show that this model and our choices of parameters lead to a <b>median date of AGI of 2045</b>, and a <b>median takeoff duration of 3.6 years</b> (conditional on AGI happening before 2100). You can read more about the model's results in the <span class="todo">[short summary]</span>, and browse the results of the different analyses in the <a href="reports.html">reports section</a>.</p>
+
+        <div class="output-figures">
+          <figure>
+              <img src="img/timelines.svg">
+              <figcaption>Distribution of the year when AI could readily automate all cognitive labour, and when people "wake-up" to the economic potential of AI and start upping their investments in the area. Also shown the distribution of TAI from Ajeya Cotra's bioanchors.</figcaption>
+          </figure>
+
+          <figure>
+              <img src="img/takeoff.svg">
+              <figcaption>Distribution of the takeoff length, measured as the time between AI that could readily automate 20% of the cognitive tasks needed for producing goods and services, and 100%.</figcaption>
+          </figure>
+        </div>
+      </div>
+    </div>
+
+    <div class="appendices">
+      <h4 class="section-header">Appendices</h4>
+
+      <div class="appendices-container invisible">
+        <h3 class="handorgel__header">
+          <button id="appendix-a" class="handorgel__header__button">
+            Appendix A: Computing the task weights for the production functions
+          </button>
+        </h3>
+        <div class="handorgel__content">
+          <div class="handorgel__content__inner">
+            <p>In the G&S production function, we need to set the task weights \(\alpha_G, \beta_{G,i}\).</p>
+
+            <p>These are chosen to make the initial shares of capital, labour and compute roughly match our empirical estimates.</p>
+
+            <p>Remember that the G&S production function has the form</p>
+
+            <div>\[GWP := TFP[\alpha K_{G}^{\rho_G} + (1-\alpha) \text{Cog}_G^{\rho_G}]^{1/{\rho_G}}\]</div>
+
+            <div>\[Cog_G = [\beta_{G,0} C_{G,0}^{\psi_G} + \beta_{G,1} T_{G,1}^{\psi_G} + ... + \beta_{G,N} T_{G,N}^{\psi_G} ]^{1/{\psi_G}}\]</div>
+
+            <div>\[T_{G,i} = L_{G,i} + \eta_{G,i} C_{G,i}\]</div>
+
+            <p>The shares of capital \(KS\) and cognitive output \(CogS\) can be computed as:</p>
+
+            <div>\[KS := \frac{K_G}{GWP} \frac{\partial GWP}{\partial K_G} = {GWP}^{-\rho_G}  \alpha_G K_G^{\rho_G}\]</div>
+
+            <div>\[CogS := \frac{Cog_G}{GWP} \frac{\partial GWP}{\partial Cog_G} = {GWP}^{-\rho_G}  (1-\alpha_G) {Cog_G}^{\rho_G}\]</div>
+
+            <div>So the ratio of the capital share to cognitive share is:</div>
+
+            <div>\[\frac{KS}{CogS} = \frac{\alpha_G}{(1-\alpha_G)} \frac{K^{\rho_G}}{{Cog_G}^{\rho_G}}\]</div>
+
+            <p>Since we know \(\frac{KS}{CogS}\), \(K\) and \(Cog_G\) at the beginning of the simulation, we can solve for  \(\alpha_G\).</p>
+
+            <p>Now we will estimate \(\beta_{G,i}\) using the ratio of the compute and labour share of the cognitive output.</p>
+
+            <div>\[CS := \frac{C_{G,0}}{Cog_G}\frac{\partial Cog_G}{\partial C_{G,0}} + \dots + \frac{C_{G,N}}{Cog_G}\frac{\partial Cog_G}{\partial C_{G,N}} =\]</div>
+
+            <div>\[= {Cog_G}^{-\psi_G} (\beta_{G,0} C_{G,0}^{\psi_G} + \beta_{G,1} C_{G,1} T_{G,1}^{\psi_G-1} + ... + \beta_{G,N} C_{G,N} T_{G,N}^{\psi_G-1})\]</div>
+
+            <div>\[LS := \frac{L_{G,1}}{Cog_G}\frac{\partial Cog_G}{\partial L{G_1}} + \dots + \frac{L_{G,N}}{Cog_G}\frac{\partial Cog_G}{\partial L{G_N}} =\]</div>
+
+            <div>\[= {Cog_G}^{-\psi_G} (\beta_{G,1} L_{G,1} T_{G,1}^{\psi_G-1} + ... + \beta_{G,N} L_{G,N} T_{G,N}^{\psi_G-1})\]</div>
+
+            <p>We will make two simplifying assumptions:</p>
+
+            <ol>
+              <li>There is no automation at the beginning of the simulation, ie \(C_{G,i} = 0\) for \(i > 0\).</li>
+              <li>The task weights for the labour tasks are equal ie \(\beta_{G,i} = \beta_{G,1}\) for \(i>0\).</li>
+            </ol>
+
+            <p>Given these assumptions, we have that</p>
+
+            <div>\[\frac{CS}{LS} = \frac{\beta_{G,0} C^{\psi_G}}{\beta_{G,1} N (\frac{L}{N})^{\psi_G})}\]</div>
+
+            <p>Since \(\sum_1 \beta_{G,i} = 1\) we can use this equation to solve for each \(\beta_{G,i}\).</p>
+
+            <p>The weights for the software and hardware R&D production functions are computed identically.</p>
+          </div>
+        </div>
+
+        <h3 class="handorgel__header">
+          <button id="appendix-b" class="handorgel__header__button">
+            Appendix B: Estimating the returns to R&D from historical data
+          </button>
+        </h3>
+        <div class="handorgel__content">
+          <div class="handorgel__content__inner">
+            <p>To estimate the returns to hardware \(r_H = 1/\phi\) we assume that both hardware efficiency \(H\) and the inputs to hardware R&D have grown exponentially.</p>
+
+            <div>\[H_t = H_0 \exp{[g_H t]}\]</div>
+
+            <div>\[R_t = R_0 \exp{[g_R t]}\]</div>
+
+            <p>We ignore the ceiling mechanism entirely since, in the past, the effects of the ceiling have not been noticeable. Because of that, we have that:</p>
+
+            <div>\[H = k (\int^t R^\lambda)^{r_H}\]</div>
+
+            <p>Substituting the exponential forms, we get:</p>
+
+            <div>\[H_0 \exp{[g_H t]} = k (\int^t (R_0 \exp{[g_R t]})^\lambda)^{r_H} = \frac{k}{(g_R\lambda)^{r_H}} R_0^{r_H} \exp{[g_R \lambda r_H t]} \propto \exp{[g_R \lambda r_H t]}\]</div>
+
+            <p>The exponential growth rates on both sides of the equation must match, from which we deduce that:</p>
+
+            <div>\[g_H = g_R \cdot \lambda \cdot r_H\]</div>
+
+            <div>\[r_H \cdot \lambda = \frac{g_H}{g_R}\]</div>
+
+            <div>\[r_H := \frac{1}{\phi} = \frac{g_H}{g_R} \frac{1}{\lambda}\]</div>
+          </div>
+        </div>
+
+        <h3 class="handorgel__header">
+          <button id="appendix-c" class="handorgel__header__button">
+            Appendix C: Compute the substitutability of the production functions
+          </button>
+        </h3>
+        <div class="handorgel__content">
+          <div class="handorgel__content__inner">
+            <p>To estimate the substitutability of cognitive output and capital in the production function we use an intuitive estimate of how much we believe production could be increased with ~infinite cognitive output.</p>
+
+            <p>Remember that the production function we are dealing with takes the form:</p>
+
+            <div>\[F(K, Cog) := TFP[\alpha K^{\rho} + (1-\alpha) \text{Cog}^{\rho}]^{1/{\rho}}\]</div>
+
+            <p>We consider the limit when cognitive output goes to infinity.</p>
+
+            <div>\[\lim_{Cog \to\infty} F(K, Cog) = \lim_{Cog \to\infty} TFP[\alpha K^{\rho} + (1-\alpha) \text{Cog}^{\rho}]^{1/{\rho}} = TFP \alpha^{1/\rho} K\]</div>
+
+            <p>We then consider the ratio between this limit and the current output of the CES:</p>
+
+            <div>\[R = \frac{\lim_{Cog \to\infty} F(K, Cog)}{F(K, Cog)} = \frac{TFP \alpha^{1/\rho} K}{TFP[\alpha K^{\rho} + (1-\alpha) \text{Cog}^{\rho}]^{1/{\rho}}}
+                     = [1 + \frac{1-\alpha}{\alpha}\frac{ \text{Cog}^{\rho}}{K^{\rho}}]^{-1/{\rho}}\]</div>
+
+            <p>where \(\frac{1-\alpha}{\alpha}\frac{ \text{Cog}^{\rho}}{K^{\rho}} = \frac{CogS}{KS}\) is the current ratio between the cognitive share of the economy and the capital share of the economy, which we can estimate from historical data.</p>
+
+            <p>The quantity \(R\) is how much we believe production could increase with unlimited cognitive labour. We estimate this intuitively, and derive the substitution rate from it:</p>
+
+            <div>\[\rho  = \frac{1}{\log R}\log \frac{KS}{CogS}\]</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</body>
+
+<!-- For tippy -->
+<link rel="stylesheet" href="https://unpkg.com/tippy.js@6/themes/light-border.css" />
+<script src="https://unpkg.com/@popperjs/core@2"></script>
+<script src="https://unpkg.com/tippy.js@6"></script>
+
+<!-- MathJax -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<script src="libs/d3.v4.min.js"></script>
+
+<script src="js/utils.js"></script>
+
+<link rel="stylesheet" href="css/graph.css">
+<script src="js/graph.js"></script>
+
+<script src="js/ftm/nj.js"></script>
+<script src="js/ftm/ftm.js"></script>
+<script src="js/ftm/bridge.js"></script>
+
+<script src="js/best-guess-parameters.js"></script>
+<script src="js/explanation.js"></script>

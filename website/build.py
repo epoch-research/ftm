@@ -38,6 +38,8 @@ def build():
 
   cpdir('css')
   cpdir('js')
+  cpdir('img')
+  cpdir('libs')
 
   header = read('header.html')
   footer = read('footer.html')
@@ -45,6 +47,7 @@ def build():
   def process_header(header, page):
     header = header.replace('{{{{playground-link-active}}}}', ' active' if (page == 'playground') else '')
     header = header.replace('{{{{reports-link-active}}}}', ' active' if (page == 'reports') else '')
+    header = header.replace('{{{{description-link-active}}}}', ' active' if (page == 'description') else '')
     header = header.replace('{{{{about-link-active}}}}', ' active' if (page == 'about') else '')
     return header
 
@@ -69,6 +72,17 @@ def build():
   '''
 
   write(reports, 'reports.html')
+
+  description = read('description.html')
+  description = f'''
+    <!DOCTYPE html>
+    <title>Description</title>
+    {process_header(header, 'description')}
+    {description}
+    {footer}
+  '''
+
+  write(description, 'description.html')
 
   about = read('about.html')
   about = f'''
