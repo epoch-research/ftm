@@ -17,11 +17,15 @@ def megareport(report_file_path=None, report_dir_path=None, quick_test_mode=Fals
   if new_report:
     report = Report(report_file_path=report_file_path, report_dir_path=report_dir_path)
 
-  log.info('Generating timelines analysis tab')
-  log.indent()
   report.begin_tab_group()
-  report.begin_tab('Timelines analysis', 'timelines_analysis')
-  write_timelines_analysis_report(report = report)
+
+  log.info('Generating Monte Carlo analysis tab')
+  log.indent()
+  report.begin_tab('Monte Carlo analysis', 'mc_analysis')
+  if quick_test_mode:
+    write_mc_analysis_report(report = report, n_trials = 4 if mc_trials is None else mc_trials, input_results_filename = mc_input_results_filename)
+  else:
+    write_mc_analysis_report(report = report, n_trials = mc_trials, input_results_filename = mc_input_results_filename)
   log.deindent()
   log.info()
 
@@ -33,13 +37,10 @@ def megareport(report_file_path=None, report_dir_path=None, quick_test_mode=Fals
   log.deindent()
   log.info()
 
-  log.info('Generating Monte Carlo analysis tab')
+  log.info('Generating timelines analysis tab')
   log.indent()
-  report.begin_tab('Monte Carlo analysis', 'mc_analysis')
-  if quick_test_mode:
-    write_mc_analysis_report(report = report, n_trials = 4 if mc_trials is None else mc_trials, input_results_filename = mc_input_results_filename)
-  else:
-    write_mc_analysis_report(report = report, n_trials = mc_trials, input_results_filename = mc_input_results_filename)
+  report.begin_tab('Timelines analysis', 'timelines_analysis')
+  write_timelines_analysis_report(report = report)
   log.deindent()
   log.info()
 
