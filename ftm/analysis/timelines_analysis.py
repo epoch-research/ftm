@@ -22,6 +22,8 @@ def write_timelines_analysis_report(report_file_path=None, report_dir_path=None,
   if new_report:
     report = Report(report_file_path=report_file_path, report_dir_path=report_dir_path)
 
+  report.add_paragraph("Here, you will find a comparative analysis of the model results conditional on beliefs that correspond to short, medium or long timelines until AGI.")
+
   #
   # Metrics
   #

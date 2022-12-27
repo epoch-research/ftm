@@ -248,6 +248,8 @@ def write_combined_sensitivity_analysis_report(
   if new_report:
     report = Report(report_file_path=report_file_path, report_dir_path=report_dir_path)
 
+  report.add_paragraph("Here, you will find a sensitivity analysis we run, highlighting the most important parameters for pinning down the results of the model.")
+
   last_results = None
 
   for i in range(len(methods)):

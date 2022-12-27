@@ -430,6 +430,8 @@ def write_mc_analysis_report(
   if new_report:
     report = Report(report_file_path=report_file_path, report_dir_path=report_dir_path)
 
+  report.add_paragraph("Here, you will find the distributions of results that come from sampling the parameters according to Tom Davidson's beliefs.")
+
   #
   # Add a mini-widget in a tooltip to let the user select the definition of "slow takeoff"
   #
