@@ -349,7 +349,8 @@ def conditional_dist_graph(x, y, x_label=None, y_label=None, xscale="linear"):
           medians_x.append(bins[bin_index])
           medians_y.append(np.median(ys))
 
-  plt.plot(medians_x, medians_y, color = 'red')
+  plt.plot(medians_x, medians_y, color = 'red', label = 'Median')
+  plt.legend(loc='upper left')
 
   if x_label: plt.xlabel(x_label)
   if y_label: plt.ylabel(y_label)
