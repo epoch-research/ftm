@@ -1,0 +1,69 @@
+
+
+
+
+
+
+
+<style>
+  .main {
+    padding: 2em;
+    padding-top: 0;
+    border-radius: var(--border-radius);
+    border: 2px solid #333;
+    margin: 1em;
+    box-sizing: border-box;
+    background-color: white;
+    overflow-x: auto;
+    min-height: 100%;
+  }
+
+  .todo {
+    background-color: red;
+    color: white;
+    font-weight: bold;
+  }
+</style>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.9.0/font/bootstrap-icons.css">
+
+<div class="main">
+  <h2>About</h2>
+  <p>This website is a supplement to the <span class="todo">[AI Takeoff Report by Tom Davidson]</span>, implemented by <a href="https://epochai.org/">Epoch</a>.</p>
+
+  <p>The best place to start learning about the report is by reading the <span class="todo">[short summary]</span> in Tom Davidson's report. The <span class="todo">[long summary]</span> discusses in more depth the results, while the <span class="todo">[rest of the report]</span> describes in detail the rationale behind the model.</p>
+
+  <p>In the <a href="/description.html">model description section</a>, you will find an interactive explanation of the Full Takeoff Model studied in the report. This will be useful to mathematically inclined readers who wish to understand the model deeply.</p>
+
+  <p>You can interact with the model, and set your own values for its input parameters, in the <a href="playground.html">playground</a>.</p>
+
+  <p>In the <a href="reports.html">reports section</a>, you will find three reports about the results we derive from the Full Takeoff Model:</p>
+
+  <ul>
+    <li>
+      In the <a href="reports.html#mc_analysis">Monte Carlo report</a> you will find the distributions of results that come from sampling the parameters according to Tom Davidson's beliefs.
+    </li>
+    <li>
+      In the <a href="reports.html#parameter_importance_analysis">parameter importance report</a> you will find a sensitivity analysis we run, highlighting the most important parameters for pinning down the results of the model
+    </li>
+    <li>
+      In the <a href="reports.html#timelines_analysis">timelines analysis</a> you will find a comparative analysis of the model results conditional on beliefs that correspond to short, medium or long timelines until AGI.
+    </li>
+  </ul>
+
+  <p>
+    The implementation of the model is available in <a href="https://github.com/epoch-research/ftm">our GitHub repository</a>.
+  </p>
+
+  <p>
+    For bug reports and feature requests, please open a ticket in the repository or email <a href="mailto:info@epochai.org">info@epochai.org</a>.
+  </p>
+
+  <p>
+    Jaime Sevilla and Eduardo Roldan were the main developers of the project, while Tom Davidson provided essential input through its development.
+  </p>
+
+  <p>
+    We thank Ege Erdil, Tom Adamczewski and the rest of the Epoch team for their feedback and support.
+  </p>
+</div>

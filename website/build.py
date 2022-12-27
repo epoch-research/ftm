@@ -45,6 +45,7 @@ def build():
   def process_header(header, page):
     header = header.replace('{{{{playground-link-active}}}}', ' active' if (page == 'playground') else '')
     header = header.replace('{{{{reports-link-active}}}}', ' active' if (page == 'reports') else '')
+    header = header.replace('{{{{about-link-active}}}}', ' active' if (page == 'about') else '')
     return header
 
   playground = read('playground.html')
@@ -68,6 +69,17 @@ def build():
   '''
 
   write(reports, 'reports.html')
+
+  about = read('about.html')
+  about = f'''
+    <!DOCTYPE html>
+    <title>About</title>
+    {process_header(header, 'about')}
+    {about}
+    {footer}
+  '''
+
+  write(about, 'about.html')
 
   four_oh_four = read('404.html')
   four_oh_four = f'''
