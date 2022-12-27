@@ -608,7 +608,7 @@ let ftm = {};
         let performance_growth_rate = growth_in_cumulative_inputs**(returns * ceiling_penalty);
         let new_performance = Math.min(current_performance * performance_growth_rate, performance_ceiling);
 
-        return [new_performance, new_cumulative_adjusted_input];
+        return {new_performance, new_cumulative_adjusted_input, ceiling_penalty};
       }
 
       // In the first time step, we move forward the buyable hardware performance to adjust for the delay in hardware performance
@@ -623,7 +623,7 @@ let ftm = {};
           consts,
         );
 
-        let improved_hardware_performance = result[0];
+        let improved_hardware_performance = result.new_performance;
 
         let initial_hardware_improvement_rate = improved_hardware_performance / consts.initial.buyable_hardware_performance;
 
@@ -631,6 +631,9 @@ let ftm = {};
 
         state.hardware_performance.v = consts.initial.hardware_performance;
         states[0].hardware_performance.v = consts.initial.hardware_performance;
+
+        states[0].hardware_rnd.ceiling_penalty = 1;
+        states[0].software_rnd.ceiling_penalty = 1;
       }
 
       let hardware_result = _update_rnd(
@@ -642,8 +645,9 @@ let ftm = {};
         consts.hardware_performance.ceiling,
         consts,
       );
-      state.hardware_performance.v = hardware_result[0];
-      state.hardware_performance.cumulative_rnd_input = hardware_result[1];
+      state.hardware_performance.v = hardware_result.new_performance;
+      state.hardware_performance.cumulative_rnd_input = hardware_result.new_cumulative_adjusted_input;
+      state.hardware_rnd.ceiling_penalty = hardware_result.ceiling_penalty;
 
       let software_result = _update_rnd(
         state.software.v,
@@ -654,8 +658,9 @@ let ftm = {};
         consts.software.ceiling,
         consts,
       );
-      state.software.v = software_result[0];
-      state.software.cumulative_rnd_input = software_result[1];
+      state.software.v = software_result.new_performance;
+      state.software.cumulative_rnd_input = software_result.new_cumulative_adjusted_input;
+      state.software_rnd.ceiling_penalty = software_result.ceiling_penalty;
     }
 
     static update_rampup(state, consts) {
@@ -772,13 +777,15 @@ let ftm = {};
       state[item].labour  = state.labour  * state.frac_labour[item].v;;
       state[item].compute = state.compute * state.frac_compute[item].v;
 
+      state[category].at = this.get_automatable_task_count(state, consts, category) + 1;
+
       let r = this.solve_allocation(
         state[item].labour,
         state[item].compute,
         consts[item].labour_task_weights,
         consts[item].labour_substitution,
         state[category].task_compute_to_labour_ratio,
-        this.get_automatable_task_count(state, consts, category) + 1,
+        state[category].at,
       );
       state[item].labour_task_input = r.labour;
       state[item].compute_task_input = r.compute;
@@ -791,6 +798,8 @@ let ftm = {};
         consts[item].labour_task_weights,
         consts[item].labour_substitution,
       );
+
+      state[item].cognitive_output = cognitive_output;
 
       if (apply_tfp_to_cognitive_outputs) {
         cognitive_output *= state[category].tfp;
