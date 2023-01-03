@@ -12,6 +12,13 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
     min-width: 1333px; /* I hope you understand */
   }
 
+  .super-info-icon {
+    position: relative;
+    font-size: 0.8em;
+    margin-left: 0;
+    bottom: 0.5em;
+  }
+
   .hidden {
     display: none;
   }
@@ -588,7 +595,10 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
 
   <div class="content">
     <div class="inner-content">
-      <h2>Compute decomposition</h2>
+      <h2>
+        Compute decomposition
+        <i class="bi-info-circle super-info-icon" data-tooltip-triggers="mouseenter click" data-tooltip-content="The training compute is roughly the product of the <b>hardware efficiency</b>, the <b>software efficiency</b>, the <b>budget spent on hardware</b> and the <b>fraction of compute dedicated to training</b>.<br><br>This graph visualizes the contribution of each of these components to the largest training run each year."></i>
+      </h2>
       <div id="compute-decomposition-graph-container" class="graph-container"></div>
       <h2>Takeoff metrics</h2>
       <p>
@@ -631,3 +641,23 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
 
 <script src="js/presets.js"></script>
 <script src="js/playground.js"></script>
+
+<script>
+    for (let tooltipContainer of document.querySelectorAll(`[data-tooltip-content]`)) {
+      tippy(tooltipContainer, {
+        content: tooltipContainer.dataset.tooltipContent,
+        allowHTML: true,
+        interactive: true,
+        trigger: tooltipContainer.dataset.tooltipTriggers,
+        appendTo: document.body,
+        theme: 'light-border',
+        plugins: [hideOnEsc],
+        onMount(instance) {
+          if (tooltipContainer.dataset.tooltipOnMount) {
+            eval(tooltipContainer.dataset.tooltipOnMount);
+          }
+        }
+      });
+    }
+</script>
+
