@@ -857,7 +857,7 @@ class Graph {
         self.transform_update_callback(self.transform);
       }
 
-      xAxis.call(d3.axisBottom(currentX).tickSizeOuter(0));
+      xAxis.call(d3.axisBottom(currentX).tickSizeOuter(0).tickFormat(d3.format("d")));
       yAxis.call(d3.axisLeft(currentY).tickSizeOuter(0));
 
       content

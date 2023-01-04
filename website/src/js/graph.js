@@ -274,7 +274,7 @@ class Graph {
     let xAxis = svg.append("g")
       .attr("transform", "translate(0," + height + ")")
       .attr("stroke-width", 2)
-      .call(d3.axisBottom(x).tickSizeOuter(0));
+      .call(d3.axisBottom(x).tickSizeOuter(0).tickFormat(d3.format("d")));
 
     let yAxis = svg.append("g")
       .attr("stroke-width", 2)
@@ -598,7 +598,7 @@ class Graph {
         self.transform_update_callback(self.transform);
       }
 
-      xAxis.call(d3.axisBottom(currentX).tickSizeOuter(0));
+      xAxis.call(d3.axisBottom(currentX).tickSizeOuter(0).tickFormat(d3.format("d")));
       yAxis.call(d3.axisLeft(currentY).tickSizeOuter(0));
 
       content
