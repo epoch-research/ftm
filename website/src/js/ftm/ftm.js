@@ -436,7 +436,7 @@ let ftm = {};
           no_automation_compute_task_input,
           this.get_task_compute_to_labour_ratio(consts[category].automation_runtime_flops, consts[category].automation_training_flops, consts.initial.biggest_training_run, consts, category),
           consts[item].capital_substitution,
-          consts[item].labour_substitution,
+          consts[category].labour_substitution,
           initial_capital_to_cognitive_share_ratio,
           initial_compute_to_labour_share_ratio,
         );
@@ -774,7 +774,7 @@ let ftm = {};
     static produce(state, consts, category, item, capital=null, apply_tfp_to_cognitive_outputs=false) {
       if (capital == null) capital = state.capital * state.frac_capital[item].v;
       state[item].capital = capital;
-      state[item].labour  = state.labour  * state.frac_labour[item].v;;
+      state[item].labour  = state.labour  * state.frac_labour[item].v;
       state[item].compute = state.compute * state.frac_compute[item].v;
 
       state[category].at = this.get_automatable_task_count(state, consts, category) + 1;
@@ -783,7 +783,7 @@ let ftm = {};
         state[item].labour,
         state[item].compute,
         consts[item].labour_task_weights,
-        consts[item].labour_substitution,
+        consts[category].labour_substitution,
         state[category].task_compute_to_labour_ratio,
         state[category].at,
       );
@@ -796,7 +796,7 @@ let ftm = {};
       let cognitive_output = this.ces_production_function(
         state[item].task_input,
         consts[item].labour_task_weights,
-        consts[item].labour_substitution,
+        consts[category].labour_substitution,
       );
 
       state[item].cognitive_output = cognitive_output;

@@ -96,8 +96,13 @@
       padding-bottom: 0;
     }
 
+    .value-column {
+      padding-top: 0;
+      padding-bottom: 0;
+    }
+
     .view-button {
-      width: 45px;
+      width: 23px;
       background-color: #5e5e5e;
       padding: 4px;
       border-radius: var(--card-radius);
@@ -110,6 +115,9 @@
       width: fit-content;
       padding-top: 2.5px;
       padding-bottom: 2.5px;
+    }
+
+    .view-column .view-button-hitbox {
       margin-left: auto;
       margin-right: auto;
     }
@@ -157,9 +165,8 @@
     .card {
       display: flex;
       margin-top: 1em;
-      max-width: calc(min(900px, 80%));
-      margin-left: auto;
-      margin-right: auto;
+      margin-left: 1em;
+      margin-right: 1em;
     }
 
     .card .title {
@@ -192,7 +199,6 @@
     }
 
     .card .left {
-      width: 30em;
       overflow-y: auto;
       border-top-left-radius: var(--border-radius);
       border-bottom-left-radius: var(--border-radius);
@@ -202,6 +208,13 @@
 
     .card .right {
       height: fit-content;
+      overflow-x: auto;
+    }
+
+    .card .left, .card .right {
+      flex-basis: 50%;
+      flex-grow: 0;
+      flex-shrink: 0;
     }
 
     .card .right {
@@ -329,7 +342,7 @@
 
         <p>This section details a succinct mathematical description of the Full Takeoff Model (FTM). This will be helpful to mathematically oriented readers who want to see all the dynamics of the model written down in a single place.</p>
 
-        <p>Readers who want to understand the model's conclusions would be better served reading the <span class="todo">short summary of Tom's report</span>. Readers who want to understand why the model is built the way it is or how the different parameters are estimated will be better-served reading <span class="todo">[the report]</span>. If you want to play with the model, you can do so in the <a href="playground.html">playground</a>.</p>
+        <p>Readers who want to understand the model's conclusions would be better served reading the <span class="todo">short summary of Tom's report</span>. Readers who want to understand why the model is built the way it is will be better-served reading <span class="todo">[the report]</span>. Justifications for the best-guess parameter values are described below. If you want to play with the model, you can do so in the <a href="playground.html">playground</a>.</p>
       </div>
 
       <div class="overview">
@@ -385,33 +398,33 @@
 
             <p>Remember that the G&S production function has the form</p>
 
-            <div>\[GWP := TFP[\alpha K_{G}^{\rho_G} + (1-\alpha) \text{Cog}_G^{\rho_G}]^{1/{\rho_G}}\]</div>
+            <div>\[GWP := TFP \cdot [\alpha \cdot K_{G}^{\rho_G} + (1-\alpha) \cdot \text{Cog}_G^{\rho_G}]^{1/{\rho_G}}\]</div>
 
-            <div>\[Cog_G = [\beta_{G,0} C_{G,0}^{\psi_G} + \beta_{G,1} T_{G,1}^{\psi_G} + ... + \beta_{G,N} T_{G,N}^{\psi_G} ]^{1/{\psi_G}}\]</div>
+            <div>\[Cog_G = [\beta_{G,0} \cdot C_{G,0}^{\psi_G} + \beta_{G,1} \cdot T_{G,1}^{\psi_G} + ... + \beta_{G,N} \cdot T_{G,N}^{\psi_G} ]^{1/{\psi_G}}\]</div>
 
-            <div>\[T_{G,i} = L_{G,i} + \eta_{G,i} C_{G,i}\]</div>
+            <div>\[T_{G,i} = L_{G,i} + \eta_{G,i} \cdot C_{G,i}\]</div>
 
             <p>The shares of capital \(KS\) and cognitive output \(CogS\) can be computed as:</p>
 
-            <div>\[KS := \frac{K_G}{GWP} \frac{\partial GWP}{\partial K_G} = {GWP}^{-\rho_G}  \alpha_G K_G^{\rho_G}\]</div>
+            <div>\[KS := \frac{K_G}{GWP} \cdot \frac{\partial GWP}{\partial K_G} = {GWP}^{-\rho_G} \cdot \alpha_G \cdot K_G^{\rho_G}\]</div>
 
-            <div>\[CogS := \frac{Cog_G}{GWP} \frac{\partial GWP}{\partial Cog_G} = {GWP}^{-\rho_G}  (1-\alpha_G) {Cog_G}^{\rho_G}\]</div>
+            <div>\[CogS := \frac{Cog_G}{GWP} \cdot \frac{\partial GWP}{\partial Cog_G} = {GWP}^{-\rho_G} \cdot (1-\alpha_G) \cdot {Cog_G}^{\rho_G}\]</div>
 
             <div>So the ratio of the capital share to cognitive share is:</div>
 
-            <div>\[\frac{KS}{CogS} = \frac{\alpha_G}{(1-\alpha_G)} \frac{K^{\rho_G}}{{Cog_G}^{\rho_G}}\]</div>
+            <div>\[\frac{KS}{CogS} = \frac{\alpha_G}{(1-\alpha_G)} \cdot \frac{K^{\rho_G}}{{Cog_G}^{\rho_G}}\]</div>
 
-            <p>Since we know \(\frac{KS}{CogS}\), \(K\) and \(Cog_G\) at the beginning of the simulation, we can solve for  \(\alpha_G\).</p>
+            <p>Since we know \(\frac{KS}{CogS}\), \(K\) and \(Cog_G\) at the beginning of the simulation, we can solve for \(\alpha_G\).</p>
 
             <p>Now we will estimate \(\beta_{G,i}\) using the ratio of the compute and labour share of the cognitive output.</p>
 
-            <div>\[CS := \frac{C_{G,0}}{Cog_G}\frac{\partial Cog_G}{\partial C_{G,0}} + \dots + \frac{C_{G,N}}{Cog_G}\frac{\partial Cog_G}{\partial C_{G,N}} =\]</div>
+            <div>\[CS := \frac{C_{G,0}}{Cog_G} \cdot \frac{\partial Cog_G}{\partial C_{G,0}} + \dots + \frac{C_{G,N}}{Cog_G} \cdot \frac{\partial Cog_G}{\partial C_{G,N}} =\]</div>
 
-            <div>\[= {Cog_G}^{-\psi_G} (\beta_{G,0} C_{G,0}^{\psi_G} + \beta_{G,1} C_{G,1} T_{G,1}^{\psi_G-1} + ... + \beta_{G,N} C_{G,N} T_{G,N}^{\psi_G-1})\]</div>
+            <div>\[= {Cog_G}^{-\psi_G} \cdot (\beta_{G,0} \cdot C_{G,0}^{\psi_G} + \beta_{G,1} \cdot C_{G,1} \cdot T_{G,1}^{\psi_G-1} + ... + \beta_{G,N} \cdot C_{G,N} \cdot T_{G,N}^{\psi_G-1})\]</div>
 
-            <div>\[LS := \frac{L_{G,1}}{Cog_G}\frac{\partial Cog_G}{\partial L{G_1}} + \dots + \frac{L_{G,N}}{Cog_G}\frac{\partial Cog_G}{\partial L{G_N}} =\]</div>
+            <div>\[LS := \frac{L_{G,1}}{Cog_G} \cdot \frac{\partial Cog_G}{\partial L{G_1}} + \dots + \frac{L_{G,N}}{Cog_G} \cdot \frac{\partial Cog_G}{\partial L{G_N}} =\]</div>
 
-            <div>\[= {Cog_G}^{-\psi_G} (\beta_{G,1} L_{G,1} T_{G,1}^{\psi_G-1} + ... + \beta_{G,N} L_{G,N} T_{G,N}^{\psi_G-1})\]</div>
+            <div>\[= {Cog_G}^{-\psi_G} \cdot (\beta_{G,1} \cdot L_{G,1} \cdot T_{G,1}^{\psi_G-1} + ... + \beta_{G,N} \cdot L_{G,N} \cdot T_{G,N}^{\psi_G-1})\]</div>
 
             <p>We will make two simplifying assumptions:</p>
 
@@ -422,7 +435,7 @@
 
             <p>Given these assumptions, we have that</p>
 
-            <div>\[\frac{CS}{LS} = \frac{\beta_{G,0} C^{\psi_G}}{\beta_{G,1} N (\frac{L}{N})^{\psi_G})}\]</div>
+            <div>\[\frac{CS}{LS} = \frac{\beta_{G,0} \cdot C^{\psi_G}}{\beta_{G,1} \cdot N \cdot (\frac{L}{N})^{\psi_G}}\]</div>
 
             <p>Since \(\sum_1 \beta_{G,i} = 1\) we can use this equation to solve for each \(\beta_{G,i}\).</p>
 
@@ -439,17 +452,17 @@
           <div class="handorgel__content__inner">
             <p>To estimate the returns to hardware \(r_H = 1/\phi\) we assume that both hardware efficiency \(H\) and the inputs to hardware R&D have grown exponentially.</p>
 
-            <div>\[H_t = H_0 \exp{[g_H t]}\]</div>
+            <div>\[H_t = H_0 \cdot \exp{[g_H \cdot t]}\]</div>
 
-            <div>\[R_t = R_0 \exp{[g_R t]}\]</div>
+            <div>\[R_t = R_0 \cdot \exp{[g_R \cdot t]}\]</div>
 
             <p>We ignore the ceiling mechanism entirely since, in the past, the effects of the ceiling have not been noticeable. Because of that, we have that:</p>
 
-            <div>\[H = k (\int^t R^\lambda)^{r_H}\]</div>
+            <div>\[H = k \left(\int^t R^\lambda\right)^{r_H}\]</div>
 
             <p>Substituting the exponential forms, we get:</p>
 
-            <div>\[H_0 \exp{[g_H t]} = k (\int^t (R_0 \exp{[g_R t]})^\lambda)^{r_H} = \frac{k}{(g_R\lambda)^{r_H}} R_0^{r_H} \exp{[g_R \lambda r_H t]} \propto \exp{[g_R \lambda r_H t]}\]</div>
+            <div>\[H_0 \cdot \exp{[g_H \cdot t]} = k \left(\int^t (R_0 \cdot \exp{[g_R \cdot t]})^\lambda\right)^{r_H} = \frac{k}{(g_R \cdot \lambda)^{r_H}} R_0^{r_H} \cdot \exp{[g_R \cdot \lambda \cdot r_H \cdot t]} \propto \exp{[g_R \cdot \lambda \cdot r_H \cdot t]}\]</div>
 
             <p>The exponential growth rates on both sides of the equation must match, from which we deduce that:</p>
 
@@ -457,7 +470,7 @@
 
             <div>\[r_H \cdot \lambda = \frac{g_H}{g_R}\]</div>
 
-            <div>\[r_H := \frac{1}{\phi} = \frac{g_H}{g_R} \frac{1}{\lambda}\]</div>
+            <div>\[r_H := \frac{1}{\phi} = \frac{g_H}{g_R} \cdot \frac{1}{\lambda}\]</div>
           </div>
         </div>
 
@@ -472,22 +485,22 @@
 
             <p>Remember that the production function we are dealing with takes the form:</p>
 
-            <div>\[F(K, Cog) := TFP[\alpha K^{\rho} + (1-\alpha) \text{Cog}^{\rho}]^{1/{\rho}}\]</div>
+            <div>\[F(K, Cog) := TFP \cdot [\alpha \cdot K^{\rho} + (1-\alpha) \cdot \text{Cog}^{\rho}]^{1/{\rho}}\]</div>
 
             <p>We consider the limit when cognitive output goes to infinity.</p>
 
-            <div>\[\lim_{Cog \to\infty} F(K, Cog) = \lim_{Cog \to\infty} TFP[\alpha K^{\rho} + (1-\alpha) \text{Cog}^{\rho}]^{1/{\rho}} = TFP \alpha^{1/\rho} K\]</div>
+            <div>\[\lim_{Cog \to\infty} F(K, Cog) = \lim_{Cog \to\infty} TFP \cdot [\alpha \cdot K^{\rho} + (1-\alpha) \cdot \text{Cog}^{\rho}]^{1/{\rho}} = TFP \cdot \alpha^{1/\rho} \cdot K\]</div>
 
             <p>We then consider the ratio between this limit and the current output of the CES:</p>
 
-            <div>\[R = \frac{\lim_{Cog \to\infty} F(K, Cog)}{F(K, Cog)} = \frac{TFP \alpha^{1/\rho} K}{TFP[\alpha K^{\rho} + (1-\alpha) \text{Cog}^{\rho}]^{1/{\rho}}}
-                     = [1 + \frac{1-\alpha}{\alpha}\frac{ \text{Cog}^{\rho}}{K^{\rho}}]^{-1/{\rho}}\]</div>
+            <div>\[R = \frac{\lim_{Cog \to\infty} F(K, Cog)}{F(K, Cog)} = \frac{TFP \cdot \alpha^{1/\rho} \cdot K}{TFP \cdot [\alpha \cdot K^{\rho} + (1-\alpha) \cdot \text{Cog}^{\rho}]^{1/{\rho}}}
+                     = [1 + \frac{1-\alpha}{\alpha} \cdot \frac{\text{Cog}^{\rho}}{K^{\rho}}]^{-1/{\rho}}\]</div>
 
-            <p>where \(\frac{1-\alpha}{\alpha}\frac{ \text{Cog}^{\rho}}{K^{\rho}} = \frac{CogS}{KS}\) is the current ratio between the cognitive share of the economy and the capital share of the economy, which we can estimate from historical data.</p>
+            <p>where \(\frac{1-\alpha}{\alpha} \cdot \frac{ \text{Cog}^{\rho}}{K^{\rho}} = \frac{CogS}{KS}\) is the current ratio between the cognitive share of the economy and the capital share of the economy, which we can estimate from historical data.</p>
 
             <p>The quantity \(R\) is how much we believe production could increase with unlimited cognitive labour. We estimate this intuitively, and derive the substitution rate from it:</p>
 
-            <div>\[\rho  = \frac{1}{\log R}\log \frac{KS}{CogS}\]</div>
+            <div>\[\rho = \frac{1}{\log R} \cdot \log \frac{KS}{CogS}\]</div>
           </div>
         </div>
       </div>

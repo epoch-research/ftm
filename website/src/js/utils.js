@@ -59,3 +59,35 @@ function swap(arr, i, j) {
   arr[i] = arr[j];
   arr[j] = tmp;
 }
+
+function clean_number(str) {
+  str = str.replace(/\.([0-9]*[1-9])?0*/g, ".$1"); // remove right zeroes 
+  str = str.replace('e+', 'e');
+  str = str.replace('.e', 'e'); // remove the decimal point, if no decimals
+  str = str.replace(/\.$/, ''); // remove the decimal point, if no decimals
+  return str;
+}
+
+function standard_format(x) {
+  let str;
+  if (typeof x == 'undefined') {
+    str = 'undefined';
+  } else if (typeof x == 'number') {
+    let sign = (x < 0) ? -1 : +1;
+    if (sign < 0) x = -x;
+
+    if (x > 100 || x < 1e-3) {
+      str = x.toExponential(3);
+    } else {
+      str = x.toFixed(3);
+    }
+
+    str = clean_number(str);
+
+    if (sign < 0) str = '-' + str;
+  } else {
+    str = x.toString();
+  }
+  return str;
+}
+

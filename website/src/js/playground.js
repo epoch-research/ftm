@@ -233,19 +233,6 @@ function get_parameters() {
   return params;
 }
 
-function standard_format(x) {
-  let str;
-  if (x > 100) {
-    str = x.toExponential(3);
-    str = str.replace('e+', 'e');
-    str = str.replace(/\.([0-9]*[1-9])?0*/g, ".$1"); // remove right zeroes 
-    str = str.replace('.e', 'e'); // remove the decimal point, if no decimals
-  } else {
-    str = x.toString();
-  }
-  return str;
-}
-
 // Internal, for debugging
 function export_scenario() {
   let json = JSON.stringify(get_parameters(), null, 2);
