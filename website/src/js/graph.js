@@ -1,8 +1,10 @@
+  let clipId = 0;
+
 class Graph {
+
   colors = [
     "steelblue", "orange", "pink",
   ];
-
 
   nameToScale = {
     'linear': d3.scaleLinear,
@@ -15,8 +17,8 @@ class Graph {
     this.nodes.wrapper.classList.add('graph-wrapper');
 
     this.dataset = [];
-    this.xAxis = {scale: options.xscale, lims: [null, null]};
-    this.yAxis = {scale: options.yscale, lims: [null, null]};
+    this.xAxis = {scale: options.xscale, lims: [null, null], unit: null};
+    this.yAxis = {scale: options.yscale, lims: [null, null], unit: null};
     this.axvlines = [];
     this.axhlines = [];
     this.current_color = 0;
@@ -110,6 +112,10 @@ class Graph {
     this.axhlines.push({y, ...options});
   }
 
+  yunit(unit) {
+    this.yAxis.unit = unit;
+  }
+
   hide_tooltip() {
     this.nodes.tooltip.style("display", "none");
     this.nodes.content.selectAll('.tooltip-circle').style("display", "none");
@@ -128,6 +134,11 @@ class Graph {
 
     // set the dimensions and margins of the graph
     let margin = {top: 5, right: 10, bottom: 30, left: 40};
+
+    if (this.yAxis.unit) {
+      margin.top += 15;
+    }
+
     let width = this.width - margin.left - margin.right;
     let height = this.height - margin.top - margin.bottom;
 
@@ -153,8 +164,10 @@ class Graph {
     // Add a margin so that we don't clip half a line
     let top_clip_margin = 1;
 
+    clipId++;
+
     let clip = svg.append("defs").append("SVG:clipPath")
-      .attr("id", "clip")
+      .attr("id", `clip-${clipId}`)
       .append("SVG:rect")
       .attr("width", width)
       .attr("height", height + top_clip_margin)
@@ -163,7 +176,7 @@ class Graph {
     ;
 
     let content = svg.append('g')
-      .attr("clip-path", "url(#clip)");
+      .attr("clip-path", `url(#clip-${clipId})`);
     this.nodes.content = content;
 
     let first = this.dataset[0];
@@ -206,7 +219,7 @@ class Graph {
     let gridV = content.append("g")
       .attr('class', 'grid')     
       .attr("transform", "translate(0," + height + ")")
-      .call(d3.axisBottom(x).tickSize(-height))
+      .call(d3.axisBottom(x).tickSize(-height).tickFormat(''))
     ;
 
     let gridH = content.append("g")
@@ -279,6 +292,17 @@ class Graph {
     let yAxis = svg.append("g")
       .attr("stroke-width", 2)
       .call(d3.axisLeft(y).tickSizeOuter(0));
+
+    if (this.yAxis.unit) {
+      yAxis.append("text")
+           .attr('x', -5)             
+           .attr('y', -5)
+           .attr('fill', 'black')
+           .attr('font-weight', 'bold')
+           .attr('text-anchor', 'right')  
+           .style('font-size', '12px') 
+           .text(this.yAxis.unit)
+    }
 
     let crossHairV = svg.append("line")
       .attr("opacity", 0)
@@ -626,7 +650,7 @@ class Graph {
         .attr('y2', d => currentY(d) )
       ;
 
-      gridV.call(d3.axisBottom(currentX).tickSize(-height));
+      gridV.call(d3.axisBottom(currentX).tickSize(-height).tickFormat(''));
       gridH.call(d3.axisLeft(currentY).tickSize(-width));
 
       if (!Number.isNaN(mouseP[0]) && !Number.isNaN(mouseP[1])) {
@@ -803,6 +827,10 @@ class Plotter {
 
   axhline(y, options = {}) {
     this.graph.axhline(y, options);
+  }
+
+  yunit(unit) {
+    this.graph.yAxis.unit = unit;
   }
 
   set_tooltip(tooltipBuilder) {

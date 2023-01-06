@@ -28,16 +28,16 @@ let variables = {
   'C_{S,i}': {meaning: 'Compute allocated to the \\(i\\)-th software R&D task',  },
   'L_{S,i}': {meaning: 'Labour allocated to the \\(i\\)-th software R&D task',   },
 
-  'GWP':     {meaning: 'Gross world product',                                    thread: 'gwp'},
+  'GWP':     {meaning: 'Gross world product',                                    thread: 'gwp', unit: '$'},
 
   'L':       {meaning: 'Labour',                                                 thread: 'labour'},
   'TFP':     {meaning: 'Total factor productivity',                              thread: 'goods.tfp'},
 
-  'HS':      {meaning: 'Hardware stock',                                         thread: 'hardware'},
+  'HS':      {meaning: 'Hardware stock',                                         thread: 'hardware', unit: 'FLOP/year'},
 
-  'H':       {meaning: 'Hardware efficiency',                                    thread: 'hardware_performance.v'},
+  'H':       {meaning: 'Hardware efficiency',                                    thread: 'hardware_performance.v', unit: 'FLOP/year/$'},
 
-  'C':       {meaning: 'Effective compute',                                      thread: 'compute'},
+  'C':       {meaning: 'Effective compute',                                      thread: 'compute', unit: 'FLOP'},
   'S':       {meaning: 'Software efficiency level',                              thread: 'software.v'},
 
   'F_C':     {meaning: 'Fraction of GWP used to purchase new hardware',          thread: 'compute_investment'},
@@ -51,7 +51,7 @@ let variables = {
   'F_{L,H}': {meaning: 'Fraction of labor assigned to hardware R&D',             thread: 'frac_labour.hardware_rnd.v'},
   'F_{L,S}': {meaning: 'Fraction of labor assigned to software R&D',             thread: 'frac_labour.software_rnd.v'},
 
-  'C_T':     {meaning: 'Largest training run',                                   thread: 'biggest_training_run'},
+  'C_T':     {meaning: 'Largest training run',                                   thread: 'biggest_training_run', unit: 'FLOP'},
 
   'P_H':     {meaning: 'Penalty factor for hardware R&D',                        thread: 'hardware_rnd.ceiling_penalty'},
   'Q_H':     {meaning: 'Adjusted cumulative inputs to hardware R&D',             thread: 'hardware_performance.cumulative_rnd_input'},
@@ -67,24 +67,28 @@ let parameters = {
   'g_L': {
     constant: 'labour_growth',
     meaning: 'Growth rate of labour',
+    unit: '/year',
     justification: "<a href='https://www.google.com/search?q=world+population+growth+rate&ei=VdAOY_7TDqu00PEP6pOViAM&ved=0ahUKEwi-0qLTjPD5AhUrGjQIHepJBTEQ4dUDCA4&uact=5&oq=world+population+growth+rate&gs_lcp=Cgdnd3Mtd2l6EAMyCAgAEIAEELEDMgUIABCABDIFCAAQgAQyBQgAEIAEMgUIABCABDIFCAAQgAQyBQgAEIAEMgUIABCABDIICAAQgAQQyQMyBQgAEIAEOgcIABBHELADOgQIABBDSgUIPBIBMUoECEEYAEoECEYYAFCOBVjcCGDnCWgBcAF4AIABVogB0gKSAQE1mAEAoAEByAEIwAEB&sclient=gws-wiz'>Source</a>.",
   },
 
   'g_{TFP}': {
     constant: 'tfp_growth',
     meaning: 'Growth rate of TFP',
+    unit: '/year',
     justification: "Average TFP growth over the last 20 years. <a href='https://docs.google.com/spreadsheets/d/1C-RUowD3Nwo51UF5ZeBjbeLwaw4HQ1o13KyJlhuXCcU/edit#gid=2116796644'>Source</a>.",
   },
 
   'h_d': {
     constant: 'hardware_delay',
     meaning: 'Hardware delay',
+    unit: 'years',
     justification: 'Discussed <a href="https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#bookmark=id.2gnv7nk1tdrv">here</a>.',
   },
 
   'd_C': {
     constant: 'compute_depreciation',
     meaning: 'Hardware depreciation rate',
+    unit: '/year',
     justification: 'Rough guess.',
   },
 
@@ -112,6 +116,7 @@ let parameters = {
   's_K': {
     constant: 'investment_rate',
     meaning: 'Savings rate',
+    unit: '/year',
     justification: 'See <a href="https://www.theglobaleconomy.com/rankings/savings/">here</a>. (Note that this parameter does not affect the dynamics of the model.)',
   },
 
@@ -307,18 +312,21 @@ let parameters = {
   "g_{K,H}": {
     constant: 'frac_capital.hardware_rnd.growth',
     meaning: 'Pre "wake-up" growth of the fraction of capital assigned to hardware R&D',
+    unit: '/year',
     justification: 'Real $ investments in hardware R&D have <span style="text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;"><a href="https://docs.google.com/spreadsheets/d/1bGbzR0c3TqsRYTWS3s6Bysgh9ZOuKS1w6qH1SOI11iE/edit#gid=186138651" target="_blank">recently grown</a></span> at ~4%; subtracting out ~3% GWP growth implies ~1% growth in the fraction of GWP invested.'
   },
 
   "g_{L,H}": {
     constant: 'frac_labour.hardware_rnd.growth',
     meaning: 'Pre "wake-up" growth of the fraction of labor assigned to hardware R&D',
+    unit: '/year',
     justification: 'As above.'
   },
 
   "g_{C,H}": {
     constant: 'frac_compute.hardware_rnd.growth',
     meaning: 'Pre "wake-up" growth of the fraction of effective compute assigned to hardware R&D',
+    unit: '/year',
     justification: 'As above.'
   },
 
@@ -326,24 +334,28 @@ let parameters = {
   "g_{L,S}": {
     constant: 'frac_labour.software_rnd.growth',
     meaning: 'Pre "wake-up" growth of the fraction of labor assigned to software R&D',
+    unit: '/year',
     justification: 'Discussed <span style="text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;"><a href="https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#heading=h.1v8m5dp6xefi" target="_blank">here</a></span>, calculations <span style="text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;"><a href="https://docs.google.com/spreadsheets/d/1qmiomnNLpjcWSaeT54KC1PH1hfi_jUFIkWszxJGVU5w/edit#gid=0" target="_blank">here</a></span>. We subtract out 1% population growth from 19% growth in number of reseachers (which is smaller than the 20% growth in real $).'
   },
 
   "g_{C,S}": {
     constant: 'frac_compute.software_rnd.growth',
     meaning: 'Pre "wake-up" growth of the fraction of effective compute assigned to software R&D',
+    unit: '/year',
     justification: 'As above.'
   },
 
   "g_C": {
     constant: 'frac_gwp.compute.growth',
     meaning: 'Pre "wake-up" growth of the fraction of GWP used to purchase new hardware',
+    unit: '/year',
     justification: 'Assumed to be equal to the growth rate post "wake up" (see below). Why? Demand for AI chips is smaller today than after ramp-up, pushing towards slower growth today. But growth today is from a smaller base, and can come from the share of GPUs growing as a fraction of semiconductor production (which won\'t be possible once it\'s already ~100% of production). We\'re assuming these effects cancel out.'
   },
 
   "g_{C,T}": {
     constant: 'frac_compute.training.growth',
     meaning: 'Pre "wake-up" growth of the fraction of effective compute assigned to training',
+    unit: '/year',
     justification: 'This corresponds to the assumption that there will be a $4b training run in 2030, in line with Bio Anchors\' prediction. Discussed a little <span style="text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;"><a href="https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#heading=h.yyref6x2mzxu" target="_blank">here</a></span>.'
   },
 
@@ -351,18 +363,21 @@ let parameters = {
   "g'_{K,H}": {
     constant: 'frac_capital.hardware_rnd.growth_rampup',
     meaning: 'Post "wake-up" growth of the fraction of capital assigned to hardware R&D',
+    unit: '/year',
     justification: 'Discussed <span style="text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;"><a href="https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#heading=h.612idx97x187" target="_blank">here</a></span>. We substract out 3% annual GWP growth to calculate the growth in the fraction of GWP invested.'
   },
 
   "g'_{L,H}": {
     constant: 'frac_labour.hardware_rnd.growth_rampup',
     meaning: 'Post "wake-up" growth of the fraction of labor assigned to hardware R&D',
+    unit: '/year',
     justification: 'As above.'
   },
 
   "g'_{C,H}": {
     constant: 'frac_compute.hardware_rnd.growth_rampup',
     meaning: 'Post "wake-up" growth of the fraction of effective compute assigned to hardware R&D',
+    unit: '/year',
     justification: 'We assume a one-year doubling as compute can be easily reallocated to the now-extremely-lucrative field of AI R&D.'
   },
 
@@ -370,27 +385,30 @@ let parameters = {
   "g'_{L,S}": {
     constant: 'frac_labour.software_rnd.growth_rampup',
     meaning: 'Post "wake-up" growth of the fraction of labor assigned to software R&D',
+    unit: '/year',
     justification: 'Discussed <span style="text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;"><a href="https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#heading=h.vi6088puv22e" target="_blank">here</a></span>. We substract out 3% annual GWP growth to calculate the growth in the <span style="font-style:italic;">fraction</span> of GWP invested.'
   },
 
   "g'_{C,S}": {
     constant: 'frac_compute.software_rnd.growth_rampup',
     meaning: 'Post "wake-up" growth of the fraction of effective compute assigned to software R&D',
+    unit: '/year',
     justification: 'We assume a one-year doubling as compute can be easily reallocated to the now-extremely-lucrative field of AI R&D.'
   },
 
   "g'_C": {
     constant: 'frac_gwp.compute.growth_rampup',
     meaning: 'Post "wake-up" growth of the fraction of GWP used to purchase new hardware',
+    unit: '/year',
     justification: 'Discussed <a href="https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#heading=h.612idx97x187">here</a>. We substract out 3% annual GWP growth to calculate the growth in the fraction of GWP invested.'
   },
 
   "g'_{C,T}": {
     constant: 'frac_compute.training.growth_rampup',
     meaning: 'Post "wake-up" growth of the fraction of effective compute assigned to training',
+    unit: '/year',
     justification: 'Discussed <span style="text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;"><a href="https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#heading=h.5xk4lbt60vr0" target="_blank">here</a></span>.'
   },
-
 
   "\\lambda": {
     constant: 'rnd.parallelization_penalty',
@@ -953,7 +971,7 @@ function plot_vlines(sim, line_color = 'black', graph = null) {
   }
 }
 
-function plot_variable(variable, container) {
+function plot_variable(variable, unit, container) {
   let t = sim.timesteps;
   let v = sim.get_thread(variable.thread)
 
@@ -963,14 +981,18 @@ function plot_variable(variable, container) {
   t = t.slice(0, end_idx);
   v = v.slice(0, end_idx);
 
-  plt.plot(t, v);
-
   plt.set_width(518);
   plt.set_height(350);
 
+  plt.plot(t, v);
+
+  if (unit.length > 0 && unit[0] != '/') {
+    unit = " " + unit;
+  }
+
   plt.set_tooltip((x, ys) => {
     let y = ys[0];
-    let content = `<span>Year: ${x.toFixed(1)} <br> ${variable.meaning}: ${y.toExponential(1)}</span>`;
+    let content = `<span>Year: ${x.toFixed(1)} <br> ${variable.meaning}: ${y.toExponential(1)}${unit}</span>`;
     let node = html(content);
     MathJax.typeset([node]);
     return node;
@@ -978,6 +1000,7 @@ function plot_variable(variable, container) {
 
   plot_vlines(sim);
   plt.yscale(variable.yscale || 'log');
+  plt.yunit(unit);
 
   let graph = plt.show(container);
 
@@ -1069,11 +1092,6 @@ function renderCard(card) {
           <div class="section-label">Variables and parameters</div>
           <div class="variables section-content"></div>
         </div>
-
-        <div class="parameters-box section" style="display: none">
-          <div class="section-label">Parameter glossary and values</div>
-          <div class="parameters section-content"></div>
-        </div>
       </div>
 
     </div>
@@ -1152,7 +1170,7 @@ function renderCard(card) {
         maxWidth: '860px',
         onCreate: (instance) => {
           let plotContainer = instance.popper.querySelector('.plot-container');
-          graph = plot_variable(variable, plotContainer);
+          graph = plot_variable(variable, variable.unit || "", plotContainer);
         },
         onShow: (instance) => {
           tippy.hideAll();
@@ -1218,6 +1236,11 @@ function renderCard(card) {
 
     let valueColumn = tr.querySelector('.value-column');
 
+    let unit = param.unit || "";
+    if (unit.length > 0 && unit[0] != '/') {
+      unit = " " + unit;
+    }
+
     if (Array.isArray(value)) {
       let viewButton = html(`<div class="view-button-hitbox"><div class="view-button"><i>${graphIcon}</i></div></div>`);
       valueColumn.appendChild(viewButton);
@@ -1249,6 +1272,7 @@ function renderCard(card) {
           plt.yscale('log');
           plt.set_width(518);
           plt.set_height(350);
+          plt.yunit(unit);
 
           MathJax.typeset([plotContainer]);
 
@@ -1270,7 +1294,7 @@ function renderCard(card) {
         },
       });
     } else {
-      valueColumn.innerHTML = standard_format(value);
+      valueColumn.innerHTML = standard_format(value) + unit;
     }
 
     let tbody = parametersTable.querySelector('tbody');
@@ -1310,6 +1334,23 @@ function renderCard(card) {
       initialized = true;
     }
   };
+
+  let boxIds = card.boxes || [`${card.id}-box`];
+  let boxes = [];
+  for (let boxId of boxIds) {
+    let box = document.getElementById(boxId);
+    boxes.push(box);
+  }
+
+  for (let box of boxes) {
+    box.addEventListener('mouseenter', () => {
+      for (let b of boxes) b.classList.add('hovering');
+    });
+
+    box.addEventListener('mouseleave', () => {
+      for (let b of boxes) b.classList.remove('hovering');
+    });
+  }
 
   return cardNode;
 }
@@ -1413,6 +1454,7 @@ function openCard(card) {
   card.onOpen();
 }
 
+
 let appendixAccordion = new handorgel(document.querySelector('.appendices-container'), {
   multiSelectable: false,
 });
@@ -1443,3 +1485,7 @@ document.body.addEventListener('mousedown', (e) => {
 // Driver for easier development
 //document.querySelector('#investment-box').dispatchEvent(new Event('click'));
 //openCard(productionCard);
+
+plt.plot([1, 2, 3], [4, 5, 6]);
+plt.yunit('FLOPs');
+plt.show(document.querySelector('#testing'));
