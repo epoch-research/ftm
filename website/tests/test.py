@@ -135,9 +135,9 @@ def compare(params):
   for i, p in enumerate(period):
     period[i] = {
       'Pre wake-up': 'prerampup',
-      'Wake-up': 'rampup_start',
+      'Wake-up': 'rampup start',
       'Mid rampup': 'mid rampup',
-      'AGI': 'agi',
+      'Full economic automation': 'full economic automation',
     }[p]
 
   compare_tables(python_summary_table, js_summary_table)
