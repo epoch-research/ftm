@@ -48,7 +48,7 @@ def sensitivity_analysis(quick_test_mode = False, method = 'one_at_a_time', vari
 
 def variance_reduction_comparison(quick_test_mode = False, save_dir = None, restore_dir = None, method = 'variance_reduction_on_margin'):
   params_dist = TakeoffParamsDist(
-      max_frac_automatable_tasks_goods = 0, max_frac_automatable_tasks_rnd = 0,
+      max_frac_automatable_tasks_goods = 0, max_frac_automatable_tasks_rnd = 0.05,
       use_ajeya_dist = False, ignore_rank_correlations = True, tradeoff_enabled = True, resampling_method = 'resample_all')
 
   metric_names = SimulateTakeOff.timeline_metrics + SimulateTakeOff.takeoff_metrics
