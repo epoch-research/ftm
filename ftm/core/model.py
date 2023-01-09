@@ -1971,12 +1971,12 @@ class SimulateTakeOff():
     raw_metrics = ['biggest_training_run', 'frac_tasks_automated_goods', 'frac_tasks_automated_rnd']
     doubling_time_metrics = ['hardware_performance', 'software', 'compute_investment', 'frac_compute_training', 'gwp', 'capital', 'labour', 'tfp_rnd', "rnd_input_software", "cumulative_rnd_input_software"]
 
-    for period, t in {'prerampup' : prerampup,
+    for period, t in {'prerampup': prerampup,
                       'rampup start': self.rampup_start,
                       'mid rampup': self.rampup_mid,
                       'full economic automation': self.timeline_metrics['automation_gns_100%']}.items() :
 
-      if t is None:
+      if t is None or np.isnan(t):
         summary_row = {
           'period' : period,
           'year' : np.nan,
