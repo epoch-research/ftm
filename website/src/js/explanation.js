@@ -1485,7 +1485,3 @@ document.body.addEventListener('mousedown', (e) => {
 // Driver for easier development
 //document.querySelector('#investment-box').dispatchEvent(new Event('click'));
 //openCard(productionCard);
-
-plt.plot([1, 2, 3], [4, 5, 6]);
-plt.yunit('FLOPs');
-plt.show(document.querySelector('#testing'));
