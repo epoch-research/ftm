@@ -268,6 +268,8 @@ let ftm = {};
       consts.goods.n_labour_tasks = consts.n_labour_tasks;
       consts.rnd.n_labour_tasks = consts.n_labour_tasks;
 
+      let seconds_per_year = 60*60*24*365;
+
       consts.goods.automation_training_flops = this.process_automation_costs(
         consts.training.full_automation_requirements,
         consts.training.flop_gap,
@@ -276,7 +278,7 @@ let ftm = {};
       );
 
       consts.goods.automation_runtime_flops = this.process_automation_costs(
-        consts.runtime.full_automation_requirements,
+        consts.runtime.full_automation_requirements * seconds_per_year,
         consts.runtime.flop_gap,
         consts.goods.n_labour_tasks,
         consts.runtime.steepness,
@@ -290,7 +292,7 @@ let ftm = {};
       );
 
       consts.rnd.automation_runtime_flops = this.process_automation_costs(
-        consts.runtime.full_automation_requirements / consts.runtime.goods_vs_rnd_requirements,
+        consts.runtime.full_automation_requirements * seconds_per_year / consts.runtime.goods_vs_rnd_requirements,
         consts.runtime.flop_gap,
         consts.rnd.n_labour_tasks,
         consts.runtime.steepness,

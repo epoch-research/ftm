@@ -253,14 +253,16 @@ class SimulateTakeOff():
     """ Initialize the training and runtime flops for goods and rnd
     """
 
+    seconds_per_year = 60*60*24*365
+
     # Define requirements and gap for goods and R&D
     self.full_automation_training_flops_goods = self.full_automation_requirements_training
-    self.full_automation_runtime_flops_goods = self.full_automation_requirements_runtime
+    self.full_automation_runtime_flops_goods = self.full_automation_requirements_runtime * seconds_per_year
 
     self.full_automation_training_flops_rnd = \
       self.full_automation_requirements_training / self.goods_vs_rnd_requirements_training
     self.full_automation_runtime_flops_rnd = \
-      self.full_automation_requirements_runtime / self.goods_vs_rnd_requirements_runtime
+      self.full_automation_requirements_runtime * seconds_per_year / self.goods_vs_rnd_requirements_runtime
 
     self.automation_training_flop_gap_goods = self.flop_gap_training
     self.automation_training_flop_gap_rnd = self.flop_gap_training
