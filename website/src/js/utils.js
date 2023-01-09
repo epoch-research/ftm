@@ -2,7 +2,12 @@
  * Converts an HTML string to a DOM element
  */
 function html(str) {
-  let tmp = document.createElement('div');
+  let parentTag = 'div';
+  if (str.trim().startsWith('<tr>')) {
+    parentTag = 'tbody';
+  }
+
+  let tmp = document.createElement(parentTag);
   tmp.innerHTML = str.trim();
   let node = tmp.firstChild;
   return node;

@@ -6,10 +6,7 @@
     }
 
     :root {
-      --card-radius: 7px;
-    }
-
-    :root {
+        --card-radius: 7px;
         --border-radius: 7px !important;
         --border-color: #333;
         --border: 2px solid #333;
@@ -25,27 +22,15 @@
       padding: 1em;
       margin: 1em;
       background-color: white;
-      border-radius: var(--border-radius);
       border: 2px solid #333;
+      border-radius: var(--border-radius);
     }
 
     .map-container {
-      border: 2px solid #333;
       padding: 1em;
+      border: 2px solid #333;
       border-radius: var(--border-radius);
     }
-
-    /*
-    .header {
-      border-top-left-radius: var(--card-radius);
-      border-top-right-radius: var(--card-radius);
-    }
-
-    .header, .context, .overview, .appendices {
-      border: 1px solid black;
-      padding: 0.5em;
-    }
-    */
 
     .appendices {
       border-bottom-left-radius: var(--border-radius);
@@ -60,28 +45,6 @@
       margin-bottom: 0.5em;
     }
 
-    .map {
-      max-width: 100%;
-    }
-
-    .tippy-box[data-theme~='variable'] {
-      background-color: #eee;
-      color: black;
-    }
-
-    .tippy-box[data-theme~='variable'][data-placement^='top'] > .tippy-arrow::before {
-      border-top-color: #eee;
-    }
-    .tippy-box[data-theme~='variable'][data-placement^='bottom'] > .tippy-arrow::before {
-      border-bottom-color: #eee;
-    }
-    .tippy-box[data-theme~='variable'][data-placement^='left'] > .tippy-arrow::before {
-      border-left-color: #eee;
-    }
-    .tippy-box[data-theme~='variable'][data-placement^='right'] > .tippy-arrow::before {
-      border-right-color: #eee;
-    }
-
     .invisible {
       display: none;
     }
@@ -92,34 +55,32 @@
     }
 
     table, th, td {
-      border: 1px solid black;
       padding: 5px;
+      border: 1px solid black;
+    }
+
+    .view-column, .value-column {
+      padding-top: 0;
+      padding-bottom: 0;
     }
 
     .view-column {
       text-align: center;
-      padding-top: 0;
-      padding-bottom: 0;
-    }
-
-    .value-column {
-      padding-top: 0;
-      padding-bottom: 0;
     }
 
     .view-button {
       width: 23px;
-      background-color: #5e5e5e;
       padding: 4px;
-      border-radius: var(--card-radius);
+      background-color: #5e5e5e;
       color: white;
       display: inline-block;
       text-align: center;
+      border-radius: var(--card-radius);
     }
 
     .view-button-hitbox {
-      cursor: pointer;
       width: fit-content;
+      cursor: pointer;
       padding-top: 2.5px;
       padding-bottom: 2.5px;
     }
@@ -152,6 +113,28 @@
   </style>
 
   <style>
+    .tippy-box[data-theme~='variable'] {
+      background-color: #eee;
+      color: black;
+    }
+
+    .tippy-box[data-theme~='variable'][data-placement^='top'] > .tippy-arrow::before {
+      border-top-color: #eee;
+    }
+    .tippy-box[data-theme~='variable'][data-placement^='bottom'] > .tippy-arrow::before {
+      border-bottom-color: #eee;
+    }
+    .tippy-box[data-theme~='variable'][data-placement^='left'] > .tippy-arrow::before {
+      border-left-color: #eee;
+    }
+    .tippy-box[data-theme~='variable'][data-placement^='right'] > .tippy-arrow::before {
+      border-right-color: #eee;
+    }
+  </style>
+
+  <style>
+    /* SVG boxes */
+
     .box:hover {
       cursor: pointer;
     }
@@ -220,10 +203,10 @@
 
     .card .left {
       overflow-y: auto;
+      box-sizing: border-box;
+      border-right: none;
       border-top-left-radius: var(--border-radius);
       border-bottom-left-radius: var(--border-radius);
-      border-right: none;
-      box-sizing: border-box;
     }
 
     .card .right {
@@ -235,11 +218,6 @@
       flex-basis: 50%;
       flex-grow: 0;
       flex-shrink: 0;
-    }
-
-    .card .right {
-      //min-height: 600px;
-      //max-height: 90vh;
     }
 
     .card .right .equations-box {
@@ -262,15 +240,12 @@
 
     .output-figures figure {
       width: 600px;
-      /*
-      width: 50%;
-      */
     }
 
     .card .abstract {
       padding: 4px;
-      border-radius: var(--border-radius);
       border: 1px solid grey;
+      border-radius: var(--border-radius);
     }
 
     .card .abstract p {
@@ -356,9 +331,6 @@
       <div class="context">
         <h4 class="section-header">Context</h4>
 
-        <div id="testing">
-        </div>
-
         <p>The Full Takeoff Model (FTM) is an endogenous economic growth model developed by Tom Davidson. It is meant to illustrate the future trajectory of Artificial Intelligence, the economy and associated factors. In particular, it helps us answer how long it will take to go from a partial automation of the economy to a total automation of the economy.</p>
 
         <p>This model combines features from the <a href="https://www.cold-takes.com/forecasting-transformative-ai-the-biological-anchors-method-in-a-nutshell/">biological anchors' AI timelines framework by Ajeya Cotra</a>, and previous macroeconomic models of automation, e.g. <a href="https://web.stanford.edu/~chadj/AJJ-AIandGrowth.pdf">the one by Aghion, Jones and Jones</a>.</p>
@@ -384,7 +356,7 @@
 
           <p style="font-weight: bold">(Click on the different parts of the model to understand how each one works)</p>
 
-          <div id="node-container">
+          <div id="card-container">
           </div>
         </div>
 
@@ -543,16 +515,16 @@
 <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
 <script id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
-<script src="libs/d3.v4.min.js"></script>
-
 <script src="js/utils.js"></script>
 
 <link rel="stylesheet" href="css/graph.css">
+<script src="libs/d3.v4.min.js"></script>
 <script src="js/graph.js"></script>
 
 <script src="js/ftm/nj.js"></script>
 <script src="js/ftm/ftm.js"></script>
 <script src="js/ftm/bridge.js"></script>
 
-<script src="js/best-guess-parameters.js"></script>
+<script src="js/presets.js"></script>
+<script src="js/explanation-variables-and-cards.js"></script>
 <script src="js/explanation.js"></script>
