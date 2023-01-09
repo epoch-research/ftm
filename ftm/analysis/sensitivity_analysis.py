@@ -116,6 +116,7 @@ def get_parameter_importance_metrics(params, metric_names):
 
   model.run_simulation()
 
+  all_metrics = {}
   for metric, value in model.timeline_metrics.items():
     all_metrics[metric] = model.t_end if value is None or np.isnan(value) else value
   for metric, value in model.takeoff_metrics.items():
