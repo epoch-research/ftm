@@ -148,7 +148,7 @@ class Scenario:
     self.name    = name
     self.model   = model
     self.params  = params
-    self.metrics = [Metric(name, value[0]) for name, value in model.get_takeoff_metrics().iteritems()]
+    self.metrics = [Metric(name, value[0]) for name, value in model.get_takeoff_metrics().items()]
 
 class MetricDescription:
   def __init__(self, name, meaning):
