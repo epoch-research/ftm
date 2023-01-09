@@ -594,7 +594,15 @@ if __name__ == '__main__':
   parser.add_argument(
     "--variance_reduction_save_dir",
   )
+  parser.add_argument(
+    "-c",
+    "--rank_correlations_url",
+    type=str,
+    default=None,
+  )
   args = handle_cli_arguments(parser)
+
+  set_option('rank_correlations_sheet_url', args.rank_correlations_url)
 
   variance_reduction_params = {
       'restore_dir': args.variance_reduction_restore_dir,
