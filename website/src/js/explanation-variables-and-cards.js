@@ -15,13 +15,13 @@ let variables = {
   'R_H':     {meaning: 'Research input to hardware R&D',                         thread: 'hardware_performance.rnd_input', unit: '2022 USD'},
   'R_S':     {meaning: 'Research input to software R&D',                         thread: 'software.rnd_input', unit: '2022 USD'},
 
-  'Cog_H':   {meaning: 'Cognitive input to hardware R&D',                        thread: 'hardware_rnd.cognitive_output'},
+  'Cog_H':   {meaning: 'Cognitive input to hardware R&D',                        thread: 'hardware_rnd.cognitive_output', unit: '2022 USD'},
   'T_{H,i}': {meaning: 'Output of the \\(i\\)-th hardware R&D task',             },
   'C_{H,0}': {meaning: 'Output of the non-AI hardware R&D compute tasks',        thread: 'hardware_rnd.compute_task_input[0]'},
   'C_{H,i}': {meaning: 'Compute allocated to the \\(i\\)-th hardware R&D task',  },
   'L_{H,i}': {meaning: 'Labour allocated to the \\(i\\)-th hardware R&D task',   },
 
-  'Cog_S':   {meaning: 'Cognitive input to software R&D',                        thread: 'software_rnd.cognitive_output'},
+  'Cog_S':   {meaning: 'Cognitive input to software R&D',                        thread: 'software_rnd.cognitive_output', unit: '2022 USD'},
   'T_{S,i}': {meaning: 'Output of the \\(i\\)-th software R&D task',             },
   'C_{S,0}': {meaning: 'Output of the non-AI software R&D compute tasks',        thread: 'software_rnd.compute_task_input[0]'},
   'C_{S,i}': {meaning: 'Compute allocated to the \\(i\\)-th software R&D task',  },
@@ -29,7 +29,7 @@ let variables = {
 
   'GWP':     {meaning: 'Gross world product',                                    thread: 'gwp', unit: '2022 USD'},
 
-  'L':       {meaning: 'Labour',                                                 thread: 'labour', unit: 'work-years/year'},
+  'L':       {meaning: 'Labour',                                                 thread: 'labour', unit: 'years of work/year'},
   'TFP':     {meaning: 'Total factor productivity',                              thread: 'goods.tfp'},
 
   'HS':      {meaning: 'Hardware stock',                                         thread: 'hardware', unit: 'FLOP/year'},
@@ -95,7 +95,7 @@ let parameters = {
     constant: sim => sim.consts.rnd.automation_training_flops.slice(1),
     graph: {
       indices: sim => nj.arange(1, sim.consts.rnd.automation_training_flops.length, 1),
-      tooltip: (x, y) => `Task: ${x.toFixed(0)} <br> FLOPs: ${y.toExponential(1)}`,
+      tooltip: (x, y) => `Task: ${x.toFixed(0)} <br> 2022 FLOP: ${y.toExponential(1)}`,
     },
     meaning: 'Training requirements for automation of the \\(i\\)-th R&D task',
 
@@ -108,7 +108,7 @@ let parameters = {
     constant: sim => sim.consts.goods.automation_training_flops.slice(1),
     graph: {
       indices: sim => nj.arange(1, sim.consts.goods.automation_training_flops.length, 1),
-      tooltip: (x, y) => `Task: ${x.toFixed(0)} <br> FLOPs: ${y.toExponential(1)}`,
+      tooltip: (x, y) => `Task: ${x.toFixed(0)} <br> 2022 FLOP: ${y.toExponential(1)}`,
     },
     unit: '2022 FLOP',
     meaning: 'Training requirements for automation of the \\(i\\)-th G&S task',
@@ -152,10 +152,10 @@ let parameters = {
       indices: sim => nj.arange(1, sim.consts.goods.automation_runtime_flops.length, 1),
       tooltip: (x, y) => `Task: ${x.toFixed(0)} <br> Efficiency: ${y.toExponential(1)}`,
     },
-    meaning: 'Compute-to-labour efficiency for the \\(i\\)-th G&S task',
-    unit: 'person/(2022 FLOP * year)',
+    meaning: 'Base compute-to-labour efficiency for the \\(i\\)-th G&S task <br> (without runtime-training tradeoff)',
+    unit: 'years of work/2022 FLOP',
     justification: `
-      Computed following the method explained at the end of the <a href="#automation-runtime-requirements">automation section</a>, assuming that running an AGI requires 5.256E+23 FLOP/year and that the runtime FLOP gap is 10:
+      Computed following the method explained at the end of the <a href="#automation-runtime-requirements">automation section</a>, assuming that running an AGI requires 1.67e16 FLOP/s and that the runtime FLOP gap is 10:
 
       <br>
       <br>
@@ -166,6 +166,29 @@ let parameters = {
       <br>
 
       <b>FLOP gap</b>: The spread of runtime requirements is smaller than the spread of training requirements for four reasons. First, a 10X increase in runtime compute typically corresponds to a 100X increase in training, e.g. for Chinchilla scaling. Secondly, increasing the horizon length of training tasks will increase training compute but not runtime. Thirdly, some of the "one time gains" for AGI over humans won't apply as much to pre-AGI systems; e.g. the benefits of thinking 100X faster are less for limited AIs that cannot learn independently over the course of weeks. Fourthly, a smaller spread is a hacky way to capture the fact it's harder to trade-off training compute for runtime compute today than it will be in the future.
+    `,
+  },
+
+  '\\iota_{G,i}': {
+    constant: sim => sim.consts.goods.automation_runtime_flops.slice(1),
+    graph: {
+      indices: sim => nj.arange(1, sim.consts.goods.automation_runtime_flops.length, 1),
+      tooltip: (x, y) => `Task: ${x.toFixed(0)} <br> Requirements: ${y.toExponential(1)}`,
+    },
+    meaning: 'Base runtime requirements (no runtime-training tradeoff) for the \\(i\\)-th G&S task',
+    unit: '2022 FLOP',
+    justification: `
+    Computed following the method explained on the left, assuming that running an AGI requires 1.67 FLOP/s and that the runtime FLOP gap is 10:
+
+    <br>
+    <br>
+
+    <b>AGI runtime requirements</b>: We anchor on the Bio Anchors report (~1e16 FLOP/s), then we adjust upwards by 1 OOM to account for TAI being a lower bar than full automation and downwards by 6X to account for one-time advantages for AGI over humans in goods and services.
+
+    <br>
+    <br>
+
+    <b>FLOP gap</b>: The spread of runtime requirements is smaller than the spread of training requirements for four reasons. First, a 10X increase in runtime compute typically corresponds to a 100X increase in training, e.g. for Chinchilla scaling. Secondly, increasing the horizon length of training tasks will increase training compute but not runtime. Thirdly, some of the "one time gains" for AGI over humans won't apply as much to pre-AGI systems; e.g. the benefits of thinking 100X faster are less for limited AIs that cannot learn independently over the course of weeks. Fourthly, a smaller spread is a hacky way to capture the fact it's harder to trade-off training compute for runtime compute today than it will be in the future.
     `,
   },
 
@@ -199,7 +222,8 @@ let parameters = {
       indices: sim => nj.arange(1, sim.consts.rnd.automation_runtime_flops.length, 1),
       tooltip: (x, y) => `Task: ${x.toFixed(0)} <br> Efficiency: ${y.toExponential(1)}`,
     },
-    meaning: 'Compute-to-labour efficiency for the \\(i\\)-th hardware and software R&D task',
+    meaning: 'Base compute-to-labour efficiency for the \\(i\\)-th hardware and software R&D task <br> (without runtime-training tradeoff)',
+    unit: 'years of work/2022 FLOP',
     justification: `
       This is 100 times the compute-to-labour efficiency for G&S (see above).
 
@@ -213,6 +237,29 @@ let parameters = {
 
       Then we add on another 10X because the model implicitly assumes that there are 0.8 million people doing software R&D in 2022, and 8 million people doing hardware R&D. (Because it multiplies the fraction of $ spent in these areas by the total labour force.) In fact I think the number of people working in these areas is ~10X less than this.
       `,
+  },
+
+  '\\iota_{R,i}': {
+    constant: sim => sim.consts.rnd.automation_runtime_flops.slice(1),
+    graph: {
+      indices: sim => nj.arange(1, sim.consts.rnd.automation_runtime_flops.length, 1),
+      tooltip: (x, y) => `Task: ${x.toFixed(0)} <br> Requirements: ${y.toExponential(1)} 2022 FLOP`,
+    },
+    meaning: 'Base runtime requirements (no runtime-training tradeoff) for the \\(i\\)-th R&D task',
+    unit: '2022 FLOP',
+    justification: `
+      This is 100 times the base runtime requirements for G&S (see above).
+
+      <br>
+      <br>
+
+      We estimate the one-time gains of AGIs over humans to be 60X in R&D vs 6X in G&S. This is a difference of 10X. 
+
+      <br>
+      <br>
+
+      Then we add on another 10X because the model implicitly assumes that there are 0.8 million people doing software R&D in 2022, and 8 million people doing hardware R&D. (Because it multiplies the fraction of $ spent in these areas by the total labour force.) In fact I think the number of people working in these areas is ~10X less than this.
+    `,
   },
 
   '\\alpha_S': {
@@ -290,24 +337,28 @@ let parameters = {
   "U_H": {
     constant: 'hardware_performance.ceiling',
     meaning: 'Maximum hardware efficiency',
+    unit: 'FLOP/year/$',
     justification: 'Based on a rough estimate from a technical advisor. They guessed energy prices could eventually fall 10X from today to $0.01/kWh. And that (based on <span style="text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#56a3f1;"><a href="https://en.wikipedia.org/wiki/Landauer%27s_principle" target="_blank">Landauer’s limit</a></span>) you might eventually do 1e27 bit erasures per kWh. That implies 1e29 bit erasures per $. If we do 1 FLOP per bit, that\'s 1e29 FLOP/$. You could go get more FLOP/$ than this with reversible computing, at least 1e30 FLOP/$.<br/>The advisor separately estimated 1e24 FLOP/$ as the limit within the current paradigm (the value used in Bio Anchors).<br/>We are somewhat conservative and use the mid-point as our best guess, 1e27 FLOP/$.<br/>Lastly, we adjust these FLOP/$ down an OOM to get FLOP/year/$ (implying that we use chips for 10 years).'
   },
 
   "U_S": {
     constant: 'software.ceiling',
     meaning: 'Maximum software efficiency',
+    unit: '2022&nbsp;FLOP/FLOP',
     justification: 'If training AGI currently requires 1e36 FLOP, but this can in the limit be reduced to human life-time learning FLOP of 1e24, that\'s 12 OOMs improvement. '
   },
 
   "H_0": {
     constant: 'initial.hardware_performance',
     meaning: 'Initial hardware efficiency',
+    unit: 'FLOP/year/$',
     justification: 'The training of PaLM cost ~$10m, and used 3e24 FLOP. This implies 3e17 FLOP/$. If companies renting chips make back their money over 2 years then that corresponds to a <i>buyable</i> hardware performance of 1.5e17 FLOP/year/$. The initial hardware efficiency is calculated taking into account a hardware adoption delay of 1 year.'
   },
 
   "S_0": {
     constant: 'initial.software',
     meaning: 'Initial software efficiency',
+    unit: '2022&nbsp;FLOP/FLOP',
     justification: 'Software efficiency is measured relative to the initial year (so it\'s 1 at the beginning of the simulation).'
   },
 
@@ -417,6 +468,12 @@ let parameters = {
     constant: 'rnd.parallelization_penalty',
     meaning: 'R&D parallelization penalty',
     justification: 'Economic models often use a value of 1. A prominent growth economist thought that values between 0.4 and 1 are reasonable. If you think adding new people really won\'t help much with AI progress, you could use a lower value. Besiroglu\'s <span style="text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;color:#1155cc;"><a href="https://tamaybesiroglu.com/papers/AreModels.pdf" target="_blank">thesis</a></span> cites estimates as low as 0.2 (p14).'
+  },
+
+  "\\delta": {
+    constant: 'runtime_training_tradeoff',
+    meaning: 'Efficiency of the runtime-training tradeoff',
+    justification: ''
   },
 }
 
@@ -530,11 +587,17 @@ let automationCard = {
     'C',
     'A_G',
     'A_R',
+    //'\\eta_{R,i}',
+    //'\\eta_{G,i}',
+    //'\\eta_{G,i}',
   ],
 
   parameters: [
-    '\\tau_{R,i}',
+    '\\delta',
     '\\tau_{G,i}',
+    '\\iota_{G,i}',
+    '\\tau_{R,i}',
+    '\\iota_{R,i}',
   ],
 };
 

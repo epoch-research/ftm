@@ -34,7 +34,7 @@ function plot_vlines(sim, line_color = 'black', graph = null) {
   }
 }
 
-function plot_variable(sim, variable, unit, container) {
+function plot_variable(sim, variable, container) {
   let t = sim.timesteps;
   let v = sim.get_thread(variable.thread)
 
@@ -51,13 +51,9 @@ function plot_variable(sim, variable, unit, container) {
   plt.show_grid(true);
   plt.set_margin({top: 5});
 
-  if (unit.length > 0 && unit[0] != '/') {
-    unit = " " + unit;
-  }
-
   plt.set_tooltip((x, ys) => {
     let y = ys[0];
-    let content = `<span>Year: ${x.toFixed(1)} <br> ${variable.meaning}: ${y.toExponential(1)}${unit}</span>`;
+    let content = `<span>Year: ${x.toFixed(1)} <br> ${variable.meaning}: ${y.toExponential(1)}</span>`;
     let node = html(content);
     MathJax.typeset([node]);
     return node;
@@ -65,7 +61,6 @@ function plot_variable(sim, variable, unit, container) {
 
   plot_vlines(sim);
   plt.yscale(variable.yscale || 'log');
-  plt.yunit(unit);
 
   let graph = plt.show(container);
 
@@ -168,7 +163,7 @@ function render_card(card) {
       let graph;
 
       tippy(view_button, {
-        content: `<div class="plot-container"><div class="plot-title">${variable.meaning}</div></div>`,
+        content: `<div class="plot-container"><div class="plot-title">${variable.meaning}</div><div class="plot-unit">${variable.unit ? "(" + variable.unit + ")" : ""}</div></div>`,
         triggerTarget: view_button_hitbox,
         trigger: 'click',
         duration: [10, 10],
@@ -182,7 +177,7 @@ function render_card(card) {
         maxWidth: '860px',
         onCreate: (instance) => {
           let plot_container = instance.popper.querySelector('.plot-container');
-          graph = plot_variable(sim, variable, variable.unit || "", plot_container);
+          graph = plot_variable(sim, variable, plot_container);
         },
         onShow: (instance) => {
           tippy.hideAll();
@@ -262,7 +257,7 @@ function render_card(card) {
       let graph;
 
       tippy(view_button, {
-        content: `<div class="plot-container"><div class="plot-title">${param.meaning}</div></div>`,
+        content: `<div class="plot-container"><div class="plot-title">${param.meaning}</div><div class="plot-unit">${param.unit ? "(" + param.unit + ")" : ""}</div></div>`,
         triggerTarget: view_button_hitbox,
         trigger: 'click',
         duration: [10, 10],
@@ -284,7 +279,6 @@ function render_card(card) {
           plt.set_margin({top: 5});
           plt.set_width(518);
           plt.set_height(350);
-          plt.yunit(unit);
 
           MathJax.typeset([plot_container]);
 
