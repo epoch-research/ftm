@@ -886,19 +886,23 @@ let presetModal = document.querySelector('#preset-selector-modal');
 let presetModalButton = document.querySelector('#preset-modal-button');
 let presetContainer = document.querySelector('#preset-container');
 
-let presets = {
-  "Aggressive": aggressive_parameters,
-  "Best guess": best_guess_parameters,
-  "Conservative": conservative_parameters,
-};
-
-for (let presetName in presets) {
-  let button = html(`<div><button class="preset-load-button">${presetName}</button></div>`);
+function addPreset(name, params) {
+  let button = html(`<div><button class="preset-load-button">${name}</button></div>`);
   presetContainer.appendChild(button);
   button.addEventListener('click', () => {
-    import_scenario(presets[presetName]);
+    import_scenario(params);
     presetModal.classList.add('hidden');
   });
+}
+
+for (let presetName in presets) {
+  addPreset(presetName, presets[presetName]);
+}
+
+presetContainer.appendChild(html('<div style="font-weight: bold">Foobar</div>'));
+
+for (let presetName in no_tradeoff_presets) {
+  addPreset(presetName, no_tradeoff_presets[presetName]);
 }
 
 presetModalButton.addEventListener('click', () => {
