@@ -1,41 +1,43 @@
 let cards = [];
 
-let variables = {
-  'K':       {meaning: 'Capital',                                                thread: 'capital'},
+let space_between_equations = '3pt';
 
-  'K_G':     {meaning: 'Capital dedicated to G&S',                               thread: 'goods.capital'},
-  'Cog_G':   {meaning: 'Cognitive input to G&S',                                 thread: 'goods.cognitive_output'},
+let variables = {
+  'K':       {meaning: 'Capital',                                                thread: 'capital', unit: '2022 USD'},
+
+  'K_G':     {meaning: 'Capital dedicated to G&S',                               thread: 'goods.capital', unit: '2022 USD'},
+  'Cog_G':   {meaning: 'Cognitive input to G&S',                                 thread: 'goods.cognitive_output', unit: '2022 USD'},
   'T_{G,i}': {meaning: 'Output of the \\(i\\)-th G&S task',                      },
-  'C_{G,0}': {meaning: 'Output of the non-AI G&S compute tasks',                 thread: 'goods.compute_task_input[0]'},               // <-- TODO
+  'C_{G,0}': {meaning: 'Output of the non-AI G&S compute tasks',                 thread: 'goods.compute_task_input[0]'},
   'C_{G,i}': {meaning: 'Compute allocated to the \\(i\\)-th G&S task',           },
   'L_{G,i}': {meaning: 'Labour allocated to the \\(i\\)-th G&S task',            },
 
-  'R_H':     {meaning: 'Research input to hardware R&D',                         thread: 'hardware_performance.rnd_input'},
-  'R_S':     {meaning: 'Research input to software R&D',                         thread: 'software.rnd_input'},
+  'R_H':     {meaning: 'Research input to hardware R&D',                         thread: 'hardware_performance.rnd_input', unit: '2022 USD'},
+  'R_S':     {meaning: 'Research input to software R&D',                         thread: 'software.rnd_input', unit: '2022 USD'},
 
   'Cog_H':   {meaning: 'Cognitive input to hardware R&D',                        thread: 'hardware_rnd.cognitive_output'},
   'T_{H,i}': {meaning: 'Output of the \\(i\\)-th hardware R&D task',             },
-  'C_{H,0}': {meaning: 'Output of the non-AI hardware R&D compute tasks',        thread: 'hardware_rnd.compute_task_input[0]'},        // <-- TODO
+  'C_{H,0}': {meaning: 'Output of the non-AI hardware R&D compute tasks',        thread: 'hardware_rnd.compute_task_input[0]'},
   'C_{H,i}': {meaning: 'Compute allocated to the \\(i\\)-th hardware R&D task',  },
   'L_{H,i}': {meaning: 'Labour allocated to the \\(i\\)-th hardware R&D task',   },
 
   'Cog_S':   {meaning: 'Cognitive input to software R&D',                        thread: 'software_rnd.cognitive_output'},
   'T_{S,i}': {meaning: 'Output of the \\(i\\)-th software R&D task',             },
-  'C_{S,0}': {meaning: 'Output of the non-AI software R&D compute tasks',        thread: 'software_rnd.compute_task_input[0]'},        // <-- TODO
+  'C_{S,0}': {meaning: 'Output of the non-AI software R&D compute tasks',        thread: 'software_rnd.compute_task_input[0]'},
   'C_{S,i}': {meaning: 'Compute allocated to the \\(i\\)-th software R&D task',  },
   'L_{S,i}': {meaning: 'Labour allocated to the \\(i\\)-th software R&D task',   },
 
-  'GWP':     {meaning: 'Gross world product',                                    thread: 'gwp', unit: '$'},
+  'GWP':     {meaning: 'Gross world product',                                    thread: 'gwp', unit: '2022 USD'},
 
-  'L':       {meaning: 'Labour',                                                 thread: 'labour'},
+  'L':       {meaning: 'Labour',                                                 thread: 'labour', unit: 'work-years/year'},
   'TFP':     {meaning: 'Total factor productivity',                              thread: 'goods.tfp'},
 
   'HS':      {meaning: 'Hardware stock',                                         thread: 'hardware', unit: 'FLOP/year'},
 
   'H':       {meaning: 'Hardware efficiency',                                    thread: 'hardware_performance.v', unit: 'FLOP/year/$'},
 
-  'C':       {meaning: 'Effective compute',                                      thread: 'compute', unit: 'FLOP'},
-  'S':       {meaning: 'Software efficiency level',                              thread: 'software.v'},
+  'C':       {meaning: 'Effective compute',                                      thread: 'compute', unit: '2022 FLOP/year'},
+  'S':       {meaning: 'Software efficiency level',                              thread: 'software.v', unit: '2022 FLOP/FLOP'},
 
   'F_C':     {meaning: 'Fraction of GWP used to purchase new hardware',          thread: 'compute_investment'},
   'F_{C,G}': {meaning: 'Fraction of effective compute assigned to G&S',          thread: 'frac_compute.goods.v'},
@@ -48,13 +50,13 @@ let variables = {
   'F_{L,H}': {meaning: 'Fraction of labor assigned to hardware R&D',             thread: 'frac_labour.hardware_rnd.v'},
   'F_{L,S}': {meaning: 'Fraction of labor assigned to software R&D',             thread: 'frac_labour.software_rnd.v'},
 
-  'C_T':     {meaning: 'Largest training run',                                   thread: 'biggest_training_run', unit: 'FLOP'},
+  'C_T':     {meaning: 'Largest training run',                                   thread: 'biggest_training_run', unit: '2022 FLOP'},
 
   'P_H':     {meaning: 'Penalty factor for hardware R&D',                        thread: 'hardware_rnd.ceiling_penalty'},
-  'Q_H':     {meaning: 'Adjusted cumulative inputs to hardware R&D',             thread: 'hardware_performance.cumulative_rnd_input'},
+  'Q_H':     {meaning: 'Adjusted cumulative inputs to hardware R&D',             thread: 'hardware_performance.cumulative_rnd_input', unit: '2022 USD'},
 
   'P_S':     {meaning: 'Penalty factor for software R&D',                        thread: 'software_rnd.ceiling_penalty'},
-  'Q_S':     {meaning: 'Adjusted cumulative inputs to software R&D',             thread: 'software.cumulative_rnd_input'},
+  'Q_S':     {meaning: 'Adjusted cumulative inputs to software R&D',             thread: 'software.cumulative_rnd_input', unit: '2022 USD'},
 
   'A_G':     {meaning: 'Automation index for G&S',                               thread: 'goods.at',                                   yscale: 'linear'},
   'A_R':     {meaning: 'Automation index for R&D',                               thread: 'rnd.at',                                     yscale: 'linear'},
@@ -97,6 +99,8 @@ let parameters = {
     },
     meaning: 'Training requirements for automation of the \\(i\\)-th R&D task',
 
+    unit: '2022 FLOP',
+
     justification: 'Computed following the method described on the left, assuming training an AGI will require 1e36 FLOP (we\'re mostly anchoring to the Bio Anchors report, with an extra OOM to account for TAI being a lower bar than full automation) and the FLOP gap is 1e4 (see discussion in the <a href="https://docs.google.com/document/d/1Z7HJ9pHctgDi1XYbgRW9-7J1bxTL98KW1qb7HN7Mv-A/edit#heading=h.grg4srb18f02">summary</a> and <a href="https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#heading=h.o4db3tcgrq28">full report</a>).',
   },
 
@@ -106,6 +110,7 @@ let parameters = {
       indices: sim => nj.arange(1, sim.consts.goods.automation_training_flops.length, 1),
       tooltip: (x, y) => `Task: ${x.toFixed(0)} <br> FLOPs: ${y.toExponential(1)}`,
     },
+    unit: '2022 FLOP',
     meaning: 'Training requirements for automation of the \\(i\\)-th G&S task',
     justification: 'Three times the requirements for R&D (see above). We have slightly lower requirements for R&D because it may be easier to gather data, and there may be fewer regulatory restrictions.',
   },
@@ -148,6 +153,7 @@ let parameters = {
       tooltip: (x, y) => `Task: ${x.toFixed(0)} <br> Efficiency: ${y.toExponential(1)}`,
     },
     meaning: 'Compute-to-labour efficiency for the \\(i\\)-th G&S task',
+    unit: 'person/(2022 FLOP * year)',
     justification: `
       Computed following the method explained at the end of the <a href="#automation-runtime-requirements">automation section</a>, assuming that running an AGI requires 5.256E+23 FLOP/year and that the runtime FLOP gap is 10:
 
@@ -434,7 +440,7 @@ let automationCard = {
 
     <p>The amount of effective compute dedicated to the largest training run to date \\(C_T\\) is a fraction \\(F_{C,T}\\) of the total available compute:</p>
 
-    <div>\\[C_T = F_{C,T} \\cdot C\\]</div>
+    <div>\\[C_T = F_{C,T} \\cdot C \\cdot 1 \\, \\text{year} \\]</div>
 
     <p id="automation-index">To determine the automation index for goods and services, we compare \\(C_T\\) to the automation training requirements \\(\\tau_{G,1}, ..., \\tau_{G,N}\\). We set the automation index \\(A_G\\) to the largest task index \\(i\\) such that \\(\\tau_{G,i} < C_T\\).</p>
 
@@ -487,27 +493,35 @@ let automationCard = {
 
     <div>\\[A_R = \\max_i \\{i : \\tau_{R,i} < C_T\\} \\]</div>
 
-    <p id="automation-runtime-requirements">Finally, we follow an identical procedure as for the training requirements to determine the runtime requirements for each task. We then define the compute-to-labour ratio of the cognitive tasks \\(\\eta_{x,i}\\) as the inverse of the runtime requirements. The result is that tasks that are easier to automate also require less effective compute to replace labour.</p>
+    <p id="automation-runtime-requirements">We follow an identical procedure as for the training requirements to determine the runtime requirements for each task. We then define the compute-to-labour ratio of the cognitive tasks \\(\\eta_{x,i}\\) as the inverse of the runtime requirements. The result is that tasks that are easier to automate also require less effective compute to replace labour.</p>
 
-    <br>
+    <p>Finally, we allow the automation of tasks where we haven't reached the corresponding effective compute automation threshold \\(\\tau_{G,i}\\) at the cost of a lower compute-to-labour efficiency \\(\\eta_{G,i}\\). This essentially allows AI developers to 'tradeoff' training and runtime effective compute – use excess runtime compute to make up for a smaller training run.</p>
 
-    <p>In one modification of the model, we allow the automation of tasks where we haven't reached the corresponding effective compute automation threshold \\(\\tau_{G,i}\\) at the cost of a lower compute-to-labour efficiency \\(\\eta_{G,i}\\). This essentially allows AI developers to 'tradeoff' training and runtime effective compute -- use excess runtime compute to make up for a smaller training run.</p>
+    <p>In more detail, as long as the training compute \\(C_T\\) is within a threshold \\(\\tau_{G,i} / C_T < \\text{Max tradeoff}\\), the task is considered automated, with a compute-to-labour efficiency of:</p>
 
-    <div class="learn-more">
-      <p>As long as the training compute \\(C_T\\) is within a threshold \\(\\tau_{G,i} / C_T < \\text{Max tradeoff}\\), the task is considered automated, with a compute-to-labour efficiency of:</p>
+    <div>\\[\\eta_{G,i} = \\frac{1}{\\iota_{G,i} \\cdot\\left(\\frac{\\tau_{G,i}}{C_T} \\right)^\\delta}\\]</div>
 
-      <div>\\[\\eta_{G,i} = \\frac{1}{run_{G,i} \\cdot\\left(\\frac{\\tau_{G,i}}{C_T} \\right)^\\delta}\\]</div>
+    <p>where \\(\\iota_{G,i}\\) are the base runtime requirements and \\(\\delta > 1\\) is a parameter governing the efficiency of the tradeoff.</p>
 
-      <p>where \\(run_{G,i}\\) are the base runtime requirements (see section on [automation]) and \\(\\delta > 1\\) is a parameter governing the efficiency of the tradeoff.</p>
-
-      <p>Note that the efficiency increases smoothly beyond the base runtime requirements; runtime requirements never stop getting lower over time as more compute is invested in training larger AI systems.</p>
-    </div>
+    <p>Note that the efficiency increases smoothly beyond the base runtime requirements; runtime requirements never stop getting lower over time as more compute is invested in training larger AI systems.</p>
   `,
 
   equations: [
-    'C_T = F_{C,T} \\cdot C',
-    'A_G = \\max_i \\{i : \\tau_{G,i} < C_T\\}',
-    'A_R = \\max_i \\{i : \\tau_{R,i} < C_T\\}',
+    'C_T = F_{C,T} \\cdot C \\cdot 1 \\, \\text{year}',
+
+    `
+    \\begin{cases}
+        A_G = \\max_i \\{i : \\tau_{G,i} < C_T\\} \\\\
+        \\eta_{G,i} = \\frac{1}{\\iota_{G,i} \\cdot\\left(\\frac{\\tau_{G,i}}{C_T} \\right)^\\delta}
+    \\end{cases}
+    `,
+
+    `
+    \\begin{cases}
+      A_R = \\max_i \\{i : \\tau_{R,i} < C_T\\} \\\\
+      \\eta_{R,i} = \\frac{1}{\\iota_{R,i} \\cdot\\left(\\frac{\\tau_{R,i}}{C_T} \\right)^\\delta}
+    \\end{cases}
+    `,
   ],
 
   variables: [
@@ -563,8 +577,11 @@ let rndCard = {
 
   equations: [
     '\\frac{\\dot H}{H} = {r_H \\cdot P_H} \\cdot\\frac{\\dot Q_H}{Q_H}',
+
     'P_H = \\frac{\\log (U_H/H)}{\\log (U_H/H_0)}',
+
     '\\frac{\\dot S}{S} = {r_S \\cdot P_S} \\cdot\\frac{\\dot Q_S}{Q_S}',
+
     'P_S = \\frac{\\log (U_S/S)}{\\log (U_S/S_0)}',
   ],
 
@@ -725,10 +742,15 @@ let reinvestmentCard = {
 
   equations: [
     '\\dot K = s_K \\cdot \\text{GWP}',
+
     '\\dot L = g_L \\cdot L',
+
     '\\dot{\\text{TFP}} = g_{\\text{TFP}} \\cdot \\text{TFP}',
+
     '\\dot{HS} = F_C \\cdot \\text{GWP} \\cdot H_{t - h_d} - d_C \\cdot HS',
+
     'C = HS \\cdot S',
+
     '\\dot F_X = G_X \\cdot F_X',
   ],
 
@@ -833,17 +855,29 @@ let productionCard = {
   `,
 
   equations: [
-    'GWP := TFP \\cdot [\\alpha_G \\cdot K_{G}^{\\rho_G} + (1-\\alpha_G) \\cdot \\text{Cog}_G^{\\rho_G}]^{1/{\\rho_G}}',
-    'Cog_G = [\\beta_{G,0} \\cdot C_{G,0}^{\\psi_G} + \\beta_{G,1} \\cdot T_{G,1}^{\\psi_G} + ... + \\beta_{G,N} \\cdot T_{G,N}^{\\psi_G} ]^{1/{\\psi_G}}',
-    'T_{G,i} = L_{G,i} + \\eta_{G,i} \\cdot C_{G,i}',
+    `
+    \\begin{cases}
+      GWP := TFP \\cdot [\\alpha_G \\cdot K_{G}^{\\rho_G} + (1-\\alpha_G) \\cdot \\text{Cog}_G^{\\rho_G}]^{1/{\\rho_G}} \\\\
+      Cog_G = [\\beta_{G,0} \\cdot C_{G,0}^{\\psi_G} + \\beta_{G,1} \\cdot T_{G,1}^{\\psi_G} + ... + \\beta_{G,N} \\cdot T_{G,N}^{\\psi_G} ]^{1/{\\psi_G}} \\\\
+      T_{G,i} = L_{G,i} + \\eta_{G,i} \\cdot C_{G,i}
+    \\end{cases}
+    `,
 
-    'R_H := TFP \\cdot [\\alpha_R \\cdot K_{H}^{\\rho_R} + (1-\\alpha_R) \\cdot \\text{Cog}_H^{\\rho_R}]^{1/{\\rho_R}}',
-    'Cog_H := [\\beta_{R,0} \\cdot C_{H,0}^{\\psi_R} + \\beta_{R,1} \\cdot T_{H,1}^{\\psi_R} + ... + \\beta_{R,N} \\cdot T_{H,N}^{\\psi_R} ]^{1/{\\psi_R}}',
-    'T_{H,i} = L_{H,i} + \\eta_{R,i} \\cdot C_{H,i}',
+    `
+    \\begin{cases}
+      R_H := TFP \\cdot [\\alpha_R \\cdot K_{H}^{\\rho_R} + (1-\\alpha_R) \\cdot \\text{Cog}_H^{\\rho_R}]^{1/{\\rho_R}} \\\\
+      Cog_H := [\\beta_{R,0} \\cdot C_{H,0}^{\\psi_R} + \\beta_{R,1} \\cdot T_{H,1}^{\\psi_R} + ... + \\beta_{R,N} \\cdot T_{H,N}^{\\psi_R} ]^{1/{\\psi_R}} \\\\
+      T_{H,i} = L_{H,i} + \\eta_{R,i} \\cdot C_{H,i}
+    \\end{cases}
+    `,
 
-    'R_S := TFP \\cdot [\\alpha_S \\cdot HS^{\\zeta \\cdot \\rho_S} + (1-\\alpha_S) \\cdot \\text{Cog}_S^{\\rho_S}]^{1/{\\rho_S}}',
-    'Cog_S := [\\beta_{R,0} \\cdot C_{S,0}^{\\psi_R} + \\beta_{R,1} \\cdot T_{S,1}^{\\psi_R} + ... + \\beta_{R,N} \\cdot T_{S,N}^{\\psi_R} ]^{1/{\\psi_R}}',
-    'T_{S,i} = L_{S,i} + \\eta_{R,i} \\cdot C_{S,i}',
+    `
+    \\begin{cases}
+      R_S := TFP \\cdot [\\alpha_S \\cdot HS^{\\zeta \\cdot \\rho_S} + (1-\\alpha_S) \\cdot \\text{Cog}_S^{\\rho_S}]^{1/{\\rho_S}} \\\\
+      Cog_S := [\\beta_{R,0} \\cdot C_{S,0}^{\\psi_R} + \\beta_{R,1} \\cdot T_{S,1}^{\\psi_R} + ... + \\beta_{R,N} \\cdot T_{S,N}^{\\psi_R} ]^{1/{\\psi_R}} \\\\
+      T_{S,i} = L_{S,i} + \\eta_{R,i} \\cdot C_{S,i}
+    \\end{cases}
+    `,
   ],
 
   variables: [

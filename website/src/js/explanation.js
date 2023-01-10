@@ -128,8 +128,12 @@ function render_card(card) {
   card_node.querySelector('.explanation').innerHTML = `<div class="abstract">${abstract}</div>` + '\n' + explanation;
 
   // Equations
-  let equations = card.equations.map(s => '<p>\\[' + s + '\\]</p>').join('\n');
-  card_node.querySelector('.equations').innerHTML = equations;
+  let equations = card.equations;
+  if (!Array.isArray(equations)) {
+    equations = [equations];
+  }
+  let equationsHtml = equations.map(s => '<p class="key-equation">\\[' + s + '\\]</p>').join('\n');
+  card_node.querySelector('.equations').innerHTML = equationsHtml;
 
   // Variables
   let variables_table = html(`
