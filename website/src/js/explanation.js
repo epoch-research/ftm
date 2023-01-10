@@ -132,7 +132,7 @@ function render_card(card) {
 
   // Variables
   let variables_table = html(`
-    <table>
+    <table class="variable-table">
       <thead>
         <th>Variable</th>
         <th>Meaning</th>
@@ -197,7 +197,7 @@ function render_card(card) {
 
   // Parameters
   let parameters_table = html(`
-    <table>
+    <table class="parameter-table">
       <thead>
         <th>Parameter</th>
         <th>Meaning</th>
@@ -300,7 +300,11 @@ function render_card(card) {
         },
       });
     } else {
-      value_column.innerHTML = standard_format(value) + unit;
+      if (typeof value == 'string') {
+        value_column.innerHTML = value;
+      } else {
+        value_column.innerHTML = `<span class="no-break">${standard_format(value)}</span> ${unit}`;
+      }
     }
 
     let tbody = parameters_table.querySelector('tbody');

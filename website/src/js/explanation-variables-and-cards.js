@@ -29,7 +29,7 @@ let variables = {
 
   'GWP':     {meaning: 'Gross world product',                                    thread: 'gwp', unit: '2022 USD'},
 
-  'L':       {meaning: 'Labour',                                                 thread: 'labour', unit: 'years of work/year'},
+  'L':       {meaning: 'Labour',                                                 thread: 'labour', unit: 'years of human labour/year'},
   'TFP':     {meaning: 'Total factor productivity',                              thread: 'goods.tfp'},
 
   'HS':      {meaning: 'Hardware stock',                                         thread: 'hardware', unit: 'FLOP/year'},
@@ -129,7 +129,7 @@ let parameters = {
   },
 
   '\\beta_{G,i}': {
-    constant: sim => `Task 0: 1 <br><br> Rest of tasks: ${standard_format(sim.consts.goods.labour_task_weights[1])}`,
+    constant: sim => `Task 0: 1 <br><br> Rest of tasks: <span class="no-break">${standard_format(sim.consts.goods.labour_task_weights[1])}</span>`,
     meaning: 'Task weights in the G&S cognitive CES function',
     justification: 'See <a href="#appendix-a">appendix A</a>.',
   },
@@ -153,7 +153,7 @@ let parameters = {
       tooltip: (x, y) => `Task: ${x.toFixed(0)} <br> Efficiency: ${y.toExponential(1)}`,
     },
     meaning: 'Base compute-to-labour efficiency for the \\(i\\)-th G&S task <br> (without runtime-training tradeoff)',
-    unit: 'years of work/2022 FLOP',
+    unit: 'years of human labour/2022 FLOP',
     justification: `
       Computed following the method explained at the end of the <a href="#automation-runtime-requirements">automation section</a>, assuming that running an AGI requires 1.67e16 FLOP/s and that the runtime FLOP gap is 10:
 
@@ -223,7 +223,7 @@ let parameters = {
       tooltip: (x, y) => `Task: ${x.toFixed(0)} <br> Efficiency: ${y.toExponential(1)}`,
     },
     meaning: 'Base compute-to-labour efficiency for the \\(i\\)-th hardware and software R&D task <br> (without runtime-training tradeoff)',
-    unit: 'years of work/2022 FLOP',
+    unit: 'years of human labour/2022 FLOP',
     justification: `
       This is 100 times the compute-to-labour efficiency for G&S (see above).
 
