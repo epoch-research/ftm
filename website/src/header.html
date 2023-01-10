@@ -291,7 +291,7 @@
         width: 90% !important;
         min-width: 90% !important;
       }
-      
+
       @supports (display: flex) {
         .modal-container {
           width: 90% !important;
@@ -339,6 +339,30 @@ window.addEventListener('load', () => {
     });
   }
 });
+</script>
+
+<script>
+// See https://atomiks.github.io/tippyjs/v6/plugins/#hideonesc
+const hideOnEsc = {
+  name: 'hideOnEsc',
+  defaultValue: true,
+  fn({hide}) {
+    function onKeyDown(event) {
+      if (event.keyCode === 27) {
+        hide();
+      }
+    }
+
+    return {
+      onShow() {
+        document.addEventListener('keydown', onKeyDown);
+      },
+      onHide() {
+        document.removeEventListener('keydown', onKeyDown);
+      },
+    };
+  },
+};
 </script>
 
 <link rel="stylesheet" href="https://unpkg.com/tippy.js@6/themes/light-border.css" />

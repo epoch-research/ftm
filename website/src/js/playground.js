@@ -268,7 +268,6 @@ function download(content, filename, type) {
 document.getElementById('export-button').addEventListener('click', () => export_scenario());
 
 document.getElementById('import-button').addEventListener('change', function() {
-  console.log(this.files);
   if (this.files.length == 0) {
     return;
   }
@@ -504,6 +503,7 @@ function plot_variable(sim, var_name, title, {plot_growth = false, crop_after_ag
     y = y.slice(0, end_idx);
   }
     
+  plt.set_tooltip(null);
   plt.plot(x, y);
   plot_vlines(sim);
   plt.set_title(title);
@@ -851,6 +851,7 @@ function draw_requirements(runtime_or_training, graph_container, steepness_node)
 
   plt.clear(graph_container);
   plt.set_size(450, 250);
+  plt.set_tooltip(null);
   plt.plot(automation_costs, percentage_automated);
   plt.set_interactive(false);
   plt.yscale('linear');
@@ -987,28 +988,6 @@ function injectMeaningTooltip(node, meaning) {
     node._meaningInjected = true;
   }
 }
-
-// See https://atomiks.github.io/tippyjs/v6/plugins/#hideonesc
-const hideOnEsc = {
-  name: 'hideOnEsc',
-  defaultValue: true,
-  fn({hide}) {
-    function onKeyDown(event) {
-      if (event.keyCode === 27) {
-        hide();
-      }
-    }
-
-    return {
-      onShow() {
-        document.addEventListener('keydown', onKeyDown);
-      },
-      onHide() {
-        document.removeEventListener('keydown', onKeyDown);
-      },
-    };
-  },
-};
 
 // ------------------------------------------------------------------------
 // And... run

@@ -92,6 +92,7 @@ let bridge = {}
     'software_returns':                                    'software.returns',
     'runtime_training_tradeoff':                           'runtime_training_tradeoff',
     'runtime_training_max_tradeoff':                       'runtime_training_max_tradeoff',
+    'runtime_training_tradeoff_enabled':                   'runtime_training_tradeoff_enabled',
     'n_labour_tasks':                                      'n_labour_tasks',
   };
 

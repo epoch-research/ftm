@@ -29,19 +29,12 @@ class Graph {
     this.on_select_callback = null;
     this.transform = null;
     this.transform_update_callback = null;
+    this.grid_enabled = false;
+
+    this.margin = {top: 15, right: 10, bottom: 30, left: 40};
 
     // You can overwrite this one
-    this.tooltipBuilder = (x, ys) => {
-      let tooltipHtml = [];
-      tooltipHtml.push(`x: ${x.toFixed(1)}`);
-      for (let yIndex = 0; yIndex < ys.length; yIndex++) {
-        let y = ys[yIndex];
-        let label = 'y';
-        if (ys.length > 1) label += (yIndex+1);
-        tooltipHtml.push(`${label}: ${(this.yAxis.scale == 'log') ? y.toExponential(1) : y.toFixed(1)}`);
-      }
-      return tooltipHtml.join('<br>');
-    }
+    this.tooltipBuilder = null;
 
     this.width = 770;
     this.height = 520;
@@ -79,6 +72,16 @@ class Graph {
 
   set_title(title) {
     this.title = title;
+  }
+
+  set_margin(margin) {
+    for (let key in margin) {
+      this.margin[key] = margin[key];
+    }
+  }
+
+  show_grid(show) {
+    this.grid_enabled = show;
   }
 
   add_data_xy(x, y, options = {}) {
@@ -133,7 +136,7 @@ class Graph {
     }
 
     // set the dimensions and margins of the graph
-    let margin = {top: 5, right: 10, bottom: 30, left: 40};
+    let margin = this.margin;
 
     if (this.yAxis.unit) {
       margin.top += 15;
@@ -216,16 +219,21 @@ class Graph {
       .range([height, 0])
     ;
 
-    let gridV = content.append("g")
-      .attr('class', 'grid')     
-      .attr("transform", "translate(0," + height + ")")
-      .call(d3.axisBottom(x).tickSize(-height).tickFormat(''))
-    ;
+    let gridV;
+    let gridH;
 
-    let gridH = content.append("g")
-      .attr('class', 'grid')     
-      .call(d3.axisLeft(y).tickSize(-width))
-    ;
+    if (this.grid_enabled) {
+      gridV = content.append("g")
+        .attr('class', 'grid')
+        .attr("transform", "translate(0," + height + ")")
+        .call(d3.axisBottom(x).tickSize(-height).tickFormat(''))
+      ;
+
+      gridH = content.append("g")
+        .attr('class', 'grid')
+        .call(d3.axisLeft(y).tickSize(-width))
+      ;
+    }
 
     let currentX = x;
     let currentY = y;
@@ -295,12 +303,12 @@ class Graph {
 
     if (this.yAxis.unit) {
       yAxis.append("text")
-           .attr('x', -5)             
+           .attr('x', -5)
            .attr('y', -5)
            .attr('fill', 'black')
            .attr('font-weight', 'bold')
-           .attr('text-anchor', 'right')  
-           .style('font-size', '12px') 
+           .attr('text-anchor', 'right')
+           .style('font-size', '12px')
            .text(this.yAxis.unit)
     }
 
@@ -436,10 +444,10 @@ class Graph {
 
     if (this.graph_title) {
       svg.append('text')
-        .attr('x', (width / 2))             
+        .attr('x', (width / 2))
         .attr('y', -8)
-        .attr('text-anchor', 'middle')  
-        .style('font-size', '16px') 
+        .attr('text-anchor', 'middle')
+        .style('font-size', '16px')
         .text(this.graph_title)
       ;
     }
@@ -650,10 +658,12 @@ class Graph {
         .attr('y2', d => currentY(d) )
       ;
 
-      gridV.call(d3.axisBottom(currentX).tickSize(-height).tickFormat(''));
-      gridH.call(d3.axisLeft(currentY).tickSize(-width));
+      if (self.grid_enabled) {
+        gridV.call(d3.axisBottom(currentX).tickSize(-height).tickFormat(''));
+        gridH.call(d3.axisLeft(currentY).tickSize(-width));
+      }
 
-      if (!Number.isNaN(mouseP[0]) && !Number.isNaN(mouseP[1])) {
+      if (self.tooltipBuilder && !Number.isNaN(mouseP[0]) && !Number.isNaN(mouseP[1])) {
         updateTooltip(d3.event, mouseP, false);
       }
     }
@@ -811,6 +821,14 @@ class Plotter {
 
   ylims(lims) {
     this.graph.ylims(lims);
+  }
+
+  set_margin(margin) {
+    this.graph.set_margin(margin);
+  }
+
+  show_grid(show) {
+    this.graph.show_grid(show);
   }
 
   xscale(scale) {

@@ -7,6 +7,7 @@ import re
 import json
 from ftm.core.utils import *
 from ftm.core.model import *
+from ftm.core.scenarios import *
 
 important_params_and_metrics = pd.read_excel(
     get_input_workbook(),
@@ -98,6 +99,17 @@ def generate_dictionaries():
   print(f'let conservative_parameters = {json.dumps(conservative_parameters)};')
   print(f'let best_guess_parameters = {json.dumps(best_guess_parameters)};')
   print(f'let aggressive_parameters = {json.dumps(aggressive_parameters)};')
+
+  log.level = Log.ERROR_LEVEL
+
+  scenario_runner = ScenarioRunner()
+  groups = scenario_runner.simulate_all_scenarios()
+
+  parameters = {group.name: scenario.params for group in groups for scenario in group.scenarios if scenario.name == 'Best guess'}
+  print()
+  print(f'let short_timelines_best_guess = {json.dumps(parameters["Very short timelines"])};')
+  print(f'let med_timelines_best_guess = {json.dumps(parameters["Med timelines"])};')
+  print(f'let long_timelines_best_guess = {json.dumps(parameters["Very long timelines"])};')
 
 def generate_arrays():
   print(f'let important_metrics = {json.dumps([x for x in important_params_and_metrics["Metric id"] if not pd.isnull(x)])};')

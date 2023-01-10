@@ -48,6 +48,8 @@ function plot_variable(sim, variable, unit, container) {
   plt.set_height(350);
 
   plt.plot(t, v);
+  plt.show_grid(true);
+  plt.set_margin({top: 5});
 
   if (unit.length > 0 && unit[0] != '/') {
     unit = " " + unit;
@@ -274,6 +276,8 @@ function render_card(card) {
           graph = plt.graph;
           plt.plot(param.graph.indices(sim), value);
           plt.yscale('log');
+          plt.show_grid(true);
+          plt.set_margin({top: 5});
           plt.set_width(518);
           plt.set_height(350);
           plt.yunit(unit);
