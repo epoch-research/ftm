@@ -900,10 +900,10 @@ for (let presetName in presets) {
   addPreset(presetName, presets[presetName]);
 }
 
-presetContainer.appendChild(html('<div style="font-weight: bold">Foobar</div>'));
+presetContainer.appendChild(html('<div style="margin-top: 15px;">Best guess timelines analysis scenarios</div>'));
 
-for (let presetName in no_tradeoff_presets) {
-  addPreset(presetName, no_tradeoff_presets[presetName]);
+for (let presetName in timelines_analysis_presets) {
+  addPreset(presetName, timelines_analysis_presets[presetName]);
 }
 
 presetModalButton.addEventListener('click', () => {

@@ -87,18 +87,13 @@ def generate_dictionaries():
     parameter: row['Aggressive'] if not np.isnan(row['Aggressive']) else row['Best guess'] for parameter, row in parameter_table.iterrows()
   }
 
-  if best_guess_parameters['runtime_training_tradeoff'] > 0:
-    best_guess_parameters['runtime_training_tradeoff_enabled'] = True
+  def handle_tradeoff(params):
+    params['runtime_training_tradeoff_enabled'] = (params['runtime_training_tradeoff'] > 0)
+    return params
 
-  if conservative_parameters['runtime_training_tradeoff'] > 0:
-    conservative_parameters['runtime_training_tradeoff_enabled'] = True
-
-  if aggressive_parameters['runtime_training_tradeoff'] > 0:
-    aggressive_parameters['runtime_training_tradeoff_enabled'] = True
-
-  print(f'let conservative_parameters = {json.dumps(conservative_parameters)};')
-  print(f'let best_guess_parameters = {json.dumps(best_guess_parameters)};')
-  print(f'let aggressive_parameters = {json.dumps(aggressive_parameters)};')
+  print(f'let conservative_parameters = {json.dumps(handle_tradeoff(conservative_parameters))};')
+  print(f'let best_guess_parameters = {json.dumps(handle_tradeoff(best_guess_parameters))};')
+  print(f'let aggressive_parameters = {json.dumps(handle_tradeoff(aggressive_parameters))};')
 
   log.level = Log.ERROR_LEVEL
 
@@ -107,9 +102,9 @@ def generate_dictionaries():
 
   parameters = {group.name: scenario.params for group in groups for scenario in group.scenarios if scenario.name == 'Best guess'}
   print()
-  print(f'let short_timelines_best_guess = {json.dumps(parameters["Very short timelines"])};')
-  print(f'let med_timelines_best_guess = {json.dumps(parameters["Med timelines"])};')
-  print(f'let long_timelines_best_guess = {json.dumps(parameters["Very long timelines"])};')
+  print(f'let short_timelines_best_guess = {json.dumps(handle_tradeoff(parameters["Very short timelines"]))};')
+  print(f'let med_timelines_best_guess = {json.dumps(handle_tradeoff(parameters["Med timelines"]))};')
+  print(f'let long_timelines_best_guess = {json.dumps(handle_tradeoff(parameters["Very long timelines"]))};')
 
 def generate_arrays():
   print(f'let important_metrics = {json.dumps([x for x in important_params_and_metrics["Metric id"] if not pd.isnull(x)])};')
