@@ -17,7 +17,7 @@ class TakeoffParamsDist():
 
   def __init__(self, max_frac_automatable_tasks_goods = 0, max_frac_automatable_tasks_rnd = 0,
       ignore_rank_correlations = False, use_ajeya_dist = True, resampling_method = 'all_but_training_requirements',
-      tradeoff_enabled = True, parameter_table = None):
+      tradeoff_enabled = True, parameter_table = None, aggressive = False):
 
     if resampling_method not in ('all_but_training_requirements', 'resample_all'):
       raise ValueError("`resampling_method` must be one of 'all_but_training_requirements' or 'resample_all'")
@@ -34,7 +34,7 @@ class TakeoffParamsDist():
 
     self.rank_correlations = get_rank_correlations()
 
-    self.marginals = self.get_marginals(parameter_table, use_ajeya_dist)
+    self.marginals = self.get_marginals(parameter_table, use_ajeya_dist, use_aggressive_ajeya_dist = aggressive)
 
     if ignore_rank_correlations:
       self.pairwise_rank_corr = {}
@@ -53,7 +53,7 @@ class TakeoffParamsDist():
         directions[parameter] = +1 if (row['Conservative'] < row['Aggressive']) else -1
     return directions
 
-  def get_marginals(self, parameter_table, use_ajeya_dist):
+  def get_marginals(self, parameter_table, use_ajeya_dist, use_aggressive_ajeya_dist):
     marginals = {}
     for parameter, row in parameter_table.iterrows():
       if not np.isnan(row['Conservative']) and not np.isnan(row['Aggressive']) and not row['Type'] == 'delta':
@@ -68,7 +68,7 @@ class TakeoffParamsDist():
       marginals[parameter] = marginal
 
     if use_ajeya_dist:
-      marginals['full_automation_requirements_training'] = AjeyaDistribution()
+      marginals['full_automation_requirements_training'] = AjeyaDistribution(aggressive = use_aggressive_ajeya_dist)
     else:
       marginals['full_automation_requirements_training'] = SkewedLogUniform(
         parameter_table.at['full_automation_requirements_training', 'Conservative'],
@@ -166,7 +166,6 @@ class TakeoffParamsDist():
         for i, sample in samples.iterrows():
           # Only add the sample if it makes sense
           if not self.sample_is_good(sample):
-            log.trace('Discarding sample')
             continue
 
           # OK, looks good
@@ -207,8 +206,8 @@ class BioAnchorsAGIDistribution():
 
 # TODO Change the name
 class AjeyaDistribution(rv_continuous):
-  def __init__(self, lower_bound = None):
-    self.cdf_pd = get_clipped_ajeya_dist(lower_bound)
+  def __init__(self, lower_bound = None, aggressive = False):
+    self.cdf_pd = get_clipped_ajeya_dist(lower_bound = lower_bound, aggressive = aggressive)
 
     cdf = self.cdf_pd.to_numpy()
     self.v = cdf[:, 0]

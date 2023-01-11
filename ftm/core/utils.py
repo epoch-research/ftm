@@ -30,6 +30,7 @@ CONFIG_FILES = [
 # Excel removes some characters from the sheet names and limits their length
 MOST_IMPORTANT_PARAMETERS_SHEET = re.sub(r'[\[\]]', '', '[tom] Most important parameters and metrics')[:31]
 AJEYA_SHEET = 'Ajeya distribution of automation FLOP'[:31]
+AGGRESSIVE_AJEYA_SHEET = '[Aggressive] Ajeya distribution of automation FLOP'[:31]
 
 #--------------------------------------------------------------------------
 # Poor person's mini configuration system
@@ -126,6 +127,7 @@ def expand_string(string, context):
 
 cached_input_workbooks = {}
 cached_ajeya_dist = None
+cached_aggressive_ajeya_dist = None
 cached_param_table = None
 cached_metrics_table = None
 cached_rank_correlations = None
@@ -284,21 +286,32 @@ def set_parameter_table_url(url):
   set_option('param_table_url', url)
   cached_param_table = None
 
-def get_ajeya_dist():
+def get_ajeya_dist(aggressive = False):
   global cached_ajeya_dist
-  if cached_ajeya_dist is None:
-    url = get_option('ajeya_dist_url')
+  global cached_aggressive_ajeya_dist
+
+  cached_dist = cached_ajeya_dist if aggressive else cached_aggressive_ajeya_dist
+
+  if cached_dist is None:
+    url = get_option('aggressive_ajeya_dist_url' if aggressive else 'ajeya_dist_url')
     cols = [0, 1]
     if url:
-      cached_ajeya_dist = get_csv_from_sheet_url(url, usecols = cols)
+      dist = get_csv_from_sheet_url(url, usecols = cols)
     else:
       # By default we read the distibution from the omni workbook
-      cached_ajeya_dist = pd.read_excel(get_input_workbook(), sheet_name = AJEYA_SHEET, usecols = cols)
+      dist = pd.read_excel(get_input_workbook(), sheet_name = AJEYA_SHEET, usecols = cols)
 
-  return cached_ajeya_dist.copy()
+    if aggressive:
+      cached_aggressive_ajeya_dist = dist
+    else:
+      cached_ajeya_dist = dist
 
-def get_clipped_ajeya_dist(lower_bound):
-  ajeya_dist = get_ajeya_dist()
+    cached_dist = dist
+
+  return cached_dist.copy()
+
+def get_clipped_ajeya_dist(lower_bound, aggressive = False):
+  ajeya_dist = get_ajeya_dist(aggressive)
 
   if lower_bound:
     lower_bound = np.log10(lower_bound)
@@ -314,10 +327,16 @@ def get_clipped_ajeya_dist(lower_bound):
 
   return ajeya_dist
 
-def set_ajeya_dist_url(url):
+def set_ajeya_dist_url(url, aggressive = False):
   global cached_ajeya_dist
-  set_option('ajeya_dist_url', url)
-  cached_ajeya_dist = None
+  global cached_aggressive_ajeya_dist
+
+  if aggressive:
+    set_option('ajeya_dist_url', url)
+    cached_ajeya_dist = None
+  else:
+    set_option('aggressive_ajeya_dist_url', url)
+    cached_aggressive_ajeya_dist = None
 
 def get_rank_correlations():
   global cached_rank_correlations
@@ -466,6 +485,11 @@ def init_cli_arguments():
   )
 
   parser.add_argument(
+    "--aggressive-ajeya-dist-url",
+    default=None,
+  )
+
+  parser.add_argument(
     "--human-names",
     action='store_true',
     default=None,
@@ -505,6 +529,9 @@ def handle_cli_arguments(parser):
 
   if args.ajeya_dist_url is not None:
     set_ajeya_dist_url(args.ajeya_dist_url)
+
+  if args.aggressive_ajeya_dist_url is not None:
+    set_ajeya_dist_url(args.aggressive_ajeya_dist_url, aggressive = True)
 
   if args.disable_automation:
     set_option('disable_automation', True)

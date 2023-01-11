@@ -42,8 +42,7 @@ def sensitivity_analysis(quick_test_mode = False, method = 'one_at_a_time', vari
 
   if method == 'combined':
     var = variance_reduction_comparison(quick_test_mode = quick_test_mode, method = 'variance_reduction_on_margin', **variance_reduction_params)
-    result = one_at_a_time_comparison(quick_test_mode = quick_test_mode)
-    result.table.insert(1, 'variance_reduction', var.table[main_metric]) # after importance
+    result = one_at_a_time_comparison(quick_test_mode = quick_test_mode, additional_columns = [['variance_reduction', var.table[main_metric]]])
     return result
 
 def variance_reduction_comparison(quick_test_mode = False, save_dir = None, restore_dir = None, method = 'variance_reduction_on_margin'):
@@ -53,6 +52,7 @@ def variance_reduction_comparison(quick_test_mode = False, save_dir = None, rest
 
   metric_names = SimulateTakeOff.timeline_metrics + SimulateTakeOff.takeoff_metrics
   parameters = [name for name, marginal in params_dist.marginals.items() if not isinstance(marginal, PointDistribution)]
+  #parameters = parameters[:2]
   mean_samples = 50_000
   var_samples = 2
   shapley_samples = 1000
@@ -64,7 +64,7 @@ def variance_reduction_comparison(quick_test_mode = False, save_dir = None, rest
     processes = 4
     shapley_samples = 4
     #parameters = [name for name, marginal in params_dist.marginals.items() if not isinstance(marginal, PointDistribution)]
-    parameters = parameters[:2]
+    #parameters = parameters[:2]
     #parameters = ['flop_gap_training',]
     print(parameters)
     #parameters = ['full_automation_requirements_training', 'flop_gap_training',]
@@ -127,7 +127,7 @@ def get_parameter_importance_metrics(params, metric_names):
 
   return metrics
 
-def one_at_a_time_comparison(quick_test_mode = False):
+def one_at_a_time_comparison(quick_test_mode = False, additional_columns = []):
   log.info('Retrieving parameters...')
 
   parameter_table = get_parameter_table(tradeoff_enabled=True)
@@ -220,12 +220,21 @@ def one_at_a_time_comparison(quick_test_mode = False):
       break
 
   table = pd.DataFrame(table)
-  table = table.set_index('Parameter').sort_values(by='importance', ascending=False)
+  table = table.set_index('Parameter')
 
   # Move the importance column to the beginning
   importance = table['importance']
   table.drop(labels = ['importance'], axis = 1, inplace = True)
   table.insert(0, 'importance', importance)
+
+  # Insert the additional columns at the beginning
+  for index, column in enumerate(additional_columns):
+    name = column[0]
+    data = column[1]
+    table.insert(index, name, data)
+
+  # Sort by first column
+  table = table.sort_values(by=table.columns[0], ascending=False)
 
   results = SensitivityAnalysisResults()
   results.parameter_table = parameter_table

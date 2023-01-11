@@ -8,7 +8,7 @@ from .timelines_analysis import write_timelines_analysis_report
 from .mc_analysis import write_mc_analysis_report, McAnalysisResults
 
 def megareport(report_file_path=None, report_dir_path=None, quick_test_mode=False, report=None,
-    mc_trials=None, mc_input_results_filename=None, variance_reduction_params={}, variance_reduction_method=False):
+    mc_trials=None, mc_input_results_filename=None, mc_aggressive_input_results_filename=None, variance_reduction_params={}, variance_reduction_method=False):
   if mc_trials is None: mc_trials = 100
   if report_file_path is None:
     report_file_path = 'megareport.html'
@@ -26,6 +26,16 @@ def megareport(report_file_path=None, report_dir_path=None, quick_test_mode=Fals
     write_mc_analysis_report(report = report, n_trials = 4 if mc_trials is None else mc_trials, input_results_filename = mc_input_results_filename)
   else:
     write_mc_analysis_report(report = report, n_trials = mc_trials, input_results_filename = mc_input_results_filename)
+  log.deindent()
+  log.info()
+
+  log.info('Generating aggressive Monte Carlo analysis tab')
+  log.indent()
+  report.begin_tab('Monte Carlo analysis (aggressive)', 'mc_analysis_aggressive')
+  if quick_test_mode:
+    write_mc_analysis_report(report = report, n_trials = 4 if mc_trials is None else mc_trials, input_results_filename = mc_aggressive_input_results_filename, aggressive = True)
+  else:
+    write_mc_analysis_report(report = report, n_trials = mc_trials, input_results_filename = mc_aggressive_input_results_filename, aggressive = True)
   log.deindent()
   log.info()
 
@@ -75,8 +85,13 @@ if __name__ == '__main__':
   )
 
   parser.add_argument(
-    "--input-results-file",
+    "--mc-input-results-file",
     help = 'Read the MC results from this file (pickle) instead of regenerating them',
+  )
+
+  parser.add_argument(
+    "--mc-aggressive-input-results-file",
+    help = 'Read the aggressive MC results from this file (pickle) instead of regenerating them',
   )
 
   parser.add_argument(
@@ -106,7 +121,8 @@ if __name__ == '__main__':
   megareport(
     report_file_path=args.output_file, report_dir_path=args.output_dir,
     quick_test_mode=args.quick_test_mode, mc_trials=args.mc_trials,
-    mc_input_results_filename=args.input_results_file,
+    mc_input_results_filename=args.mc_input_results_file,
+    mc_aggressive_input_results_filename=args.mc_aggressive_input_results_file,
     variance_reduction_params=variance_reduction_params,
     variance_reduction_method=args.variance_reduction_method,
   )

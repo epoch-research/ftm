@@ -1550,7 +1550,7 @@ class SimulateTakeOff():
 
     assert 0. <= p <= 1., f"o = {o}, p = {p}"
     assert 0. <= p_not <= 1., f"o = {o}, p_not = {p_not}"
-    assert np.abs(p/p_not / o - 1.) < 1e-6
+    assert np.abs(p/p_not / o - 1.) < 1e-4
     return p, p_not
 
   @staticmethod

@@ -18,7 +18,7 @@ from scipy.special import erfinv
 from numpy.random import default_rng
 from matplotlib import cm
 from xml.etree import ElementTree as et
-from ..core.utils import get_clipped_ajeya_dist, get_param_names, get_metric_names, get_most_important_metrics, pluralize
+from ..core.utils import get_param_names, get_metric_names, get_most_important_metrics, pluralize
 from ..stats.distributions import *
 from statsmodels.distributions.empirical_distribution import ECDF
 
@@ -86,7 +86,7 @@ class DoublingYearsBeforeFullAutomationMetric(YearsBeforeAgiMetric):
 
     return doubling_time
 
-def mc_analysis(n_trials = 100, max_retries = 100):
+def mc_analysis(n_trials = 100, max_retries = 100, aggressive = False):
   scalar_metrics = {}
 
   for metric in SimulateTakeOff.timeline_metrics:
@@ -140,6 +140,7 @@ def mc_analysis(n_trials = 100, max_retries = 100):
       max_frac_automatable_tasks_goods=0,
       max_frac_automatable_tasks_rnd=0.05,
       resampling_method='all_but_training_requirements',
+      aggressive=aggressive,
   )
   samples = []
 
@@ -282,6 +283,7 @@ def mc_analysis(n_trials = 100, max_retries = 100):
   results.rank_correlations            = params_dist.rank_correlations
   results.slow_takeoff_count           = slow_takeoff_count
   results.last_valid_indices           = last_valid_indices
+  results.aggressive                   = aggressive
   results.metrics_before_full_automation_quantiles = metrics_before_full_automation_quantiles
 
   reqs_marginal = params_dist.marginals['full_automation_requirements_training']
@@ -403,7 +405,7 @@ def write_takeoff_probability_table(n_trials=100, max_retries=100, input_results
   return df
 
 def write_mc_analysis_report(
-    n_trials=100, max_retries=100, include_sample_table=False, report_file_path=None,
+    n_trials=100, max_retries=100, aggressive=False, include_sample_table=False, report_file_path=None,
     report_dir_path=None, report=None, output_results_filename=None, input_results_filename=None,
     results=None
   ):
@@ -416,7 +418,7 @@ def write_mc_analysis_report(
       with open(input_results_filename, 'rb') as f:
         results = pickle.load(f)
     else:
-      results = mc_analysis(n_trials, max_retries)
+      results = mc_analysis(n_trials, max_retries, aggressive)
 
   if output_results_filename:
     with open(output_results_filename, 'wb') as f:
@@ -430,7 +432,10 @@ def write_mc_analysis_report(
   if new_report:
     report = Report(report_file_path=report_file_path, report_dir_path=report_dir_path)
 
-  report.add_paragraph("Here, you will find the distributions of results that come from sampling the parameters according to Tom Davidson's beliefs.")
+  if aggressive:
+    report.add_paragraph("Here, you will find the distributions of results that come from sampling the parameters according to Tom Davidson's beliefs but with an aggressive distribution for the amount of FLOP required to train an AGI.")
+  else:
+    report.add_paragraph("Here, you will find the distributions of results that come from sampling the parameters according to Tom Davidson's beliefs.")
 
   #
   # Add a mini-widget in a tooltip to let the user select the definition of "slow takeoff"
@@ -820,7 +825,7 @@ def write_mc_analysis_report(
     tbody.insert(0, et.fromstring(f'''
       <tr>
         <th data-param-id='full_automation_requirements_training'>{get_param_names()['full_automation_requirements_training'] if get_option('human_names') else 'full_automation_requirements_training'}</th>
-        <td colspan="4" style="text-align: center">sampled from Cotra's distribution <span data-modal-trigger="ajeya-modal">(<i>click here to view</i>)</span></td>
+        <td colspan="4" style="text-align: center">sampled from {"an aggressive distribution" if aggressive else "Cotra's distribution"} <span data-modal-trigger="ajeya-modal">(<i>click here to view</i>)</span></td>
       </tr>
     '''))
   else:
@@ -899,6 +904,11 @@ if __name__ == '__main__':
   )
 
   parser.add_argument(
+    "--use-aggressive-ajeya",
+    action='store_true',
+  )
+
+  parser.add_argument(
     "-c",
     "--rank-correlations-url",
     type=str,
@@ -927,4 +937,5 @@ if __name__ == '__main__':
     report_dir_path=args.output_dir,
     output_results_filename=args.output_results_file,
     input_results_filename=args.input_results_file,
+    aggressive=args.use_aggressive_ajeya,
   )
