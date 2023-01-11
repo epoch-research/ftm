@@ -91,6 +91,7 @@ class TakeoffParamsDist():
         r = rank_correlations_matrix[right][left]
         if not np.isnan(r) and r != 0:
           correlations[(left, right)] = r * directions[left]*directions[right]
+          correlations[(left, right)] -= 1e-6 # Adding a small perturbation usually helps in making the matrix positive
     return correlations
 
   def sample_is_admissible(self, training_reqs):
