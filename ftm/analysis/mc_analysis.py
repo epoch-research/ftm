@@ -676,7 +676,7 @@ def write_mc_analysis_report(
 
   # Display input parameter statistics
   param_stats = []
-  for key, samples in results.param_samples.iteritems():
+  for key, samples in results.param_samples.items():
     samples = samples.to_numpy()
     stats = [np.mean(samples)] + [np.quantile(samples, q) for q in results.quantiles]
     param_stats.append(stats)
