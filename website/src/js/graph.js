@@ -1,16 +1,6 @@
   let clipId = 0;
 
 class Graph {
-
-  colors = [
-    "steelblue", "orange", "pink",
-  ];
-
-  nameToScale = {
-    'linear': d3.scaleLinear,
-    'log': d3.scaleLog,
-  };
-
   constructor(options) {
     this.nodes = {};
     this.nodes.wrapper = document.createElement('div');
@@ -86,7 +76,8 @@ class Graph {
 
   add_data_xy(x, y, options = {}) {
     let o = {x, y, ...options};
-    o.color = o.color || this.colors[(this.current_color++) % this.colors.length]
+    let colors = ["steelblue", "orange", "pink",];
+    o.color = o.color || colors[(this.current_color++) % colors.length]
     o.linestyle = o.linestyle || '-',
     this.dataset.push(o);
   }
@@ -205,8 +196,13 @@ class Graph {
     if (this.yAxis.lims[0] != null) ylims[0] = this.yAxis.lims[0];
     if (this.yAxis.lims[1] != null) ylims[1] = this.yAxis.lims[1];
 
-    let xScale = this.nameToScale[this.xAxis.scale]();
-    let yScale = this.nameToScale[this.yAxis.scale]();
+    let nameToScale = {
+      'linear': d3.scaleLinear,
+      'log': d3.scaleLog,
+    };
+
+    let xScale = nameToScale[this.xAxis.scale]();
+    let yScale = nameToScale[this.yAxis.scale]();
 
     let x = xScale
       .domain(xlims)
