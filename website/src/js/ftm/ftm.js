@@ -1384,44 +1384,44 @@ let ftm = {};
   }
 
   class SimulationState {
-    t_idx = 0;
-    t_year = 0;
-
-    rampup = false;
-
-    automation_training_flops = 0;
-
-    capital = 0;
-    labour  = 0;
-    compute = 0;
-
-    frac_capital = SimulationState.create_frac_state(['goods', 'hardware_rnd', 'software_rnd']);
-    frac_labour  = SimulationState.create_frac_state(['goods', 'hardware_rnd', 'software_rnd']);
-    frac_compute = SimulationState.create_frac_state(['goods', 'hardware_rnd', 'software_rnd', 'training',]);
-    frac_gwp = SimulationState.create_frac_state(['compute']);
-
-    goods = { tfp: 0, };
-    hardware_rnd = {};
-    software_rnd = {};
-
-    rnd = {
-      tfp: 0,
-      automation_runtime_flops: 0,
-      automation_training_flops: 0,
-      automation_multiplier: 0,
-    };
-
-    hardware_performance = {
-      v: 0,
-      rnd_input: 0,
-    };
-
-    software = {
-      v: 0,
-      rnd_input: 0,
-    };
-
     constructor(consts) {
+      this.t_idx = 0;
+      this.t_year = 0;
+
+      this.rampup = false;
+
+      this.automation_training_flops = 0;
+
+      this.capital = 0;
+      this.labour  = 0;
+      this.compute = 0;
+
+      this.frac_capital = SimulationState.create_frac_state(['goods', 'hardware_rnd', 'software_rnd']);
+      this.frac_labour  = SimulationState.create_frac_state(['goods', 'hardware_rnd', 'software_rnd']);
+      this.frac_compute = SimulationState.create_frac_state(['goods', 'hardware_rnd', 'software_rnd', 'training',]);
+      this.frac_gwp = SimulationState.create_frac_state(['compute']);
+
+      this.goods = { tfp: 0, };
+      this.hardware_rnd = {};
+      this.software_rnd = {};
+
+      this.rnd = {
+        tfp: 0,
+        automation_runtime_flops: 0,
+        automation_training_flops: 0,
+        automation_multiplier: 0,
+      };
+
+      this.hardware_performance = {
+        v: 0,
+        rnd_input: 0,
+      };
+
+      this.software = {
+        v: 0,
+        rnd_input: 0,
+      };
+
       this.init_task_state(this.goods, consts.goods.n_labour_tasks);
       this.goods.task_compute_to_labour_ratio = nj.zeros(consts.goods.n_labour_tasks + 1);
 
