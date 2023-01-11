@@ -7,7 +7,7 @@ let sim = ftm.run_simulation(js_params);
 let plt = new Plotter();
 
 function plot_vlines(sim, line_color = 'black', graph = null) {
-  graph ||= plt;
+  graph = graph || plt;
 
   if (sim.rampup_start) {
     graph.axvline(sim.rampup_start, {

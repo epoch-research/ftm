@@ -26,6 +26,187 @@ let ftm = {};
     return model;
   }
 
+  let default_input_params = {
+    t_start: 2022,
+    t_end: 2100,
+    t_step: 0.1,
+
+    money_cap_training_before_wakeup: 1e9,
+    research_to_compute_experiments_task_weight_ratio: 1.857142857,
+
+    rampup_trigger: 0.03,
+    hardware_delay: 1,
+    compute_depreciation: 0.2,
+    labour_growth: 0.01,
+    tfp_growth: 0.01,
+
+    n_labour_tasks: 100,
+
+    training: {
+      full_automation_requirements: 1e36,
+      flop_gap: 1e5,
+      goods_vs_rnd_requirements: 3,
+      steepness: 0,
+    },
+
+    runtime: {
+      full_automation_requirements: 1e17/6,
+      flop_gap: 100,
+      goods_vs_rnd_requirements: 10,
+      steepness: 0,
+    },
+
+    runtime_training_tradeoff: 0,
+    runtime_training_max_tradeoff: 1,
+
+    goods: create_production_params({
+      labour_substitution: -0.5,
+      capital_substitution: -0.4,
+    }),
+
+    rnd: create_production_params({
+      parallelization_penalty: 0.7,
+      labour_substitution: -0.5,
+      capital_substitution: -0.25,
+    }),
+
+    hardware_rnd: {
+    },
+
+    software_rnd: {
+      experiments_substitution: -0.1,
+    },
+
+    hardware_performance: create_rnd_params({
+      returns: 5.1,
+      ceiling: 1e30,
+    }),
+
+    software: create_rnd_params({
+      returns: 1.25,
+      ceiling: 1e7,
+    }),
+
+    frac_capital: {
+      hardware_rnd: {
+        growth: 0.01,
+        growth_rampup: 0.14,
+        ceiling: 0.03,
+      },
+    },
+
+    frac_labour: {
+      hardware_rnd: {
+        growth: 0.01,
+        growth_rampup: 0.14,
+        ceiling: 0.03,
+      },
+
+      software_rnd: {
+        growth: 0.18,
+        growth_rampup: 0.22,
+        ceiling: 0.03,
+      },
+    },
+
+    frac_compute: {
+      hardware_rnd: {
+        growth: 0.01,
+        growth_rampup: 0.67,
+        ceiling: 0.2,
+      },
+
+      software_rnd: {
+        growth: 0.18,
+        growth_rampup: 0.67,
+        ceiling: 0.2,
+      },
+
+      training: {
+        growth: 0.547528364331348,
+        growth_rampup: 1.1,
+        ceiling: 0.1,
+      },
+    },
+
+    frac_gwp: {
+      compute: {
+        growth: 0.19,
+        growth_rampup: 0.19,
+        ceiling: 0.3,
+      },
+    },
+
+    initial: {
+      frac_capital: { hardware_rnd: 0.002, },
+      frac_labour:  { hardware_rnd: 0.002, software_rnd: 0.0002, },
+      frac_compute: { hardware_rnd: 0.002, software_rnd: 0.0002},
+
+      biggest_training_run: 3e24,
+      hardware_production: 1e28,
+      buyable_hardware_performance: 1.5e17,
+      population: 8e9,
+      gwp: 8.5e13,
+
+      ratio_initial_to_cumulative_input_hardware_rnd: 0.047,
+      ratio_initial_to_cumulative_input_software_rnd: 0.2,
+      ratio_hardware_to_initial_hardware_production: 2,
+
+      goods: {
+        share: {
+          cognitive: 0.5,
+          compute: 0.01,
+        },
+      },
+
+      hardware_rnd: {
+        share: {
+          cognitive: 0.7,
+        },
+      },
+
+      software_rnd: {
+        share: {
+          experiments: 0.7,
+        },
+      },
+
+      rnd: {
+        share: {
+          compute: 0.01,
+        },
+      },
+
+      capital_growth: 0.0275,
+      tfp_growth: 0.01,
+      compute_depreciation: 0.2,
+    },
+  };
+
+  function create_production_params(config) {
+    return {
+      task_compute_to_labour_ratio: 0,
+      automatable_tasks: 0,
+
+      labour_task_weights: 0,
+      labour_substitution: 0,
+
+      capital_task_weights: 0,
+      capital_substitution: 0,
+
+      ...config,
+    };
+  }
+
+  function create_rnd_params(config) {
+    return {
+      returns: 0,
+      ceiling: 0,
+
+      ...config,
+    };
+  }
+
   class Model {
     constructor(input_params) {
       this.consts = Model.process_params(input_params);
@@ -73,191 +254,10 @@ let ftm = {};
     // Initialization functions
     // ------------------------------------------------------------------------
 
-    static default_input_params = {
-      t_start: 2022,
-      t_end: 2100,
-      t_step: 0.1,
-
-      money_cap_training_before_wakeup: 1e9,
-      research_to_compute_experiments_task_weight_ratio: 1.857142857,
-
-      rampup_trigger: 0.03,
-      hardware_delay: 1,
-      compute_depreciation: 0.2,
-      labour_growth: 0.01,
-      tfp_growth: 0.01,
-
-      n_labour_tasks: 100,
-
-      training: {
-        full_automation_requirements: 1e36,
-        flop_gap: 1e5,
-        goods_vs_rnd_requirements: 3,
-        steepness: 0,
-      },
-
-      runtime: {
-        full_automation_requirements: 1e17/6,
-        flop_gap: 100,
-        goods_vs_rnd_requirements: 10,
-        steepness: 0,
-      },
-
-      runtime_training_tradeoff: 0,
-      runtime_training_max_tradeoff: 1,
-
-      goods: this.create_production_params({
-        labour_substitution: -0.5,
-        capital_substitution: -0.4,
-      }),
-
-      rnd: this.create_production_params({
-        parallelization_penalty: 0.7,
-        labour_substitution: -0.5,
-        capital_substitution: -0.25,
-      }),
-
-      hardware_rnd: {
-      },
-
-      software_rnd: {
-        experiments_substitution: -0.1,
-      },
-
-      hardware_performance: this.create_rnd_params({
-        returns: 5.1,
-        ceiling: 1e30,
-      }),
-
-      software: this.create_rnd_params({
-        returns: 1.25,
-        ceiling: 1e7,
-      }),
-
-      frac_capital: {
-        hardware_rnd: {
-          growth: 0.01,
-          growth_rampup: 0.14,
-          ceiling: 0.03,
-        },
-      },
-
-      frac_labour: {
-        hardware_rnd: {
-          growth: 0.01,
-          growth_rampup: 0.14,
-          ceiling: 0.03,
-        },
-
-        software_rnd: {
-          growth: 0.18,
-          growth_rampup: 0.22,
-          ceiling: 0.03,
-        },
-      },
-
-      frac_compute: {
-        hardware_rnd: {
-          growth: 0.01,
-          growth_rampup: 0.67,
-          ceiling: 0.2,
-        },
-
-        software_rnd: {
-          growth: 0.18,
-          growth_rampup: 0.67,
-          ceiling: 0.2,
-        },
-
-        training: {
-          growth: 0.547528364331348,
-          growth_rampup: 1.1,
-          ceiling: 0.1,
-        },
-      },
-
-      frac_gwp: {
-        compute: {
-          growth: 0.19,
-          growth_rampup: 0.19,
-          ceiling: 0.3,
-        },
-      },
-
-      initial: {
-        frac_capital: { hardware_rnd: 0.002, },
-        frac_labour:  { hardware_rnd: 0.002, software_rnd: 0.0002, },
-        frac_compute: { hardware_rnd: 0.002, software_rnd: 0.0002},
-
-        biggest_training_run: 3e24,
-        hardware_production: 1e28,
-        buyable_hardware_performance: 1.5e17,
-        population: 8e9,
-        gwp: 8.5e13,
-
-        ratio_initial_to_cumulative_input_hardware_rnd: 0.047,
-        ratio_initial_to_cumulative_input_software_rnd: 0.2,
-        ratio_hardware_to_initial_hardware_production: 2,
-
-        goods: {
-          share: {
-            cognitive: 0.5,
-            compute: 0.01,
-          },
-        },
-
-        hardware_rnd: {
-          share: {
-            cognitive: 0.7,
-          },
-        },
-
-        software_rnd: {
-          share: {
-            experiments: 0.7,
-          },
-        },
-
-        rnd: {
-          share: {
-            compute: 0.01,
-          },
-        },
-
-        capital_growth: 0.0275,
-        tfp_growth: 0.01,
-        compute_depreciation: 0.2,
-      },
-    };
-
-    static create_production_params(config) {
-      return {
-        task_compute_to_labour_ratio: 0,
-        automatable_tasks: 0,
-
-        labour_task_weights: 0,
-        labour_substitution: 0,
-
-        capital_task_weights: 0,
-        capital_substitution: 0,
-
-        ...config,
-      };
-    }
-
-    static create_rnd_params(config) {
-      return {
-        returns: 0,
-        ceiling: 0,
-
-        ...config,
-      };
-    }
-
     static process_params(input_params) {
       input_params = input_params || {};
 
-      let consts = cheap_deep_copy(Model.default_input_params);
+      let consts = cheap_deep_copy(default_input_params);
 
       override(consts, input_params);
       if (consts.runtime_training_tradeoff <= 0) {
