@@ -317,6 +317,8 @@ def write_sensitivity_analysis_report(
   if new_report:
     report = Report(report_file_path=report_file_path, report_dir_path=report_dir_path)
 
+  report.add_paragraph("Here, you will find a sensitivity analysis we run, highlighting the most important parameters for pinning down the results of the model.")
+
   report.add_header(method_human_names[method], level = 3)
 
   float_format = None
