@@ -1,4 +1,6 @@
-let js_params = transform_python_to_js_params(best_guess_parameters);
+"use strict";
+
+let js_params = bridge.transform_python_to_js_params(best_guess_parameters);
 let sim = ftm.run_simulation(js_params);
 
 ///////////////////////////////////////////////////////////////////////////////

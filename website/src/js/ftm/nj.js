@@ -4,6 +4,8 @@ Poor people's implementation of some of NumPy's utilities
 
 *******************************************************************************/
 
+"use strict";
+
 let nj;
 
 {

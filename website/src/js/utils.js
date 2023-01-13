@@ -1,3 +1,5 @@
+  "use strict";
+
 /**
  * Converts an HTML string to a DOM element
  */

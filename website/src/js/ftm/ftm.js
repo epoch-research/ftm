@@ -17,6 +17,8 @@ TODO:
 
 *******************************************************************************/
 
+"use strict";
+
 let ftm = {};
 
 {
@@ -1550,6 +1552,7 @@ let ftm = {};
     // Stable implementation of conversion between odds and probs
 
     let p;
+    let p_not;
 
     if (o < 1e-10) {
       // For small outputs the odds are approx equal to the probs

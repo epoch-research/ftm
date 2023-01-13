@@ -1,4 +1,6 @@
-  let clipId = 0;
+  "use strict";
+
+let clipId = 0;
 
 class Graph {
   constructor(options) {

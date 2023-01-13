@@ -86,7 +86,7 @@ function run_simulation(immediate, callback) {
     document.body.classList.add('running');
     cancelBackgroundProcesses();
     dispatchBackgroundProcess(() => {
-      let js_params = transform_python_to_js_params(params);
+      let js_params = bridge.transform_python_to_js_params(params);
       sim = ftm.run_simulation(js_params);
 
       if (callback) {

@@ -1,3 +1,5 @@
+"use strict";
+
 let cards = [];
 
 let space_between_equations = '3pt';

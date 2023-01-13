@@ -1,3 +1,5 @@
+  "use strict";
+
 function init_tabs(update_url) {
   for (let span of document.querySelectorAll('.tabs .tab-links span')) {
     span.addEventListener('click', function(e) {
