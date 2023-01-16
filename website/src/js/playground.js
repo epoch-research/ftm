@@ -299,7 +299,7 @@ function plot_compute_decomposition(sim, container, crop_after_agi = true) {
 
   let median_tai_arrival_bio = 2052; // https://www.cold-takes.com/forecasting-transformative-ai-the-biological-anchors-method-in-a-nutshell/
 
-  let bioanchors = run_bioanchors_model({
+  let bioanchors = ftm.run_bioanchors_model({
     t_start: sim.t_start,
     t_end: Math.max(sim.timesteps[sim.timesteps.length-1], median_tai_arrival_bio + 5),
 

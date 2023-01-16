@@ -1524,30 +1524,6 @@ let ftm = {};
   // Utilities
   // ---------------------------------------------------------------------------
 
-  function override(o1, o2) {
-    for (let k in o2) {
-      if (typeof o1[k] == 'object') {
-        override(o1[k], o2[k]);
-      } else {
-        o1[k] = o2[k];
-      }
-    }
-  }
-
-  function cheap_deep_copy(d) {
-    if (Array.isArray(d)) {
-      return [...d];
-    } else if (typeof(d) == 'object') {
-      let r = {};
-      for (let k in d) {
-        r[k] = cheap_deep_copy(d[k]);
-      }
-      return r;
-    } else {
-      return d;
-    }
-  }
-
   function odds_to_probs(o) {
     // Stable implementation of conversion between odds and probs
 
