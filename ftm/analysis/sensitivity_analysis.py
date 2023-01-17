@@ -599,14 +599,14 @@ if __name__ == '__main__':
     ]
   )
   parser.add_argument(
-    "--variance_reduction_restore_dir",
+    "--variance-reduction-restore-dir",
   )
   parser.add_argument(
-    "--variance_reduction_save_dir",
+    "--variance-reduction-save-dir",
   )
   parser.add_argument(
     "-c",
-    "--rank_correlations_url",
+    "--rank-correlations-url",
     type=str,
     default=None,
   )
