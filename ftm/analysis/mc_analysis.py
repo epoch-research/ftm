@@ -805,17 +805,19 @@ def write_mc_analysis_report(
 
   report.add_paragraph(f"<span style='font-weight:bold'>Number of samples:</span> {results.n_trials}")
 
-  report.add_paragraph("<span style='font-weight:bold'>Rank correlations:</span> <span data-modal-trigger='rank-correlations-modal'><i>click here to view</i>.</span>")
-  report.add_data_frame_modal(results.rank_correlations.fillna(''), 'rank-correlations-modal')
+  _aggressive = '_aggresive' if aggressive else ''
+
+  report.add_paragraph(f"<span style='font-weight:bold'>Rank correlations:</span> <span data-modal-trigger='rank-correlations-modal{_aggressive}'><i>click here to view</i>.</span>")
+  report.add_data_frame_modal(results.rank_correlations.fillna(''), f'rank-correlations-modal{_aggressive}')
 
   params_stats_table = pd.DataFrame(param_stats, index = param_names, columns = columns)
   params_stats_table.columns.name = 'quantiles'
 
-  report.add_paragraph("<span style='font-weight:bold'>Input statistics:</span> <span data-modal-trigger='input-stats-modal'><i>click here to view</i>.</span>")
-  report.add_data_frame_modal(params_stats_table, 'input-stats-modal')
+  report.add_paragraph(f"<span style='font-weight:bold'>Input statistics:</span> <span data-modal-trigger='input-stats-modal{_aggressive}'><i>click here to view</i>.</span>")
+  report.add_data_frame_modal(params_stats_table, f'input-stats-modal{_aggressive}')
 
   if results.ajeya_cdf is not None:
-    report.add_data_frame_modal(results.ajeya_cdf, 'ajeya-modal', show_index = False)
+    report.add_data_frame_modal(results.ajeya_cdf, f'ajeya-modal{_aggressive}', show_index = False)
 
     # the parameter full_automation_requirements_training is special (we might be sampling from Ajeya's distribution)
     inputs_table = report.add_data_frame(
@@ -830,7 +832,7 @@ def write_mc_analysis_report(
     tbody.insert(0, et.fromstring(f'''
       <tr>
         <th data-param-id='full_automation_requirements_training'>{get_param_names()['full_automation_requirements_training'] if get_option('human_names') else 'full_automation_requirements_training'}</th>
-        <td colspan="4" style="text-align: center">sampled from {"an aggressive distribution" if aggressive else "Cotra's distribution"} <span data-modal-trigger="ajeya-modal">(<i>click here to view</i>)</span></td>
+        <td colspan="4" style="text-align: center">sampled from {"an aggressive distribution" if aggressive else "Cotra's distribution"} <span data-modal-trigger="ajeya-modal{_aggressive}">(<i>click here to view</i>)</span></td>
       </tr>
     '''))
   else:
