@@ -21,7 +21,7 @@ method_human_names = {
   'one_at_a_time': 'One-at-a-time',
   'variance_reduction_on_margin': 'Variance reduction on the margin',
   'shapley_values': 'Variance reduction with Shapley values',
-  'combined': 'One-at-a-time (with variance reduction)',
+  'combined': 'One-at-a-time',
 }
 
 class SensitivityAnalysisResults:
@@ -227,11 +227,11 @@ def one_at_a_time_comparison(quick_test_mode = False, additional_columns = []):
   table.drop(labels = ['importance'], axis = 1, inplace = True)
   table.insert(0, 'importance', importance)
 
-  # Insert the additional columns at the beginning
+  # Insert the additional columns after the first one
   for index, column in enumerate(additional_columns):
     name = column[0]
     data = column[1]
-    table.insert(index, name, data)
+    table.insert(index + 1, name, data)
 
   # Sort by first column
   table = table.sort_values(by=table.columns[0], ascending=False)
@@ -280,7 +280,7 @@ def write_combined_sensitivity_analysis_report(
   if not skip_inputs:
     report.add_header("Inputs", level = 3)
     inputs_table = report.add_data_frame(last_results.parameter_table, show_justifications = True, nan_format = inputs_nan_format)
-    report.add_importance_selector(inputs_table, label = 'parameters', layout = 'vertical')
+    report.add_importance_selector(inputs_table, label = 'parameters', layout = 'vertical', )
 
   if new_report:
     report_path = report.write()
@@ -365,8 +365,7 @@ def write_sensitivity_analysis_report(
   most_important_parameters = get_most_important_parameters()
 
   def keep_cell(row, col, index_r, index_c, cell):
-    fixed_cols = [0, 1] if method == 'one_at_a_time' else [0]
-    col_condition = (col in fixed_cols) or (index_c in most_important_metrics or index_c in ['importance', 'variance_reduction'])
+    col_condition = (col in [0, 1])
     row_condition = (row in [0]) or (index_r in most_important_parameters)
     return col_condition and row_condition
 
