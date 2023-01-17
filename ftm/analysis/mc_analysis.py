@@ -628,7 +628,7 @@ def write_mc_analysis_report(
   pdf_cdf_sub_container = add_pdf_cdf_sub_container('cdf')
   for method in ['cdf', 'pdf']:
     plt.figure(figsize=(10,6))
-    for i, metric in enumerate(['rampup_start', 'automation_gns_100%']):
+    for i, metric in enumerate(['automation_gns_20%', 'automation_gns_100%']):
       plot = plot_ecdf if method == 'cdf' else plot_epdf
       plot(results.scalar_metrics[metric], limits = [results.t_start, results.t_end], label = metric_id_to_human[metric], color = colors[color_index + i])
     if method == 'cdf':
