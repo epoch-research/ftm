@@ -152,6 +152,8 @@ class TakeoffParamsDist():
 
       return pd.DataFrame(samples)
     else:
+      # Resample all
+
       output_samples = pd.DataFrame(columns = [name for name in self.marginals], index = range(count), dtype = np.float64)
       output_samples_count = 0
 
