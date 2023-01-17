@@ -287,7 +287,7 @@ def mc_analysis(n_trials = 100, max_retries = 100, aggressive = False):
   results.metrics_before_full_automation_quantiles = metrics_before_full_automation_quantiles
 
   reqs_marginal = params_dist.marginals['full_automation_requirements_training']
-  results.ajeya_cdf = reqs_marginal.cdf_pd if isinstance(reqs_marginal, AjeyaDistribution) else None
+  results.ajeya_cdf = reqs_marginal.cdf_pd
 
   return results
 
@@ -433,9 +433,14 @@ def write_mc_analysis_report(
     report = Report(report_file_path=report_file_path, report_dir_path=report_dir_path)
 
   if aggressive:
-    report.add_paragraph("Here, you will find the distributions of results that come from sampling the parameters according to Tom Davidson's beliefs but with an aggressive distribution for the amount of FLOP required to train an AGI.")
+    intro = "Here, you will find the distributions of results that come from sampling the parameters according to Tom Davidson's beliefs but with an aggressive distribution for the amount of FLOP required to train an AGI."
   else:
-    report.add_paragraph("Here, you will find the distributions of results that come from sampling the parameters according to Tom Davidson's beliefs.")
+    intro = "Here, you will find the distributions of results that come from sampling the parameters according to Tom Davidson's beliefs."
+
+  cdf = results.ajeya_cdf.to_numpy()
+  median_flops = interp1d(cdf[:,1], cdf[:,0])(0.5)
+  intro += f" The median training requirements for AGI are ~1e{median_flops:.0f} FLOP using 2022 algorithms."
+  report.add_paragraph(intro)
 
   #
   # Add a mini-widget in a tooltip to let the user select the definition of "slow takeoff"
