@@ -768,7 +768,7 @@ for (let input of document.querySelectorAll('.input-parameter')) {
 
   let initialized = false;
   tippy_instances.push(
-    tippy(input.querySelector('input'), {
+    tippy(input.querySelector('input:last-child'), {
       content: tooltip,
       triggerTarget: input,
       allowHTML: true,
