@@ -30,6 +30,8 @@ class Graph {
 
     this.width = 770;
     this.height = 520;
+
+    this.interactive = true;
   }
 
   attach(container) {
@@ -62,6 +64,15 @@ class Graph {
     this.axhlines = [];
   }
 
+  set_interactive(interactive) {
+    this.interactive = interactive;
+  }
+
+  set_size(width, height) {
+    this.width = width;
+    this.height = height;
+  }
+
   set_title(title) {
     this.title = title;
   }
@@ -82,6 +93,14 @@ class Graph {
     o.color = o.color || colors[(this.current_color++) % colors.length]
     o.linestyle = o.linestyle || '-',
     this.dataset.push(o);
+  }
+
+  xlabel(label) {
+    this.xAxis.label = label;
+  }
+
+  ylabel(label) {
+    this.yAxis.label = label;
   }
 
   xscale(scale) {
@@ -131,7 +150,7 @@ class Graph {
     // set the dimensions and margins of the graph
     let margin = this.margin;
 
-    if (this.yAxis.unit) {
+    if (this.yAxis.unit || this.yAxis.label) {
       margin.top += 15;
     }
 
@@ -293,12 +312,37 @@ class Graph {
     let xAxis = svg.append("g")
       .attr("transform", "translate(0," + height + ")")
       .attr("stroke-width", 2)
-      .call(d3.axisBottom(x).tickSizeOuter(0).tickFormat(d3.format("d")));
+      .call(d3.axisBottom(x).tickSizeOuter(0));
+
+    // Remove overlapping tick labels
+    let lastBoundsX = -Infinity;
+    for (let node of xAxis.selectAll('text').nodes()) {
+      if (!node.innerHTML) continue;
+
+      let bounds = node.getBoundingClientRect();
+      if (bounds.x < lastBoundsX + 5) {
+        node.remove();
+        continue;
+      }
+
+      lastBoundsX = bounds.x + bounds.width;
+    }
+
+    // Add label
+    if (this.xAxis.label) {
+      svg.append("text")
+          .attr("class", "x label")
+          .attr("text-anchor", "middle")
+          .attr("x", width/2)
+          .attr("y", height + 32)
+          .text(this.xAxis.label);
+    }
 
     let yAxis = svg.append("g")
       .attr("stroke-width", 2)
       .call(d3.axisLeft(y).tickSizeOuter(0));
 
+    // Add unit
     if (this.yAxis.unit) {
       yAxis.append("text")
            .attr('x', -5)
@@ -308,6 +352,18 @@ class Graph {
            .attr('text-anchor', 'right')
            .style('font-size', '12px')
            .text(this.yAxis.unit)
+    }
+
+    // Add label
+    if (this.yAxis.label) {
+      svg.append("text")
+          .attr("class", "y label")
+          .attr("text-anchor", "middle")
+          .attr("y", -40)
+          .attr("x", -height/2)
+          .attr("dy", ".75em")
+          .attr("transform", "rotate(-90)")
+          .text(this.yAxis.label);
     }
 
     let crossHairV = svg.append("line")
@@ -586,28 +642,30 @@ class Graph {
     let self = this;
 
     // Zooming
-    let zoom = d3.zoom()
-      .scaleExtent([1, 20])
-      .extent([[0, 0], [width, height]])
-      .translateExtent([[0, 0], [width, height]])
-      .on("zoom", updateChart)
-    ;
+    if (this.interactive) {
+      let zoom = d3.zoom()
+        .scaleExtent([1, 20])
+        .extent([[0, 0], [width, height]])
+        .translateExtent([[0, 0], [width, height]])
+        .on("zoom", updateChart)
+      ;
 
-    let overlay = content.append("rect")
-      .attr("width", width)
-      .attr("height", height)
-      .style("fill", "none")
-      .style("pointer-events", "all")
-      .call(zoom.transform, this.transform || d3.zoomIdentity)
-      .call(zoom)
-    ;
+      let overlay = content.append("rect")
+        .attr("width", width)
+        .attr("height", height)
+        .style("fill", "none")
+        .style("pointer-events", "all")
+        .call(zoom.transform, this.transform || d3.zoomIdentity)
+        .call(zoom)
+      ;
 
-    overlay
-      .on('mouseover', mouseover)
-      .on('mousemove', mousemove)
-      .on('mouseleave', mouseleave)
-      .on('mouseout', mouseout)
-    ;
+      overlay
+        .on('mouseover', mouseover)
+        .on('mousemove', mousemove)
+        .on('mouseleave', mouseleave)
+        .on('mouseout', mouseout)
+      ;
+    }
 
     content.on('wheel', (e) => {
       d3.event.preventDefault()
@@ -783,6 +841,14 @@ class Plotter {
     return this.graph.get_dataset();
   }
 
+  set_interactive(interactive) {
+    this.graph.set_interactive(interactive);
+  }
+
+  set_size(width, height) {
+    this.graph.set_size(width, height);
+  }
+
   set_title(title) {
     this.graph.set_title(title);
   }
@@ -827,6 +893,14 @@ class Plotter {
 
   show_grid(show) {
     this.graph.show_grid(show);
+  }
+
+  xlabel(label) {
+    this.graph.xlabel(label);
+  }
+
+  ylabel(label) {
+    this.graph.ylabel(label);
   }
 
   xscale(scale) {
