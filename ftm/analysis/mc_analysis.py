@@ -464,8 +464,8 @@ def write_mc_analysis_report(
   report.add_paragraph(f"<span style='font-weight:bold'>Probability of full economic automation before {results.t_end}</span><span style='font-weight:bold'>:</span> {results.n_finished_trials/results.n_trials:.0%}")
 
   # Add the tooltip
-  description = f'''Probability of a full <input class='doubling-years-inputs' id='doubling-years-input-m' value='4' style='display:inline-block'> year doubling of GWP before a <input class='doubling-years-inputs' id='doubling-years-input-n' value='1'> year doubling of GWP starts, conditional on full economic automation before {results.t_end}'''
-  report.add_paragraph(f"<span style='font-weight:bold'>Probability of slow takeoff</span>{report.generate_tooltip_html(description, on_mount = 'initialize_takeoff_probability_mini_widget()', triggers = 'mouseenter click', classes = 'slow-takeoff-probability-tooltip-info')}<span style='font-weight:bold'>:</span> <span id='slow-takeoff-probability'>{results.slow_takeoff_count/results.n_finished_trials:.0%}</span>")
+  description = f'''Probability of a full <input class='doubling-years-inputs' id='doubling-years-input-m-{report.id}' value='4' style='display:inline-block'> year doubling of GWP before a <input class='doubling-years-inputs' id='doubling-years-input-n-{report.id}' value='1'> year doubling of GWP starts, conditional on full economic automation before {results.t_end}.'''
+  report.add_paragraph(f"<span style='font-weight:bold'>Probability of slow takeoff</span>{report.generate_tooltip_html(description, on_mount = 'initialize_takeoff_probability_mini_widget_' + report.id + '()', triggers = 'mouseenter click', classes = 'slow-takeoff-probability-tooltip-info')}<span style='font-weight:bold'>:</span> <span id='slow-takeoff-probability-{report.id}'>{results.slow_takeoff_count/results.n_finished_trials:.0%}</span>")
 
   # Style
   report.head.append(et.fromstring('''
@@ -485,19 +485,19 @@ def write_mc_analysis_report(
 
   # JS
   report.body.append(et.fromstring('<script>' + Report.escape('''
-      let takeoff_probability_mini_widget_initialized = false;
+      let takeoff_probability_mini_widget_initialized_''' + report.id + ''' = false;
 
-      function initialize_takeoff_probability_mini_widget() {
-        if (takeoff_probability_mini_widget_initialized) {
+      function initialize_takeoff_probability_mini_widget_''' + report.id + '''() {
+        if (takeoff_probability_mini_widget_initialized_''' + report.id + ''') {
           return;
         }
 
         // p(full <row + 1> year doubling before the start of a <col + 1> year doubling)
         let p_table = ''' + json.dumps(takeoff_probability_table) + ''';
 
-        let n_input = document.getElementById('doubling-years-input-n');
-        let m_input = document.getElementById('doubling-years-input-m');
-        let probability = document.getElementById('slow-takeoff-probability');
+        let n_input = document.getElementById('doubling-years-input-n-''' + report.id + '''');
+        let m_input = document.getElementById('doubling-years-input-m-''' + report.id + '''');
+        let probability = document.getElementById('slow-takeoff-probability-''' + report.id + '''');
 
         function update_slow_takeoff_probability() {
           let m = parseInt(m_input.value);
@@ -514,7 +514,7 @@ def write_mc_analysis_report(
         m_input.addEventListener('input', update_slow_takeoff_probability);
         n_input.addEventListener('input', update_slow_takeoff_probability);
 
-        takeoff_probability_mini_widget_initialized = true;
+        takeoff_probability_mini_widget_initialized_''' + report.id + ''' = true;
       }
   ''') + '</script>'))
 
@@ -598,7 +598,7 @@ def write_mc_analysis_report(
     report.add_html(f'''
       <p>
         Show
-        <select class="pdf-cdf-selector">
+        <select class="pdf-cdf-selector-{report.id}">
           <option value="pdf" {'selected="true"' if (default == 'pdf') else ''}>probability density function (smoothed)</option>
           <option value="cdf" {'selected="true"' if (default == 'cdf') else ''}>cumulative density function</option>
         </select>
@@ -646,7 +646,7 @@ def write_mc_analysis_report(
   report.head.append(report.from_html('''
     <script>
       window.addEventListener('load', () => {
-        for (let selector of document.querySelectorAll('.pdf-cdf-selector')) {
+        for (let selector of document.querySelectorAll('.pdf-cdf-selector-''' + report.id + '''')) {
           let container = selector.parentElement.parentElement;
           selector.addEventListener('input', () => {
             for (let node of container.querySelectorAll('.selected')) {
@@ -748,31 +748,41 @@ def write_mc_analysis_report(
       metric_name = f'{id_to_name[metric_id]} {metric.name[len(metric_id):].strip()}'
     metrics_before_full_automation_names.append(metric_name)
 
-  metric_options = '\n'.join([f'<option value="{name}">{name}</option>' for name in metrics_before_full_automation_names])
+  metric_options = '\n'.join([f'<option value="{name}-{report.id}">{name}</option>' for name in metrics_before_full_automation_names])
   report.add_html(f'''
     <p>
-      <select id="years-before-full-automation-selector">
+      <select id="years-before-full-automation-selector-{report.id}">
         {metric_options}
       </select>
     </p>
   ''')
 
-  years_before_full_automation_container = report.add_html('<div id="years-before-full-automation-container"></div>')
+  years_before_full_automation_container = report.add_html(f'<div id="years-before-full-automation-container-{report.id}"></div>')
 
   for i, (metric, table) in enumerate(results.metrics_before_full_automation_quantiles.items()):
     dataframe = pd.DataFrame(table)
+
     table_container = report.add_data_frame(dataframe, show_index = False, float_format = metric.format_quantile, parent = years_before_full_automation_container)
-    table_container.attrib['id'] = metrics_before_full_automation_names[i]
+    table_container.attrib['id'] = metrics_before_full_automation_names[i] + '-' + report.id
     if i == 0:
       report.add_class(table_container, 'selected')
-    if metric.nan_remarks and dataframe.isna().values.any():
+
+    # Mmmmh...
+    any_nan = False
+    for row_index, row in dataframe.iterrows():
+      for col_name, item in row.items():
+        if col_name == 'Percentile': continue
+        if metric.format_quantile(item) == 'N/A':
+          any_nan = True
+
+    if metric.nan_remarks and any_nan:
       report.add_html(f'<p class="years-before-full-automation-remarks">{metric.nan_remarks}</p>', parent = table_container)
 
   report.head.append(report.from_html('''
     <script>
       window.addEventListener('load', () => {
-        let selector = document.getElementById('years-before-full-automation-selector');
-        let container = document.getElementById('years-before-full-automation-container');
+        let selector = document.getElementById('years-before-full-automation-selector-''' + report.id + '''');
+        let container = document.getElementById('years-before-full-automation-container-''' + report.id + '''');
         selector.addEventListener('input', () => {
           let selected = container.querySelector('.selected');
           if (selected) {
@@ -786,11 +796,11 @@ def write_mc_analysis_report(
 
   report.head.append(report.from_html('''
     <style>
-      #years-before-full-automation-container > * {
+      #years-before-full-automation-container-''' + report.id + ''' > * {
         display: none;
       }
 
-      #years-before-full-automation-container > .selected {
+      #years-before-full-automation-container-''' + report.id + ''' > .selected {
         display: unset;
       }
 
@@ -805,19 +815,17 @@ def write_mc_analysis_report(
 
   report.add_paragraph(f"<span style='font-weight:bold'>Number of samples:</span> {results.n_trials}")
 
-  _aggressive = '_aggresive' if aggressive else ''
-
-  report.add_paragraph(f"<span style='font-weight:bold'>Rank correlations:</span> <span data-modal-trigger='rank-correlations-modal{_aggressive}'><i>click here to view</i>.</span>")
-  report.add_data_frame_modal(results.rank_correlations.fillna(''), f'rank-correlations-modal{_aggressive}')
+  report.add_paragraph(f"<span style='font-weight:bold'>Rank correlations:</span> <span data-modal-trigger='rank-correlations-modal-{report.id}'><i>click here to view</i>.</span>")
+  report.add_data_frame_modal(results.rank_correlations.fillna(''), f'rank-correlations-modal-{report.id}')
 
   params_stats_table = pd.DataFrame(param_stats, index = param_names, columns = columns)
   params_stats_table.columns.name = 'quantiles'
 
-  report.add_paragraph(f"<span style='font-weight:bold'>Input statistics:</span> <span data-modal-trigger='input-stats-modal{_aggressive}'><i>click here to view</i>.</span>")
-  report.add_data_frame_modal(params_stats_table, f'input-stats-modal{_aggressive}')
+  report.add_paragraph(f"<span style='font-weight:bold'>Input statistics:</span> <span data-modal-trigger='input-stats-modal-{report.id}'><i>click here to view</i>.</span>")
+  report.add_data_frame_modal(params_stats_table, f'input-stats-modal-{report.id}')
 
   if results.ajeya_cdf is not None:
-    report.add_data_frame_modal(results.ajeya_cdf, f'ajeya-modal{_aggressive}', show_index = False)
+    report.add_data_frame_modal(results.ajeya_cdf, f'ajeya-modal-{report.id}', show_index = False)
 
     # the parameter full_automation_requirements_training is special (we might be sampling from Ajeya's distribution)
     inputs_table = report.add_data_frame(
@@ -832,7 +840,7 @@ def write_mc_analysis_report(
     tbody.insert(0, et.fromstring(f'''
       <tr>
         <th data-param-id='full_automation_requirements_training'>{get_param_names()['full_automation_requirements_training'] if get_option('human_names') else 'full_automation_requirements_training'}</th>
-        <td colspan="4" style="text-align: center">sampled from {"an aggressive distribution" if aggressive else "Cotra's distribution"} <span data-modal-trigger="ajeya-modal{_aggressive}">(<i>click here to view</i>)</span></td>
+        <td colspan="4" style="text-align: center">sampled from {"an aggressive distribution" if aggressive else "Cotra's distribution"} <span data-modal-trigger="ajeya-modal-{report.id}">(<i>click here to view</i>)</span></td>
       </tr>
     '''))
   else:

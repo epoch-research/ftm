@@ -1119,6 +1119,13 @@ class Report:
   # Utils
   # ---------------------------------------------------------------------------
 
+  @property
+  def id(self):
+    if self.current_tab:
+      return self.current_tab.id
+    else:
+      return '0'
+
   def insert_before(self, parent, reference, element):
     if parent is None: parent = self.default_parent
     parent.insert(list(parent).index(reference), element)
