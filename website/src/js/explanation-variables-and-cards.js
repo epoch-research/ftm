@@ -103,7 +103,7 @@ let parameters = {
 
     unit: '2022 FLOP',
 
-    justification: 'Computed following the method described on the left, assuming training an AGI will require 1e36 FLOP (we\'re mostly anchoring to the Bio Anchors report, with an extra OOM to account for TAI being a lower bar than full automation) and the FLOP gap is 1e4 (see discussion in the <a href="https://docs.google.com/document/d/1Z7HJ9pHctgDi1XYbgRW9-7J1bxTL98KW1qb7HN7Mv-A/edit#heading=h.grg4srb18f02">summary</a> and <a href="https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#heading=h.o4db3tcgrq28">full report</a>).',
+    justification: 'Computed following the method described on the left, assuming training an AGI will require 1e36 FLOP (we\'re mostly anchoring to the Bio Anchors report, with an extra OOM to account for TAI being a lower bar than full automation) and the FLOP gap is 1e4 (see discussion in the <a href="https://docs.google.com/document/d/1os_4YOw6Xv33KjX-kR76D3kW1drkWRHKG2caeiEWzNs/edit#heading=h.ri0lo7o4pv24">summary</a> and <a href="https://docs.google.com/document/d/1rw1pTbLi2brrEP0DcsZMAVhlKp6TKGKNUSFRkkdP_hs/edit#heading=h.o4db3tcgrq28">full report</a>).',
   },
 
   '\\tau_{G,i}': {
