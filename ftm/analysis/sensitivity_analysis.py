@@ -523,6 +523,7 @@ def g(dist, get_metrics, parameters, mean_samples = 1, var_samples = 10, process
     save_file_subindex = 0
     metric_values_array = []
     conditional_samples_array = []
+    samples_flushed = 0
 
     def flush_batch():
       nonlocal conditional_samples_array
@@ -539,7 +540,7 @@ def g(dist, get_metrics, parameters, mean_samples = 1, var_samples = 10, process
       save_dict['iterations'] = []
       for i in range(len(conditional_samples_array)):
         iteration = {}
-        iteration['iter_sample'] = outer_samples.iloc[i].to_list()
+        iteration['iter_sample'] = outer_samples.iloc[samples_flushed + i].to_list()
         iteration['param_samples'] = conditional_samples_array[i].to_numpy().tolist()
         iteration['metric_values'] = np.array(metric_values_array[i]).tolist()
         save_dict['iterations'].append(iteration)
@@ -548,6 +549,8 @@ def g(dist, get_metrics, parameters, mean_samples = 1, var_samples = 10, process
       with gzip.open(os.path.join(save_dir, filename), 'wb') as f:
         f.write(json.dumps(save_dict).encode('utf-8'))
       save_file_subindex += 1
+
+      samples_flushed += len(conditional_samples_array)
 
       metric_values_array.clear()
       conditional_samples_array.clear()
