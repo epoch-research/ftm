@@ -751,7 +751,7 @@ for (let input of document.querySelectorAll('.input-parameter')) {
     let runtime_or_training = (id == 'training_requirements_steepness') ? 'training' : 'runtime';
     tooltip += '<br>';
     tooltip += '<br>';
-    tooltip += `<div class="illustration" style="margin-bottom: -3em">This is what the ${runtime_or_training} R&D requirements look like with the current value for the steepness of <span class="steepness"></span>:<div class="requirements-graph-container"></div></div>`;
+    tooltip += `<div class="illustration" style="margin-bottom: -3em">This is what the ${runtime_or_training} R&D requirements look like with the current value for the steepness of <span class="steepness"></span> (try changing it):<div class="requirements-graph-container"></div></div>`;
   }
 
   if (tooltip.length > 0) tooltip += '<br><br>';
@@ -766,7 +766,6 @@ for (let input of document.querySelectorAll('.input-parameter')) {
     tooltip += '<span style="font-weight: bold">Justification for best guess value:</span> ' + justification;
   }
 
-  let initialized = false;
   tippy_instances.push(
     tippy(input.querySelector('input:last-child'), {
       content: tooltip,
@@ -778,9 +777,7 @@ for (let input of document.querySelectorAll('.input-parameter')) {
       hideOnClick: false,
       theme: 'light-border',
       maxWidth: (id == 'training_requirements_steepness' || id == 'runtime_requirements_steepness' ) ? '460px' : '350px',
-      onMount: (instance) => {
-        if (initialized) return;
-
+      onCreate: (instance) => {
         if (id == 'training_requirements_steepness' || id == 'runtime_requirements_steepness' ) {
           let graph_container = instance.popper.querySelector('.requirements-graph-container');
           let steepness_node = instance.popper.querySelector('.steepness');
@@ -793,8 +790,6 @@ for (let input of document.querySelectorAll('.input-parameter')) {
 
           draw_requirements(runtime_or_training, graph_container, steepness_node);
         }
-
-        initialized = true;
       },
     })
   );
@@ -851,10 +846,12 @@ function draw_requirements(runtime_or_training, graph_container, steepness_node)
 
   plt.clear(graph_container);
   plt.set_size(450, 250);
+  plt.set_margin({bottom: 40});
   plt.set_tooltip(null);
   plt.plot(automation_costs, percentage_automated);
   plt.set_interactive(false);
   plt.yscale('linear');
+  plt.ylims([-2, 100]);
   plt.xscale('log');
   plt.xlabel(`${runtime_or_training} FLOP`);
   plt.ylabel('% of automatable tasks');
