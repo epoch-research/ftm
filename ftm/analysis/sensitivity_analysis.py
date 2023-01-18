@@ -329,7 +329,7 @@ def write_sensitivity_analysis_report(
     formatters = {'variance_reduction': lambda x: f'{max(x, 0):.0%}'}
   table_container = report.add_data_frame(results.table, float_format = float_format, formatters = formatters)
 
-  if method == 'one_at_a_time':
+  if method in ('one_at_a_time', 'combined'):
     def process_header(row, col, index_r, index_c, cell):
       if row == 0:
         if index_c in SimulateTakeOff.timeline_metrics + SimulateTakeOff.takeoff_metrics + ["doubling_times"]:
