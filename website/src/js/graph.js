@@ -946,11 +946,18 @@ class Plotter {
   }
 
   show(container) {
+    let originalParent = container.parentElement;
+
+    document.body.appendChild(container);
+
     container = container ? nodify(container) : this.container;
     this.graphToContainer.set(this.graph, container);
     this.graph.attach(container);
     let graph = this.graph;
     this.reset();
+
+    originalParent.appendChild(container);
+
     return graph;
   }
 
