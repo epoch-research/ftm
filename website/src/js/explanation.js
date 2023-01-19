@@ -430,6 +430,8 @@ function open_card(card) {
     box.classList.add('selected');
   }
 
+  window.history.replaceState({}, "", `#${card.id}`);
+
   card.on_open();
 }
 
@@ -439,6 +441,13 @@ function close_cards() {
   current_card = null;
   for (let box of document.querySelectorAll('svg .box')) {
     box.classList.remove('selected');
+  }
+
+  // Remove card ID from URL
+  let url = window.location.toString();
+  if (url.indexOf("#") > 0) {
+    let clean_url = url.substring(0, url.indexOf("#"));
+    window.history.replaceState({}, "", clean_url);
   }
 }
 
@@ -466,6 +475,19 @@ for (let card of cards) {
 
 let appendix_accordion = new handorgel(document.querySelector('.appendices-container'), {
   multiSelectable: false,
+});
+
+appendix_accordion.on('fold:opened', (fold) => {
+  window.history.replaceState({}, "", `#${fold.button.id}`);
+});
+
+appendix_accordion.on('fold:closed', (fold) => {
+  // Remove the appendix ID from the URL
+  let url = window.location.toString();
+  if (url.indexOf(`#${fold.button.id}`) > 0) {
+    let clean_url = url.substring(0, url.indexOf("#"));
+    window.history.replaceState({}, "", clean_url);
+  }
 });
 
 // Close tooltips when clicking outside them
@@ -542,6 +564,14 @@ function open_fold(fold) {
 
   appendix_accordion.once('fold:opened', (fold) => {
     scroll();
+
+    // Remove card ID from URL
+    let url = window.location.toString();
+    if (url.indexOf("#") > 0) {
+      let clean_url = url.substring(0, url.indexOf("#"));
+      window.history.replaceState({}, "", clean_url);
+    }
+
   });
 
   if (fold.expanded) {
