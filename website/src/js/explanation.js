@@ -438,16 +438,19 @@ function open_card(card) {
 function close_cards() {
   let node_container = document.querySelector('#card-container');
   while (node_container.firstChild) node_container.removeChild(node_container.firstChild);
+
+  if (current_card) {
+    // Remove card ID from URL
+    let url = window.location.toString();
+    if (url.indexOf(`#${current_card.id}`) > 0) {
+      let clean_url = url.substring(0, url.indexOf("#"));
+      window.history.replaceState({}, "", clean_url);
+    }
+  }
+
   current_card = null;
   for (let box of document.querySelectorAll('svg .box')) {
     box.classList.remove('selected');
-  }
-
-  // Remove card ID from URL
-  let url = window.location.toString();
-  if (url.indexOf("#") > 0) {
-    let clean_url = url.substring(0, url.indexOf("#"));
-    window.history.replaceState({}, "", clean_url);
   }
 }
 
@@ -527,11 +530,12 @@ function follow_internal_link(href) {
         // Scroll inside the card
         let left = card.node.querySelector('.section.left');
         left.scrollTop = node.getBoundingClientRect().top;
-      } else {
-        node.scrollIntoView({
-          behavior: 'smooth',
-        });
       }
+
+      document.querySelector('.map-container').scrollIntoView({
+        behavior: 'smooth',
+      });
+
       return;
     }
   }
@@ -564,14 +568,6 @@ function open_fold(fold) {
 
   appendix_accordion.once('fold:opened', (fold) => {
     scroll();
-
-    // Remove card ID from URL
-    let url = window.location.toString();
-    if (url.indexOf("#") > 0) {
-      let clean_url = url.substring(0, url.indexOf("#"));
-      window.history.replaceState({}, "", clean_url);
-    }
-
   });
 
   if (fold.expanded) {
