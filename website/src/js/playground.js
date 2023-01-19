@@ -233,7 +233,6 @@ function get_parameters() {
   return params;
 }
 
-// Internal, for debugging
 function export_scenario() {
   let json = JSON.stringify(get_parameters(), null, 2);
   download(json, 'takeoff-scenario.json', 'text/plain');
@@ -279,6 +278,7 @@ document.getElementById('import-button').addEventListener('change', function() {
   });
 
   reader.readAsText(this.files[0]);
+  this.value = '';
 });
 
 // ------------------------------------------------------------------------
