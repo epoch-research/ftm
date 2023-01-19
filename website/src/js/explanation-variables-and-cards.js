@@ -154,7 +154,7 @@ let parameters = {
       indices: sim => nj.arange(1, sim.consts.goods.automation_runtime_flops.length, 1),
       tooltip: (x, y) => `Task: ${x.toFixed(0)} <br> Efficiency: ${y.toExponential(1)}`,
     },
-    meaning: 'Base compute-to-labour efficiency for the \\(i\\)-th G&S task <br> (without runtime-training tradeoff)',
+    meaning: 'Base compute-to-labour efficiency for the \\(i\\)-th G&S task <br> without runtime-training tradeoff',
     unit: 'years of human labour/2022 FLOP',
     justification: `
       Computed following the method explained at the end of the <a href="#automation-runtime-requirements">automation section</a>, assuming that running an AGI requires 1.67e16 FLOP/s and that the runtime FLOP gap is 10:
@@ -224,7 +224,7 @@ let parameters = {
       indices: sim => nj.arange(1, sim.consts.rnd.automation_runtime_flops.length, 1),
       tooltip: (x, y) => `Task: ${x.toFixed(0)} <br> Efficiency: ${y.toExponential(1)}`,
     },
-    meaning: 'Base compute-to-labour efficiency for the \\(i\\)-th hardware and software R&D task <br> (without runtime-training tradeoff)',
+    meaning: 'Base compute-to-labour efficiency for the \\(i\\)-th hardware and software R&D task <br> without runtime-training tradeoff',
     unit: 'years of human labour/2022 FLOP',
     justification: `
       This is 100 times the compute-to-labour efficiency for G&S (see above).
