@@ -532,7 +532,7 @@ function follow_internal_link(href) {
         left.scrollTop = node.getBoundingClientRect().top;
       }
 
-      document.querySelector('.map-container').scrollIntoView({
+      card.node.scrollIntoView({
         behavior: 'smooth',
       });
 
