@@ -673,7 +673,7 @@ class Graph {
     });
 
     function updateChart(transform) {
-      let mouseP = d3.mouse(this);
+      let mouseP = d3.event.sourceEvent ? d3.mouse(this) : NaN;
       if (!Number.isNaN(mouseP[0]) && !Number.isNaN(mouseP[1])) {
         updateCrossHairs(mouseP);
       }
