@@ -121,3 +121,11 @@ function cheap_deep_copy(d) {
     return d;
   }
 }
+
+function nodify(node_or_query) {
+  if (typeof(node_or_query) == 'string') {
+    return document.querySelector(node_or_query);
+  }
+  return node_or_query;
+}
+

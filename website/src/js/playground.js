@@ -287,13 +287,6 @@ document.getElementById('import-button').addEventListener('change', function() {
 
 let plt = new Plotter();
 
-function nodify(node_or_query) {
-  if (typeof(node_or_query) == 'string') {
-    return document.querySelector(node_or_query);
-  }
-  return node_or_query;
-}
-
 function plot_compute_decomposition(sim, container, crop_after_agi = true) {
   let t = sim.timesteps;
 

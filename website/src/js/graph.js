@@ -35,9 +35,12 @@ class Graph {
   }
 
   attach(container) {
+    // Unfortunately, we need to make sure the wrapper is in the DOM before rendering
+    document.body.appendChild(this.nodes.wrapper);
+    this.render();
+
     this.container = nodify(container);
     this.container.appendChild(this.nodes.wrapper);
-    this.render();
   }
 
   get_dataset() {
@@ -946,17 +949,11 @@ class Plotter {
   }
 
   show(container) {
-    let originalParent = container.parentElement;
-
-    document.body.appendChild(container);
-
     container = container ? nodify(container) : this.container;
     this.graphToContainer.set(this.graph, container);
     this.graph.attach(container);
     let graph = this.graph;
     this.reset();
-
-    originalParent.appendChild(container);
 
     return graph;
   }
