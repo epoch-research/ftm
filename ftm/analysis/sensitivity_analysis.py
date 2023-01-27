@@ -529,6 +529,7 @@ def g(dist, get_metrics, parameters, mean_samples = 1, var_samples = 10, process
       nonlocal conditional_samples_array
       nonlocal metric_values_array
       nonlocal save_file_subindex
+      nonlocal samples_flushed
 
       if len(metric_values_array) == 0:
         return
