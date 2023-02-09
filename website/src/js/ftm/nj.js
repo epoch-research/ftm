@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-Poor people's implementation of some of NumPy's utilities
+Poor person's implementation of some of NumPy's utilities
 
 *******************************************************************************/
 
