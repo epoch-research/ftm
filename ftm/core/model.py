@@ -245,7 +245,7 @@ class SimulateTakeOff():
     self.hardware_delay_idx = round(self.hardware_delay / self.t_step)
 
     # Deactivate runtime training tradeoff
-    if self.runtime_training_tradeoff < 0 or np.isnan(self.runtime_training_tradeoff):
+    if self.runtime_training_tradeoff <= 0 or np.isnan(self.runtime_training_tradeoff):
       self.runtime_training_tradeoff = None
       self.runtime_training_max_tradeoff = None
 
