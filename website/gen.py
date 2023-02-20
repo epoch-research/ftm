@@ -42,7 +42,7 @@ def generate_sidebar_content():
     if param == 'runtime_training_tradeoff' and value < 0:
       value = 1
 
-    array.append(f'''<div class="{classes}"><label for="{label_target}">{name}</label>{additional_inputs} <input class="input" id="{param}" value="{format_float(value)}"></div>''')
+    array.append(f'''<div class="{classes}"><label for="{label_target}">{name}</label>{additional_inputs} <input class="input" id="{param}" value="{prettify_float(value)}"></div>''')
     test += 1
 
   # Basic params
@@ -63,6 +63,27 @@ def generate_sidebar_content():
     </div>
   </div>
   ''')
+
+def prettify_float(x):
+  sign = -1 if (x < 0) else +1;
+  if sign < 0: x = -x;
+
+  if x == 0:
+    s = '0'
+  elif x > 100 or x < 1e-4:
+    s = f'{x:.4e}'
+  else:
+    s = f'{x:.4}'
+
+  s = re.sub(r'\.([0-9]*[1-9])?0*', r'.\1', s); # remove trailing zeroes
+  s = re.sub(r'e([+-]?)0*([0-9])', r'e\1\2', s); # remove leading zeroes in the exponential
+  s = s.replace('e+', 'e')
+  s = s.replace('.e', 'e') # remove the decimal point, if no decimal
+  s = re.sub(r'\.$', '', s) # remove the decimal point, if no decimal
+
+  if sign < 0: s = '-' + s;
+
+  return s
 
 def generate_dictionaries():
   print(f'let parameter_names = {json.dumps(get_param_names())};')

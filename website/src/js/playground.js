@@ -234,7 +234,7 @@ function get_parameters() {
 }
 
 function export_scenario() {
-  let json = JSON.stringify(get_parameters(), null, 2);
+  let json = stringifyParams(get_parameters());
   download(json, 'takeoff-scenario.json', 'text/plain');
 }
 
@@ -729,7 +729,7 @@ let tippy_instances = [];
 for (let input of document.querySelectorAll('.input-parameter')) {
   let elements = input.querySelectorAll('input');
   let id = elements[elements.length-1].id;
-  let value = elements[elements.length-1].value;
+  let value = best_guess_parameters[id];
   let meaning = parameter_meanings[id];
   let justification = parameter_justifications[id];
 
@@ -749,9 +749,9 @@ for (let input of document.querySelectorAll('.input-parameter')) {
 
   if (tooltip.length > 0) tooltip += '<br><br>';
   if (input.classList.contains('simulation-parameter')) {
-    tooltip += `<span style="font-weight: bold">Initial value:</span> ${value}`;
+    tooltip += `<span style="font-weight: bold">Initial value:</span> ${standard_format(value)}`;
   } else {
-    tooltip += `<span style="font-weight: bold">Best guess value:</span> ${value}`;
+    tooltip += `<span style="font-weight: bold">Best guess value:</span> ${standard_format(value)}`;
   }
 
   if (justification) {
@@ -977,6 +977,24 @@ function injectMeaningTooltip(node, meaning) {
 
     node._meaningInjected = true;
   }
+}
+
+function stringifyParams(params, indent=2) {
+  let indentation = ' '.repeat(indent);
+  let paramNames = Object.keys(params);
+
+  let lines = [];
+  lines.push('{');
+  for (let i = 0; i < paramNames.length; i++) {
+    let name = paramNames[i];
+    let line = `${indentation}"${name}": ${standard_format(params[name])}`;
+    if (i < paramNames.length - 1) {
+      line += ',';
+    }
+    lines.push(line);
+  }
+  lines.push('}');
+  return lines.join('\n');
 }
 
 // ------------------------------------------------------------------------

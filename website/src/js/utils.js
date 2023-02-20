@@ -68,7 +68,8 @@ function swap(arr, i, j) {
 }
 
 function clean_number(str) {
-  str = str.replace(/\.([0-9]*[1-9])?0*/g, ".$1"); // remove right zeroes 
+  str = str.replace(/\.([0-9]*[1-9])?0*/g, ".$1"); // remove trailing zeroes
+  str = str.replace(/e([+-]?)0*([0-9])/g, "e$1$2"); // remove leading zeroes in the exponential
   str = str.replace('e+', 'e');
   str = str.replace('.e', 'e'); // remove the decimal point, if no decimals
   str = str.replace(/\.$/, ''); // remove the decimal point, if no decimals
@@ -83,10 +84,12 @@ function standard_format(x) {
     let sign = (x < 0) ? -1 : +1;
     if (sign < 0) x = -x;
 
-    if (x > 100 || x < 1e-3) {
-      str = x.toExponential(3);
+    if (x == 0) {
+      str = '0';
+    } else if (x > 100 || x < 1e-4) {
+      str = x.toExponential(4);
     } else {
-      str = x.toFixed(3);
+      str = x.toFixed(4);
     }
 
     str = clean_number(str);
