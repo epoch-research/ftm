@@ -262,6 +262,8 @@ let ftm = {};
 
       let consts = cheap_deep_copy(default_input_params);
 
+      consts.t_end = input_params.t_end;
+
       override(consts, input_params);
       if (consts.runtime_training_tradeoff <= 0) {
         consts.runtime_training_tradeoff = 0;
