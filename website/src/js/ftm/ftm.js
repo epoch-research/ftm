@@ -60,6 +60,7 @@ let ftm = {};
 
     runtime_training_tradeoff: 0,
     runtime_training_max_tradeoff: 1,
+    bright_line_growth_rate: Math.infinity,
 
     goods: create_production_params({
       labour_substitution: -0.5,
@@ -455,6 +456,8 @@ let ftm = {};
       let experiments_compute = state.hardware ** consts.software_rnd.experiments_efficiency;
       consts.initial.software_rnd.share.capital = consts.initial.software_rnd.share.experiments; 
       _initialize_task_weight(state, consts, 'rnd', 'software_rnd', experiments_compute);
+
+      state.bright_line = consts.initial.biggest_training_run;
     }
 
     static process_automation_costs(full_automation_flops, flop_gap, n_labour_tasks, steepness) {
@@ -589,6 +592,7 @@ let ftm = {};
       this.update_rampup(state, consts, states);
       this.allocate_frac_inputs(state, consts, states);
       this.calculate_total_inputs(state, consts, states);
+      this.limit_frac_inputs(state, consts, states);
       this.calculate_tfps(state, consts, states);
       this.calculate_money_spent_training(state, consts, states);
     }
@@ -690,11 +694,6 @@ let ftm = {};
       _update_frac_input(state.frac_labour.software_rnd, state, consts);
       _update_frac_input(state.frac_compute.software_rnd, state, consts);
 
-      // Cap the growth of the fraction of FLOP before rampup
-      if (state.money_spent_training > consts.money_cap_training_before_wakeup && !states[state.t_idx-1].rampup) {
-        state.frac_compute.training.v = states[state.t_idx-1].frac_compute.training.v;
-      }
-
       state.frac_capital.goods.v = 1 - state.frac_capital.hardware_rnd.v - state.frac_capital.software_rnd.v;
       state.frac_labour.goods.v  = 1 - state.frac_labour.hardware_rnd.v  - state.frac_labour.software_rnd.v;
       state.frac_compute.goods.v =
@@ -726,6 +725,22 @@ let ftm = {};
       state.labour = state.labour * nj.exp(consts.labour_growth * consts.t_step)
     }
 
+    static limit_frac_inputs(state, consts, states) {
+      // Cap the growth of the biggest training run
+      state.bright_line = consts.initial.biggest_training_run * 10**(consts.bright_line_growth_rate * (state.t_year - consts.t_start));
+      state.frac_compute.training.v = Math.min(state.frac_compute.training.v, state.bright_line / state.compute);
+
+      // Cap the growth of the fraction of FLOP before rampup
+      if (state.money_spent_training > consts.money_cap_training_before_wakeup && !states[state.t_idx-1].rampup) {
+        state.frac_compute.training.v = states[state.t_idx-1].frac_compute.training.v;
+      }
+
+      state.frac_compute.goods.v =
+        1 - state.frac_compute.hardware_rnd.v
+          - state.frac_compute.software_rnd.v
+          - state.frac_compute.training.v;
+    }
+
     static calculate_tfps(state, consts) {
       state.goods.tfp *= nj.exp(consts.tfp_growth * consts.t_step)
       state.rnd.tfp   *= nj.exp(consts.tfp_growth * consts.t_step)
@@ -741,6 +756,10 @@ let ftm = {};
 
     static automate_tasks(state, consts) {
       state.biggest_training_run = state.compute * state.frac_compute.training.v;
+
+      if (state.biggest_training_run > 1.00001 * state.bright_line) {
+        console.error('Bright line violated', state.biggest_training_run, state.bright_line);
+      }
 
       let _update_automatable_tasks = (s, p, category) => {
         s.task_compute_to_labour_ratio = this.get_task_compute_to_labour_ratio(p.automation_runtime_flops, p.automation_training_flops, state.biggest_training_run, consts, category);
@@ -1193,7 +1212,7 @@ let ftm = {};
       return x;
     }
 
-    get_growth(path_or_thread) {
+    get_growth(path_or_thread, growth_type='log') {
       let thread = (typeof path_or_thread == 'string') ? this.get_thread(path_or_thread) : path_or_thread;
 
       let steps_per_year = Math.floor(1 / this.consts.t_step);
@@ -1201,7 +1220,13 @@ let ftm = {};
       let t = nj.array(this.states.length - steps_per_year);
       for (let i = steps_per_year; i < this.states.length; i++) {
         t[i-steps_per_year] = this.states[i].t_year;
-        growth[i-steps_per_year] = Math.log(thread[i]/thread[i-steps_per_year]);
+
+        let g;
+        if (growth_type == 'linear') g = thread[i] - thread[i-steps_per_year];
+        if (growth_type == 'log')    g = Math.log(thread[i]/thread[i-steps_per_year]);
+        if (growth_type == 'log10')  g = Math.log10(thread[i]/thread[i-steps_per_year]);
+
+        growth[i-steps_per_year] = g;
       }
 
       return {t, growth};

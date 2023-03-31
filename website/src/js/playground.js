@@ -23,6 +23,7 @@ let ui_state = {
   metrics_to_show: 'important-metrics',
 
   takeoff_table_scroll_x: 0,
+  extra_metrics_table_scroll_x: 0,
   summary_table_scroll_x: 0,
 
   // TODO Generalize these
@@ -102,7 +103,37 @@ function run_simulation(immediate, callback) {
       metrics_to_show.dispatchEvent(new Event('change'));
 
       clear_tables('#summary-table-container');
+      clear_tables('#extra-metrics-table-container');
       clear_tables('#year-by-year-table-container');
+
+      let frac_automated_tasks = nj.array(sim.states.length);
+      for (let i = 0; i < sim.states.length; i++) {
+        frac_automated_tasks[i] =
+          (ftm.Model.get_automated_tasks_count(sim.states[i].goods) + ftm.Model.get_automated_tasks_count(sim.states[i].hardware_rnd))
+            / (sim.consts.goods.n_labour_tasks + sim.consts.rnd.n_labour_tasks);
+      }
+
+      let frac_task_growth = sim.get_growth(frac_automated_tasks, 'linear').growth;
+      let gwp_growth = sim.get_growth('gwp', 'log10').growth;
+      let biggest_training_run_growth = sim.get_growth('biggest_training_run', 'log10').growth;
+
+      let agi_index = sim.time_to_index(sim.agi_year);
+      let max_biggest_training_run_growth = nj.max(biggest_training_run_growth.slice(0, agi_index));
+      let max_frac_task_growth = nj.max(frac_task_growth.slice(0, agi_index));
+      let max_gwp_growth = nj.max(gwp_growth.slice(0, agi_index));
+
+      let extra_table = {
+        'Maximum train run growth before AGI': `${max_biggest_training_run_growth.toFixed(3)} OOM/year`,
+        'Maximum GWP growth before AGI': `${max_gwp_growth.toFixed(3)} OOM/year`,
+        'Maximum task automation growth before AGI': `${max_frac_task_growth.toFixed(3)}/year`,
+        'Maximum overhang': 'TBA',
+      };
+
+      let extra_table_wrapper = add_table('#extra-metrics-table-container', extra_table);
+      extra_table_wrapper.scrollLeft = ui_state.extra_metrics_table_scroll_x;
+      extra_table_wrapper.addEventListener('scroll', () => {
+        ui_state.extra_metrics_table_scroll_x = extra_table_wrapper.scrollLeft;
+      });
 
       let summary_table_wrapper = add_table('#summary-table-container', sim.get_summary_table());
       summary_table_wrapper.scrollLeft = ui_state.summary_table_scroll_x;
@@ -151,13 +182,6 @@ function run_simulation(immediate, callback) {
 
       plot_compute_decomposition(sim, '#compute-decomposition-graph-container');
 
-      let frac_automated_tasks = nj.array(sim.states.length);
-      for (let i = 0; i < sim.states.length; i++) {
-        frac_automated_tasks[i] =
-          (ftm.Model.get_automated_tasks_count(sim.states[i].goods) + ftm.Model.get_automated_tasks_count(sim.states[i].hardware_rnd))
-            / (sim.consts.goods.n_labour_tasks + sim.consts.rnd.n_labour_tasks);
-      }
-
       add_multigraph(sim, [
         { label: 'GWP',                     var: 'gwp',                    yscale: 'log'},
         { label: 'Software',                var: 'software.v',             yscale: 'log'},
@@ -166,6 +190,7 @@ function run_simulation(immediate, callback) {
         { label: 'Labour',                  var: 'labour',                 yscale: 'log'},
         { label: 'Capital',                 var: 'capital',                yscale: 'log'},
         { label: 'Compute',                 var: 'compute',                yscale: 'log'},
+        { label: 'Bright line',             var: 'bright_line',            yscale: 'log'},
         { label: 'Biggest training run',    var: 'biggest_training_run',   yscale: 'log'},
         { label: 'Money spent on training', var: 'money_spent_training',   yscale: 'log'},
 
@@ -437,15 +462,10 @@ function add_multigraph(sim, variables, container, crop_after_agi = true) {
     let show_growth = (top == 'growth per year');
 
     if (show_growth) {
-      if (label_to_yscale[side] == 'log') {
-        let r = sim.get_growth(label_to_var[side]);
-        x = r.t;
-        y = r.growth;
-        graph.yscale('linear');
-      } else {
-        x = null;
-        y = null;
-      }
+      let r = sim.get_growth(label_to_var[side], label_to_yscale[side]);
+      x = r.t;
+      y = r.growth;
+      graph.yscale('linear');
     } else {
       x = sim.timesteps;
       y = (typeof label_to_var[side] == 'string') ? sim.get_thread(label_to_var[side]) : label_to_var[side];

@@ -513,7 +513,7 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
 
           <div class="tab-content">
             <div class="tab active" data-id="main-parameters">
-
+              <div class="input-parameter"><label for="bright_line_growth_rate">Growth rate of the maximum biggest training bright line</label> <input class="input" id="bright_line_growth_rate" value="0.2"></div>
               <div class="input-parameter"><label for="full_automation_requirements_training">AGI training requirements (FLOP with 2022 algorithms)</label> <input class="input" id="full_automation_requirements_training" value="1e36"></div>
               <div class="input-parameter"><label for="flop_gap_training">Effective FLOP gap (training)</label> <input class="input" id="flop_gap_training" value="1e4"></div>
               <div class="input-parameter"><label for="goods_vs_rnd_requirements_training">Training goods vs R&D</label> <input class="input" id="goods_vs_rnd_requirements_training" value="3"></div>
@@ -609,6 +609,8 @@ See https://communities.sas.com/t5/SAS-Communities-Library/Adding-brush-and-zoom
         </select>
       </p>
       <div id="takeoff-metrics-table-container"></div>
+      <h2>Bright line metrics</h2>
+      <div id="extra-metrics-table-container"></div>
       <h2>Summary</h2>
       <p>Click <span data-modal-trigger="year-by-year-modal"><i>here</i> for the detailed year by year table.</p>
       <div id="summary-table-container"></div>
