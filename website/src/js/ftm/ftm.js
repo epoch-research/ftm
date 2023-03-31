@@ -130,6 +130,13 @@ let ftm = {};
         growth_rampup: 1.1,
         ceiling: 0.1,
       },
+
+      /* Fraction of compute we would give to training if not for the bright line restriction */
+      uncapped_training: {
+        growth: 0.547528364331348,
+        growth_rampup: 1.1,
+        ceiling: 0.1,
+      },
     },
 
     frac_gwp: {
@@ -406,6 +413,7 @@ let ftm = {};
       state.frac_compute.hardware_rnd.v = initial.frac_compute.hardware_rnd;
       state.frac_compute.software_rnd.v = initial.frac_compute.software_rnd;
       state.frac_compute.training.v = initial.biggest_training_run / state.compute;
+      state.frac_compute.uncapped_training = cheap_deep_copy(state.frac_compute.training);
       state.frac_compute.goods.v =
         1 - state.frac_compute.hardware_rnd.v
           - state.frac_compute.software_rnd.v
@@ -460,6 +468,7 @@ let ftm = {};
       _initialize_task_weight(state, consts, 'rnd', 'software_rnd', experiments_compute);
 
       state.bright_line = consts.initial.biggest_training_run;
+      state.compute_overhang = 1;
     }
 
     static process_automation_costs(full_automation_flops, flop_gap, n_labour_tasks, steepness) {
@@ -687,6 +696,7 @@ let ftm = {};
       _update_frac_input(state.frac_gwp.compute, state, consts);
 
       _update_frac_input(state.frac_compute.training, state, consts);
+      _update_frac_input(state.frac_compute.uncapped_training, state, consts);
 
       _update_frac_input(state.frac_capital.hardware_rnd, state, consts);
       _update_frac_input(state.frac_labour.hardware_rnd, state, consts);
@@ -734,8 +744,14 @@ let ftm = {};
 
       // Cap the growth of the fraction of FLOP before rampup
       if (state.money_spent_training > consts.money_cap_training_before_wakeup && !states[state.t_idx-1].rampup) {
+        state.frac_compute.uncapped_training.v = states[state.t_idx-1].frac_compute.uncapped_training.v;
+      }
+
+      if (state.money_spent_training > consts.money_cap_training_before_wakeup && !states[state.t_idx-1].rampup) {
         state.frac_compute.training.v = states[state.t_idx-1].frac_compute.training.v;
       }
+
+      state.compute_overhang = state.frac_compute.uncapped_training.v/state.frac_compute.training.v;
 
       state.frac_compute.goods.v =
         1 - state.frac_compute.hardware_rnd.v
@@ -1427,7 +1443,7 @@ let ftm = {};
 
       this.frac_capital = SimulationState.create_frac_state(['goods', 'hardware_rnd', 'software_rnd']);
       this.frac_labour  = SimulationState.create_frac_state(['goods', 'hardware_rnd', 'software_rnd']);
-      this.frac_compute = SimulationState.create_frac_state(['goods', 'hardware_rnd', 'software_rnd', 'training',]);
+      this.frac_compute = SimulationState.create_frac_state(['goods', 'hardware_rnd', 'software_rnd', 'training', 'uncapped_training']);
       this.frac_gwp = SimulationState.create_frac_state(['compute']);
 
       this.goods = { tfp: 0, };
