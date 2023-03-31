@@ -118,6 +118,7 @@ function run_simulation(immediate, callback) {
       let biggest_training_run_growth = sim.get_growth('biggest_training_run', 'log10').growth;
 
       let agi_index = sim.time_to_index(sim.agi_year);
+      if (agi_index < 0) agi_index = sim.states.length;
       let max_biggest_training_run_growth = nj.max(biggest_training_run_growth.slice(0, agi_index));
       let max_frac_task_growth = nj.max(frac_task_growth.slice(0, agi_index));
       let max_gwp_growth = nj.max(gwp_growth.slice(0, agi_index));
