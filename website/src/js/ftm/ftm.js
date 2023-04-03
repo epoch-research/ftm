@@ -1243,6 +1243,7 @@ let ftm = {};
         if (growth_type == 'linear') g = thread[i] - thread[i-steps_per_year];
         if (growth_type == 'log')    g = Math.log(thread[i]/thread[i-steps_per_year]);
         if (growth_type == 'log10')  g = Math.log10(thread[i]/thread[i-steps_per_year]);
+        if (growth_type == '%')      g = thread[i]/thread[i-steps_per_year] - 1;
 
         growth[i-steps_per_year] = g;
       }

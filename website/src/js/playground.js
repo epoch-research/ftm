@@ -114,7 +114,7 @@ function run_simulation(immediate, callback) {
       }
 
       let frac_task_growth = sim.get_growth(frac_automated_tasks, 'linear').growth;
-      let gwp_growth = sim.get_growth('gwp', 'log10').growth;
+      let gwp_growth = sim.get_growth('gwp', '%').growth;
       let biggest_training_run_growth = sim.get_growth('biggest_training_run', 'log10').growth;
 
       let last_index = (sim.agi_year == null) ? sim.states.length : sim.time_to_index(sim.agi_year);
@@ -126,7 +126,7 @@ function run_simulation(immediate, callback) {
 
       let extra_table = {
         'Maximum train run growth before AGI': `${max_biggest_training_run_growth.toFixed(3)} OOM/year`,
-        'Maximum GWP growth before AGI': `${max_gwp_growth.toFixed(3)} OOM/year`,
+        'Maximum GWP growth before AGI': `${(100*max_gwp_growth).toFixed(3)} %/year`,
         'Maximum task automation growth before AGI': `${(100*max_frac_task_growth).toFixed(1)} %/year`,
         'Maximum overhang': `${Math.log10(max_compute_overhang).toFixed(0)} OOM`,
       };
