@@ -747,6 +747,10 @@ let ftm = {};
         state.frac_compute.uncapped_training.v = states[state.t_idx-1].frac_compute.uncapped_training.v;
       }
 
+      if (state.money_spent_training > consts.money_cap_training_before_wakeup && !states[state.t_idx-1].rampup) {
+        state.frac_compute.training.v = states[state.t_idx-1].frac_compute.training.v;
+      }
+
       state.compute_overhang = state.frac_compute.uncapped_training.v/state.frac_compute.training.v;
 
       state.frac_compute.goods.v =
