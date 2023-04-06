@@ -122,13 +122,30 @@ function run_simulation(immediate, callback) {
       let max_frac_task_growth = nj.max(frac_task_growth.slice(0, last_index));
       let max_gwp_growth = nj.max(gwp_growth.slice(0, last_index));
       let max_compute_overhang = nj.max(sim.get_thread('compute_overhang').slice(0, last_index));
-      console.log(last_index);
+
+      let time_with_high_overhang = nj.count_true(nj.gt(sim.get_thread('compute_overhang'), 1e1).slice(0, last_index)) * sim.consts.t_step;
+
+      function first_true_index(array) {
+        if (!nj.any(array)) {
+          return nj.nan;
+        }
+        return nj.argmax(array);
+      }
+
+      let takeoff_start_index = first_true_index(nj.gt(sim.frac_tasks_automated_goods, 0.2));
+      let takeoff_end_index = first_true_index(nj.gte(sim.frac_tasks_automated_goods, 1.));
+      let min_compute_overhang_during_takeoff = nj.nan;
+      if (takeoff_start_index) {
+        min_compute_overhang_during_takeoff = nj.min(sim.get_thread('compute_overhang').slice(takeoff_start_index, takeoff_end_index || sim.states.length));
+      }
 
       let extra_table = {
         'Maximum train run growth before AGI': `${max_biggest_training_run_growth.toFixed(3)} OOM/year`,
+        'Maximum overhang': `${Math.log10(max_compute_overhang).toFixed(1)} OOM`,
+        'Minimum overhang during takeoff': `${Math.log10(min_compute_overhang_during_takeoff).toFixed(1)} OOM`,
+        'Length of time with >1 OOM overhang before AGI': `${time_with_high_overhang.toFixed(1)} years`,
         'Maximum GWP growth before AGI': `${(100*max_gwp_growth).toFixed(3)} %/year`,
         'Maximum task automation growth before AGI': `${(100*max_frac_task_growth).toFixed(1)} %/year`,
-        'Maximum overhang': `${Math.log10(max_compute_overhang).toFixed(1)} OOM`,
       };
 
       let extra_table_wrapper = add_table('#extra-metrics-table-container', extra_table);
@@ -194,6 +211,7 @@ function run_simulation(immediate, callback) {
         { label: 'Compute',                 var: 'compute',                yscale: 'log'},
         { label: 'Bright line',             var: 'bright_line',            yscale: 'log'},
         { label: 'Biggest training run',    var: 'biggest_training_run',   yscale: 'log'},
+        { label: 'Overhang',                var: 'compute_overhang',       yscale: 'log'},
         { label: 'Money spent on training', var: 'money_spent_training',   yscale: 'log'},
 
         { label: 'Fraction of GWP spent on training', var: nj.div(sim.get_thread('money_spent_training'), sim.get_thread('gwp')), yscale: 'log'},
