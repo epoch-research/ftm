@@ -467,7 +467,7 @@ let ftm = {};
       consts.initial.software_rnd.share.capital = consts.initial.software_rnd.share.experiments; 
       _initialize_task_weight(state, consts, 'rnd', 'software_rnd', experiments_compute);
 
-      state.bright_line = consts.initial.biggest_training_run;
+      state.bright_line = consts.initial.biggest_training_run/consts.initial.software;
       state.compute_overhang = 1;
     }
 
@@ -739,8 +739,8 @@ let ftm = {};
 
     static limit_frac_inputs(state, consts, states) {
       // Cap the growth of the biggest training run
-      state.bright_line = consts.initial.biggest_training_run * 10**(consts.bright_line_growth_rate * (state.t_year - consts.t_start));
-      state.frac_compute.training.v = Math.min(state.frac_compute.training.v, state.bright_line / state.compute);
+      state.bright_line = consts.initial.biggest_training_run/consts.initial.software * 10**(consts.bright_line_growth_rate * (state.t_year - consts.t_start));
+      state.frac_compute.training.v = Math.min(state.frac_compute.training.v, state.bright_line/state.hardware);
 
       // Cap the growth of the fraction of FLOP before rampup
       if (state.money_spent_training > consts.money_cap_training_before_wakeup && !states[state.t_idx-1].rampup) {
@@ -775,8 +775,8 @@ let ftm = {};
     static automate_tasks(state, consts) {
       state.biggest_training_run = state.compute * state.frac_compute.training.v;
 
-      if (state.biggest_training_run > 1.00001 * state.bright_line) {
-        console.error('Bright line violated', state.biggest_training_run, state.bright_line);
+      if (state.biggest_training_run/state.software.v > 1.00001 * state.bright_line) {
+        console.error('Bright line violated', state.biggest_training_run/state.software.v, state.bright_line);
       }
 
       let _update_automatable_tasks = (s, p, category) => {
