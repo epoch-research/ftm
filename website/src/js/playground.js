@@ -128,7 +128,7 @@ function run_simulation(immediate, callback) {
         'Maximum train run growth before AGI': `${max_biggest_training_run_growth.toFixed(3)} OOM/year`,
         'Maximum GWP growth before AGI': `${(100*max_gwp_growth).toFixed(3)} %/year`,
         'Maximum task automation growth before AGI': `${(100*max_frac_task_growth).toFixed(1)} %/year`,
-        'Maximum overhang': `${Math.log10(max_compute_overhang).toFixed(0)} OOM`,
+        'Maximum overhang': `${Math.log10(max_compute_overhang).toFixed(1)} OOM`,
       };
 
       let extra_table_wrapper = add_table('#extra-metrics-table-container', extra_table);
