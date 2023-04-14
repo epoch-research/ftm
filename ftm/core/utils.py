@@ -11,6 +11,7 @@ import yaml
 import inspect
 import numbers
 import argparse
+import requests
 import numpy as np
 import pandas as pd
 import urllib.request
@@ -166,8 +167,11 @@ def get_export_url_from_gsheet(gsheet_url, format = 'xlsx'):
 
 def get_workbook(path, format = 'xlsx', data_only = False):
   if re.match(r'^(http|https|file)://', path):
-    response = urllib.request.urlopen(get_export_url_from_gsheet(path, format = format))
-    workbook = response.read()
+    url = get_export_url_from_gsheet(path, format=format)
+    response = requests.get(url, verify=False)
+    workbook = response.content
+    # response = urllib.request.urlopen(get_export_url_from_gsheet(path, format = format))
+    # workbook = response.read()
   else:
     with open(path, 'rb') as f:
       workbook = f.read()
