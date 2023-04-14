@@ -141,3 +141,4 @@ _ignore*
 _output_/
 _cache_/
 local_config.yml
+.txt
