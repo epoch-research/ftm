@@ -211,6 +211,7 @@ function run_simulation(immediate, callback) {
         { label: 'Compute',                 var: 'compute',                yscale: 'log'},
         { label: 'Bright line',             var: 'bright_line',            yscale: 'log'},
         { label: 'Biggest training run',    var: 'biggest_training_run',   yscale: 'log'},
+        { label: 'Biggest training run (physical)', var: nj.div(sim.get_thread('biggest_training_run'), sim.get_thread('software.v')),  yscale: 'log'},
         { label: 'Overhang',                var: 'compute_overhang',       yscale: 'log'},
         { label: 'Money spent on training', var: 'money_spent_training',   yscale: 'log'},
 
@@ -468,7 +469,7 @@ function add_multigraph(sim, variables, container, crop_after_agi = true) {
   plt.set_transform(ui_state.metrics_graph_transform)
   plt.set_transform_callback((transform) => {ui_state.metrics_graph_transform = transform});
 
-  plt.set_top_selections(['raw metric', 'growth per year'], ui_state.metrics_graph_top_selection);
+  plt.set_top_selections(['raw metric', 'growth per year', 'OOM/year'], ui_state.metrics_graph_top_selection);
   plt.set_side_selections(labels, ui_state.metrics_graph_side_selection);
   plt.on_select((top, side, graph) => {
     graph.clear_dataset();
@@ -479,12 +480,15 @@ function add_multigraph(sim, variables, container, crop_after_agi = true) {
     ui_state.metrics_graph_top_selection = top;
     ui_state.metrics_graph_side_selection = side;
 
-    let show_growth = (top == 'growth per year');
+    let show_growth = (top == 'growth per year' || top == 'OOM/year');
 
     if (show_growth) {
       let r = sim.get_growth(label_to_var[side], label_to_yscale[side]);
       x = r.t;
       y = r.growth;
+      if (top == 'OOM/year') {
+        y = nj.mult(y, Math.log10(Math.E));
+      }
       graph.yscale('linear');
     } else {
       x = sim.timesteps;
