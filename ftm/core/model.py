@@ -3,6 +3,7 @@ import inspect
 import matplotlib.pyplot as plt
 import pandas as pd
 import math
+import pdb
 
 from . import utils
 from .utils import get_option, get_parameter_table, init_cli_arguments, handle_cli_arguments
@@ -358,7 +359,7 @@ class SimulateTakeOff():
     or np.any(np.diff(self.automation_runtime_flops_goods) < 0.) \
     or np.any(np.diff(self.automation_training_flops_rnd) < 0.) \
     or np.any(np.diff(self.automation_runtime_flops_rnd) < 0.):
-      raise ValueError("Assumption not met: the automation costs must be monotonically increasing.")
+      raise ValueError("Assumption not met: the automation costs must be monotonically increasing.")    
 
   ##############################################################################
 
@@ -1419,6 +1420,10 @@ class SimulateTakeOff():
 
     # Logarithmic interpolation
     result = 10**np.interp(q, keys, np.log10(values))
+
+    # 
+    if max(keys) < 1:
+      result[q > max(keys)] = 1e300
 
     return result
 
