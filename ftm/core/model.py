@@ -89,6 +89,9 @@ class SimulateTakeOff():
       frac_gwp_compute_ceiling,
       frac_compute_training_ceiling,
 
+      # NEW: Maximum fraction of tasks automatable
+      frac_automation_ceiling,
+
       # Initial values
       initial_frac_capital_hardware_rnd,
       initial_frac_labour_hardware_rnd,
@@ -275,21 +278,25 @@ class SimulateTakeOff():
       SimulateTakeOff.quantiles_from_gap(
           self.full_automation_training_flops_goods,
           self.automation_training_flop_gap_goods,
+          self.frac_automation_ceiling,
           )
     self.automation_runtime_flops_goods = \
       SimulateTakeOff.quantiles_from_gap(
           self.full_automation_runtime_flops_goods,
           self.automation_runtime_flop_gap_goods,
+          self.frac_automation_ceiling,
           )
     self.automation_training_flops_rnd = \
       SimulateTakeOff.quantiles_from_gap(
           self.full_automation_training_flops_rnd,
           self.automation_training_flop_gap_rnd,
+          self.frac_automation_ceiling,
           )
     self.automation_runtime_flops_rnd = \
       SimulateTakeOff.quantiles_from_gap(
           self.full_automation_runtime_flops_rnd,
           self.automation_runtime_flop_gap_rnd,
+          self.frac_automation_ceiling,
           )
 
     self.automation_training_flops_goods =\
@@ -600,7 +607,8 @@ class SimulateTakeOff():
 
       # Haven't we automated every task yet? (We'll extend the simulation for a year, in order to be able to compute growth rates)
       one_year_ago_idx = int(math.floor(t_idx - 1/self.t_step))
-      if self.frac_tasks_automated_goods[one_year_ago_idx-1] < 1 or self.frac_tasks_automated_rnd[one_year_ago_idx-1] < 1:
+      if self.frac_tasks_automated_goods[one_year_ago_idx-1] < self.frac_automation_ceiling \
+        or self.frac_tasks_automated_rnd[one_year_ago_idx-1] < self.frac_automation_ceiling:
         return True
 
       # Can't we compute the gwp_growth metric?
@@ -1274,9 +1282,11 @@ class SimulateTakeOff():
 
   def allocate_fractional_inputs(self, t_idx):
 
+    # TODO: This could be a good place to debug, printing outputs
+
     # Rampup
     self.rampup[t_idx] = \
-      self.frac_tasks_automated_goods[t_idx-1] >= self.rampup_trigger
+      self.frac_tasks_automated_goods[t_idx-1] >= self.rampup_trigger * self.frac_automation_ceiling
 
     t_year = self.index_to_time(t_idx) - self.t_step
     if self.rampup[t_idx] and not self.rampup[t_idx-1]:
@@ -1382,15 +1392,15 @@ class SimulateTakeOff():
   ## AUXILIARY FUNCTIONS
 
   @staticmethod
-  def quantiles_from_gap(top, gap):
+  def quantiles_from_gap(top, gap, max):
       unit = gap**(1/7)
       quantiles = {
-          1.0: top,
-          0.5: top/(unit**4),
-          0.2: top/(unit**7),
-          0.1: top/(unit**8.5),
-          0.05: top/(unit**9.5),
-          0.0: top/(unit**10.5),
+          1.0 * max: top,
+          0.5 * max: top/(unit**4),
+          0.2 * max: top/(unit**7),
+          0.1 * max: top/(unit**8.5),
+          0.05 * max: top/(unit**9.5),
+          0.0 * max: top/(unit**10.5),
           }
       return quantiles
 
