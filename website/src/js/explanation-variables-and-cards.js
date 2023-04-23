@@ -41,7 +41,7 @@ let variables = {
   'C':       {meaning: 'Effective compute',                                      thread: 'compute', unit: '2022 FLOP/year'},
   'S':       {meaning: 'Software efficiency level',                              thread: 'software.v', unit: '2022 FLOP/FLOP'},
 
-  'F_C':     {meaning: 'Fraction of GWP used to purchase new hardware',          thread: 'compute_investment'},
+  'F_C':     {meaning: 'Fraction of GWP used to purchase new hardware',          thread: 'frac_gwp.compute.v'},
   'F_{C,G}': {meaning: 'Fraction of effective compute assigned to G&S',          thread: 'frac_compute.goods.v'},
   'F_{C,H}': {meaning: 'Fraction of effective compute assigned to hardware R&D', thread: 'frac_compute.hardware_rnd.v'},
   'F_{C,S}': {meaning: 'Fraction of effective compute assigned to software R&D', thread: 'frac_compute.software_rnd.v'},
