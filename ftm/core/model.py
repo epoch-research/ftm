@@ -92,6 +92,8 @@ class SimulateTakeOff():
 
       # NEW: Maximum fraction of tasks automatable
       frac_automation_ceiling,
+      long_tail_frac,
+      long_tail_gap,
 
       # Initial values
       initial_frac_capital_hardware_rnd,
@@ -168,6 +170,8 @@ class SimulateTakeOff():
 
     # Allocate memory for the simulation state
     self.create_simulation_state()
+
+    print(f'disable_automation {disable_automation}')
 
   def check_input_validity(self):
     assert self.flop_gap_training >= 1
@@ -277,27 +281,39 @@ class SimulateTakeOff():
     # Define distribution of requirements
     self.automation_training_flops_goods = \
       SimulateTakeOff.quantiles_from_gap(
+          self.initial_biggest_training_run,
           self.full_automation_training_flops_goods,
           self.automation_training_flop_gap_goods,
           self.frac_automation_ceiling,
+          self.long_tail_frac,
+          self.long_tail_gap
           )
     self.automation_runtime_flops_goods = \
       SimulateTakeOff.quantiles_from_gap(
+          self.initial_biggest_training_run,
           self.full_automation_runtime_flops_goods,
           self.automation_runtime_flop_gap_goods,
           self.frac_automation_ceiling,
+          self.long_tail_frac,
+          self.long_tail_gap
           )
     self.automation_training_flops_rnd = \
       SimulateTakeOff.quantiles_from_gap(
+          self.initial_biggest_training_run,
           self.full_automation_training_flops_rnd,
           self.automation_training_flop_gap_rnd,
           self.frac_automation_ceiling,
+          self.long_tail_frac,
+          self.long_tail_gap
           )
     self.automation_runtime_flops_rnd = \
       SimulateTakeOff.quantiles_from_gap(
+          self.initial_biggest_training_run,
           self.full_automation_runtime_flops_rnd,
           self.automation_runtime_flop_gap_rnd,
           self.frac_automation_ceiling,
+          self.long_tail_frac,
+          self.long_tail_gap
           )
 
     self.automation_training_flops_goods =\
@@ -1392,18 +1408,94 @@ class SimulateTakeOff():
 
   ## AUXILIARY FUNCTIONS
 
-  @staticmethod
-  def quantiles_from_gap(top, gap, max):
-      unit = gap**(1/7)
+  def quantiles_from_gap(initial, top_flop, twenty_gap, top_frac, tail_frac, tail_gap):
+    old_school = False
+    if old_school:
+      unit = twenty_gap**(1/7)
       quantiles = {
-          1.0 * max: top,
-          0.5 * max: top/(unit**4),
-          0.2 * max: top/(unit**7),
-          0.1 * max: top/(unit**8.5),
-          0.05 * max: top/(unit**9.5),
-          0.0 * max: top/(unit**10.5),
+          1.0: top_flop,
+          0.5: top_flop/(unit**4),
+          0.2: top_flop/(unit**7),
+          0.1: top_flop/(unit**8.5),
+          0.05: top_flop/(unit**9.5),
+          0.0: top_flop/(unit**10.5),
           }
-      return quantiles
+
+      updated_quantiles = dict()
+
+      for k, v in quantiles.items():
+        if k > top_frac:
+          updated_quantiles[top_frac] = top_flop
+        else:
+          updated_quantiles[k] = v
+
+      quantiles = updated_quantiles
+      
+    else:
+      assert tail_frac < 0.8, "Long tail must include less than 80 percent of tasks"
+      quantiles = dict()
+      quantiles[0.0] = initial
+      quantiles[0.2] = top_flop / (tail_gap * twenty_gap)
+      quantiles[1 - tail_frac] = top_flop / tail_gap
+      quantiles[1] = top_flop
+
+      updated_quantiles = dict()
+
+      for k, v in quantiles.items():
+        if k > top_frac:
+          updated_quantiles[top_frac] = top_flop
+        else:
+          updated_quantiles[k] = v
+      
+      quantiles = updated_quantiles
+      
+    return quantiles
+  
+  # @staticmethod
+  # def quantiles_from_gap(top, gap, max, long_tail_frac=None, long_tail_gap=None):
+  #   if long_tail_frac is None or long_tail_gap is None:
+  #     # If long_tail_frac or long_tail_gap is None, use the original function
+  #     unit = gap**(1/7)
+  #     quantiles = {
+  #       1.0 * max: top,
+  #       0.5 * max: top/(unit**4),
+  #       0.2 * max: top/(unit**7),
+  #       0.1 * max: top/(unit**8.5),
+  #       0.05 * max: top/(unit**9.5),
+  #       0.0 * max: top/(unit**10.5),
+  #     }
+          
+  #   unit = gap**(1/7)
+  #   quantiles = {}
+  #   for frac in [1.0, 0.5, 0.2, 0.1, 0.05, 0.0]:
+  #     if frac < long_tail_frac:
+  #       quantiles[frac * max] = top / (unit ** (4 + 4 * (long_tail_frac - frac)))
+  #     else:
+  #       quantiles[frac * max] = top / (unit ** (4 + 4 * (long_tail_frac - 1))) * (long_tail_gap ** (frac - long_tail_frac + 1))
+    
+  #   print(quantiles)
+    
+  #   return quantiles
+
+  # @staticmethod
+  # def quantiles_from_gap(top, gap, max, long_tail_frac, long_tail_gap):
+  #     unit = gap**(1/7)
+  #     quantiles = {
+  #         1.0: top,
+  #         0.5: top/(unit**4),
+  #         0.2: top/(unit**7),
+  #         0.1: top/(unit**8.5),
+  #         0.05: top/(unit**9.5),
+  #         0.0: top/(unit**10.5),
+  #         }
+
+  #     for k in quantiles.keys():
+  #       if k > max:
+  #         print('popping')
+  #         quantiles.pop(k)
+  #         quantiles[max] = top 
+
+  #     return quantiles
 
   @staticmethod
   def process_quantiles(quantile_dict, n_items):
@@ -2099,6 +2191,10 @@ if __name__ == "__main__":
   # Retrieve parameter estimates from spreadsheet
   parameter_table = get_parameter_table()
   best_guess_parameters = {parameter : row['Best guess'] for parameter, row in parameter_table.iterrows()}
+
+  print()
+  print(f'max auto {best_guess_parameters["frac_automation_ceiling"]}')
+  print()
 
   # Run model
   model = SimulateTakeOff(**best_guess_parameters)
