@@ -684,6 +684,25 @@ def write_mc_analysis_report(
     plot_quantiles(results.timesteps, results.state_metrics[metric], "Year", metrics[metric])
     report.add_figure()
 
+  # Plot sample trajectories
+  for metric in metrics:
+    plt.figure(figsize=(10,6))
+
+    median = np.zeros(len(results.timesteps))
+    for t in range(len(results.timesteps)):
+      median[t]=np.percentile(results.state_metrics[metric][:,t], 50)
+
+    for path in results.state_metrics[metric][:20]:
+      plt.plot(results.timesteps, path, color='#ccc')
+    plt.plot(results.timesteps, median, color='red', label = 'median')
+    plt.legend()
+
+    plt.xlabel('Year')
+    plt.ylabel(metrics[metric])
+    plt.yscale("log")
+    plt.title('Sample paths for the biggest training run')
+    report.add_figure()
+
   # Display input parameter statistics
   param_stats = []
   for key, samples in results.param_samples.items():
@@ -903,7 +922,7 @@ if __name__ == '__main__':
     "-n",
     "--n-trials",
     type=int,
-    default=100,
+    default=10_000,
   )
 
   parser.add_argument(
@@ -920,6 +939,11 @@ if __name__ == '__main__':
 
   parser.add_argument(
     "--use-aggressive-ajeya",
+    action='store_true',
+  )
+
+  parser.add_argument(
+    "--use-website-rank-correlations",
     action='store_true',
   )
 
@@ -942,7 +966,10 @@ if __name__ == '__main__':
 
   args = handle_cli_arguments(parser)
 
-  set_option('rank_correlations_sheet_url', args.rank_correlations_url)
+  if args.use_website_rank_correlations:
+    set_option('rank_correlations_sheet_url', get_option('website_rank_correlations_url'))
+  else:
+    set_option('rank_correlations_sheet_url', args.rank_correlations_url)
 
   write_mc_analysis_report(
     n_trials=args.n_trials,
