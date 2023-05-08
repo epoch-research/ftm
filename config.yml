@@ -3,6 +3,7 @@
 
 input_workbook: 'https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/'
 
+
 repo_web_url: 'https://github.com/epoch-research/ftm'
 repo_url: '${repo_web_url}.git'
 
@@ -17,6 +18,9 @@ t_step:   0.1
 # Full automation training requirements distribution
 ajeya_dist_url: 'https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/edit#gid=1177136586'
 aggressive_ajeya_dist_url: 'https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/edit#gid=701812055'
+
+# For the takeoffspeeds.com website
+website_rank_correlations_url: 'https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/edit#gid=2008306353'
 
 human_names: true
 
