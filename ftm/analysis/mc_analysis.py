@@ -700,6 +700,7 @@ def write_mc_analysis_report(
     plt.xlabel('Year')
     plt.ylabel(metrics[metric])
     plt.yscale("log")
+    plt.ylim(top=1e64)
     plt.title('Sample paths for the biggest training run')
     report.add_figure()
 
