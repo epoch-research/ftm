@@ -172,7 +172,7 @@ function run_simulation(immediate, callback) {
         { label: 'Fraction of GWP spent on training', var: nj.div(sim.get_thread('money_spent_training'), sim.get_thread('gwp')), yscale: 'log'},
         { label: 'Fraction of compute invested in training', var: 'frac_compute.training.v', yscale: 'log'},
 
-        { label: 'Fraction of cognitive tasks automated', var: frac_automated_tasks, yscale: 'linear'},
+        { label: 'Fraction of all cognitive tasks automated (goods and services and R&D)', var: frac_automated_tasks, yscale: 'linear'},
       ], '#metrics-graph-container');
 
       document.body.classList.remove('running');
@@ -539,7 +539,7 @@ function plot_vlines(sim, line_color = 'black', graph = null) {
     graph.axvline(sim.rampup_mid, {
       linestyle: '-.',
       color: line_color,
-      label: '20% automation',
+      label: '20% automation (goods and services)',
     });
   }
               
@@ -547,7 +547,7 @@ function plot_vlines(sim, line_color = 'black', graph = null) {
     graph.axvline(sim.timeline_metrics['automation_gns_100%'], {
       linestyle: 'dashed',
       color: line_color,
-      label: '100% automation',
+      label: '100% automation (goods and services)',
     });
   }
 }
