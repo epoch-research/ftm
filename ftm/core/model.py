@@ -2082,7 +2082,7 @@ if __name__ == "__main__":
   args = handle_cli_arguments(parser)
 
   # Retrieve parameter estimates from spreadsheet
-  parameter_table = get_parameter_table()
+  parameter_table = get_parameter_table(tradeoff_enabled="from_spreadsheet")
   best_guess_parameters = {parameter : row['Best guess'] for parameter, row in parameter_table.iterrows()}
 
   # Run model

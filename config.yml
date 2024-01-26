@@ -1,7 +1,7 @@
 # Note: If you want to locally override some parameter, create a
 # 'local_config.yml' file in this directory (it will be ignored by Git).
 
-input_workbook: 'https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/'
+input_workbook: 'https://docs.google.com/spreadsheets/d/1OMBcEvWgCVut305CRBPxLtxjxVP4m_DOiMu9qDUgHso/'
 
 
 repo_web_url: 'https://github.com/epoch-research/ftm'
@@ -16,11 +16,11 @@ t_end:   2100
 t_step:   0.1
 
 # Full automation training requirements distribution
-ajeya_dist_url: 'https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/edit#gid=1177136586'
-aggressive_ajeya_dist_url: 'https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/edit#gid=701812055'
+ajeya_dist_url: 'https://docs.google.com/spreadsheets/d/1OMBcEvWgCVut305CRBPxLtxjxVP4m_DOiMu9qDUgHso/edit#gid=1177136586'
+aggressive_ajeya_dist_url: 'https://docs.google.com/spreadsheets/d/1OMBcEvWgCVut305CRBPxLtxjxVP4m_DOiMu9qDUgHso/edit#gid=701812055'
 
 # For the takeoffspeeds.com website
-website_rank_correlations_url: 'https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/edit#gid=2008306353'
+website_rank_correlations_url: 'https://docs.google.com/spreadsheets/d/1OMBcEvWgCVut305CRBPxLtxjxVP4m_DOiMu9qDUgHso/edit#gid=2008306353'
 
 human_names: true
 

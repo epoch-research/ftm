@@ -223,7 +223,9 @@ def get_parameter_table(tradeoff_enabled=False):
 
   table = cached_param_table.copy()
 
-  if tradeoff_enabled:
+  if tradeoff_enabled == 'from_spreadsheet':
+      pass
+  elif tradeoff_enabled:
     table.at['runtime_training_tradeoff', 'Conservative'] = 3
     table.at['runtime_training_tradeoff', 'Best guess']   = 1.5
     table.at['runtime_training_tradeoff', 'Aggressive']   = 0.8
