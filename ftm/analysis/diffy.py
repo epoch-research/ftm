@@ -454,10 +454,10 @@ def diffy(
   #--------------------------------------------------------------------------
 
   if params_url_a is None:
-    params_url_a = get_option('param_table_url', 'https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/export?format=csv&gid=0')
+    params_url_a = get_option('param_table_url', 'https://docs.google.com/spreadsheets/d/1OMBcEvWgCVut305CRBPxLtxjxVP4m_DOiMu9qDUgHso/export?format=csv&gid=0')
 
   if params_url_b is None:
-    params_url_b = get_option('param_table_url', 'https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI/export?format=csv&gid=0')
+    params_url_b = get_option('param_table_url', 'https://docs.google.com/spreadsheets/d/1OMBcEvWgCVut305CRBPxLtxjxVP4m_DOiMu9qDUgHso/export?format=csv&gid=0')
 
   if report_file_path is None:
     report_file_path = 'diffy.html'
