@@ -5,7 +5,7 @@ For now, you might be interested in [the core file](ftm/core/model.py).
 
 Instructions to execute the model:
 - Clone the github repo 
-- Create a copy of the [Task_based_model_inputs](https://docs.google.com/spreadsheets/d/1r-WxW4JeNoi_gCMc5y2iTlJQnan_LLCF5s_V4ZDDMkI) and set the parameters as you want, and make it public
+- Create a copy of the [Task_based_model_inputs](https://docs.google.com/spreadsheets/d/1OMBcEvWgCVut305CRBPxLtxjxVP4m_DOiMu9qDUgHso/) and set the parameters as you want, and make it public
 - Run `python -m ftm.core.model -w YOUR_SHEET_URL` to run the model with best_guess parameters
 - Run `python -m ftm.analysis.exploration_analysis -w YOUR_SHEET_URL` to run a comparison of the model with aggressive, best_guess and conservative parameter choices
     - You can run python -m ftm.analysis.exploration_analysis -w YOUR_SHEET_URL -t PARAMETER_NAME instead to produce a detailed comparison of what happens when you set said parameter at aggressive, best_guess and conservative, with all other parameters held at best_guess value
