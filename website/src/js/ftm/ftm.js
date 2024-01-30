@@ -770,7 +770,7 @@ let ftm = {};
       this.produce(state, consts, 'rnd', 'hardware_rnd');
 
       state.software_rnd.experiments_compute = state.hardware ** consts.software_rnd.experiments_efficiency;
-      this.produce(state, consts, 'rnd', 'software_rnd', state.software_rnd.experiments_compute, true);
+      this.produce(state, consts, 'rnd', 'software_rnd', state.software_rnd.experiments_compute);
 
       this.post_production(state, consts, states);
     }

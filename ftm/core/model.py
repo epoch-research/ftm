@@ -1128,7 +1128,6 @@ class SimulateTakeOff():
           self.task_input_software_rnd[t_idx][:],
           self.labour_task_weights_software_rnd,
           self.labour_substitution_rnd,
-          self.tfp_rnd[t_idx]
           )
 
     # Combine with experiments
@@ -1137,6 +1136,7 @@ class SimulateTakeOff():
           np.array([self.compute_software_rnd_experiments[t_idx], research_output]),
           self.research_experiments_task_weights_software,
           self.research_experiments_substitution_software,
+          self.tfp_rnd[t_idx]
           )
 
     ## Compute how much worse is the software output without automation
@@ -1162,7 +1162,6 @@ class SimulateTakeOff():
           no_automation_task_input_software_rnd[:],
           self.labour_task_weights_software_rnd,
           self.labour_substitution_rnd,
-          self.tfp_rnd[t_idx]
           )
 
     # Combine with experiments
@@ -1171,6 +1170,7 @@ class SimulateTakeOff():
           np.array([self.compute_software_rnd_experiments[t_idx], no_automation_research_output]),
           self.research_experiments_task_weights_software,
           self.research_experiments_substitution_software,
+          self.tfp_rnd[t_idx]
           )
 
     if self.disable_automation:
