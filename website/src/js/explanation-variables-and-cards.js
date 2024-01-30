@@ -201,7 +201,7 @@ let parameters = {
   },
 
   '\\beta_{R,i}': {
-    constant: 'hardware_rnd.capital_task_weights[0]',
+    constant: sim => `Task 0: 1 <br><br> Rest of tasks: <span class="no-break">${standard_format(sim.consts.hardware_rnd.labour_task_weights[1])}</span>`,
     meaning: 'Task weights in the hardware and software R&D cognitive CES function',
     justification: 'See <a href="#appendix-a">appendix A</a>.',
   },
