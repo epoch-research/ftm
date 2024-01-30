@@ -1,6 +1,6 @@
 # Poor person's test. Execute from the root directory of the repo with
 #
-#   python -m website.tests.test
+#   poetry run python -m website.tests.test
 #
 # If the script terminates normally, without throwing an exception, everything is fine.
 
@@ -29,6 +29,7 @@ class JSModel:
     from py_mini_racer import MiniRacer
 
     scripts = [
+      '../utils.js',
       'nj.js',
       'ftm.js',
       'bridge.js',
