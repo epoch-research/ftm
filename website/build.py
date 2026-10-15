@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 import argparse
+import base64
+import re
 import shutil
 import os
 
@@ -65,6 +67,7 @@ def build():
   write(playground, 'index.html')
 
   reports = read('reports.html')
+  reports = extract_figures(reports, 'img/reports')
   reports = f'''
     <!DOCTYPE html>
     <meta charset="utf-8">
@@ -113,6 +116,21 @@ def build():
   write(four_oh_four, '404.html')
 
   print('Done')
+
+def extract_figures(html, figures_dir):
+  # Move base64-embedded figures into separate files so the page itself stays small
+  os.makedirs(os.path.join(BUILD_DIR, figures_dir), exist_ok=True)
+  count = 0
+
+  def replace(match):
+    nonlocal count
+    count += 1
+    filename = f'{figures_dir}/figure-{count:02}.svg'
+    with open(os.path.join(BUILD_DIR, filename), 'wb') as f:
+      f.write(base64.b64decode(match.group(2)))
+    return f'<img{match.group(1)}src="{filename}" loading="lazy"{match.group(3)}>'
+
+  return re.sub(r'<img([^>]*?)src="data:image/svg\+xml;base64,([^"]+)"([^>]*)>', replace, html)
 
 def clean():
   print('Cleaning')
