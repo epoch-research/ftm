@@ -18,6 +18,8 @@ args = parser.parse_args()
 def build():
   print('Building')
 
+  # Start from an empty dir so pages dropped from the build don't get deployed
+  shutil.rmtree(BUILD_DIR, ignore_errors=True)
   os.makedirs(BUILD_DIR, exist_ok=True)
 
   def cp(filename):
@@ -36,6 +38,7 @@ def build():
       return f.write(content)
 
   cp('favicon.svg')
+  cp('_redirects')
   cp('spinner.svg')
 
   cpdir('css')
@@ -63,7 +66,6 @@ def build():
     {footer}
   '''
 
-  write(playground, 'playground.html')
   write(playground, 'index.html')
 
   reports = read('reports.html')
